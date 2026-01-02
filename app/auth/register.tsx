@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { auth } from "../../firebase";
+import { auth } from "../../firebase"; // путь к firebase
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -17,7 +17,7 @@ export default function Register() {
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      router.replace("/(tabs)/map"); // переход на карту
+      router.replace("/(tabs)/map"); // переход после регистрации
     } catch (e: any) {
       alert(e.message);
     }
@@ -62,7 +62,7 @@ export default function Register() {
 
         <View style={styles.loginRedirect}>
           <Text style={styles.signupText}>Already have an account?</Text>
-          <TouchableOpacity onPress={() => router.replace("/auth/login")}>
+          <TouchableOpacity onPress={() => router.replace("/")}>
             <Text style={styles.signupButton}> Login</Text>
           </TouchableOpacity>
         </View>
