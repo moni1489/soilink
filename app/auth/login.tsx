@@ -1,0 +1,126 @@
+import { router } from "expo-router";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { useState } from "react";
+import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { auth } from "../../firebase";
+
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const login = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.replace("/(tabs)/map");
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const register = async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.replace("/(tabs)/map");
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>Welcome to Soilink</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#888"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#888"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity style={styles.button} onPress={login}>
+          <Text style={styles.buttonText}>Sign In</Text>
+        </TouchableOpacity>
+
+        <View style={styles.signupContainer}>
+  <Text style={styles.signupText}>Not a member?</Text>
+  <TouchableOpacity onPress={() => router.push("/auth/register")}>
+    <Text style={styles.signupButton}> Create account</Text>
+  </TouchableOpacity>
+</View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    padding: 20,
+  },
+  formContainer: {
+    width: "100%",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 32,
+  },
+  input: {
+    backgroundColor: "#222",
+    color: "#fff",
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  rememberContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  rememberText: {
+    color: "#fff",
+  },
+  forgotText: {
+    color: "#888",
+    textDecorationLine: "underline",
+  },
+  button: {
+    backgroundColor: "#1e90ff",
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  signupContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  signupText: {
+    color: "#888",
+  },
+  signupButton: {
+    color: "#1e90ff",
+    fontWeight: "bold",
+  },
+});
