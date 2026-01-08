@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { auth } from "../../firebase"; // путь к firebase
+import { auth } from "../../firebase";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -17,7 +17,7 @@ export default function Register() {
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      router.replace("/(tabs)/map"); // переход после регистрации
+      router.replace("/(tabs)/map");
     } catch (e: any) {
       alert(e.message);
     }
@@ -26,7 +26,7 @@ export default function Register() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.title}>Создать аккаунт</Text>
 
         <TextInput
           style={styles.input}
@@ -57,13 +57,13 @@ export default function Register() {
         />
 
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Register</Text>
+          <Text style={styles.buttonText}>Зарегистрироваться</Text>
         </TouchableOpacity>
 
         <View style={styles.loginRedirect}>
           <Text style={styles.signupText}>Already have an account?</Text>
-          <TouchableOpacity onPress={() => router.replace("/")}>
-            <Text style={styles.signupButton}> Login</Text>
+          <TouchableOpacity onPress={() => router.replace("/auth/login")}>
+            <Text style={styles.signupButton}> Войти</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -76,9 +76,9 @@ const styles = StyleSheet.create({
   formContainer: { width: "100%" },
   title: { fontSize: 28, fontWeight: "bold", color: "#fff", textAlign: "center", marginBottom: 32 },
   input: { backgroundColor: "#222", color: "#fff", padding: 14, borderRadius: 8, marginBottom: 16 },
-  button: { backgroundColor: "#1e90ff", padding: 16, borderRadius: 8, alignItems: "center", marginBottom: 20 },
+  button: { backgroundColor: "#96ff", padding: 16, borderRadius: 8, alignItems: "center", marginBottom: 20 },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
   loginRedirect: { flexDirection: "row", justifyContent: "center" },
   signupText: { color: "#888" },
-  signupButton: { color: "#1e90ff", fontWeight: "bold" },
+  signupButton: { color: "#96ff", fontWeight: "bold" },
 });
