@@ -1,0 +1,36 @@
+{
+  "name": "soilink-rebuild",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "expo": "~52.0.0",
+    "expo-constants": "~17.0.0",
+    "expo-linking": "~7.0.0",
+    "expo-router": "~4.0.0",
+    "expo-status-bar": "~2.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.0",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "4.1.0",
+    "react-native-maps": "1.18.0",
+    "lucide-react-native": "^0.577.0",
+    "react-native-svg": "15.8.0",
+    "expo-localization": "~16.0.0",
+    "i18n-js": "^4.3.0",
+    "mapbox-gl": "^3.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@types/react": "~18.3.12",
+    "@types/mapbox-gl": "^3.0.0",
+    "typescript": "^5.3.3"
+  },
+  "private": true
+}
