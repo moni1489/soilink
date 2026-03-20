@@ -1,12 +1,10 @@
 import { Stack } from 'expo-router';
-import { LogBox } from 'react-native';
-
-LogBox.ignoreLogs(['Warning: ']);
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function Layout() {
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#f5f7f9' } }}>
-      <Stack.Screen name="index" options={{ title: 'Dashboard' }} />
-    </Stack>
+    <SafeAreaProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </SafeAreaProvider>
   );
 }

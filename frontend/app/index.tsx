@@ -1,95 +1,146 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Text, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
-import i18n from '../i18n';
-import TopSummaryCards from '../components/TopSummaryCards';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Platform } from 'react-native';
+import '../i18n/i18n';
+import { useTranslation } from 'react-i18next';
+import { fields, zones, sensors, statistics, recommendations } from '../data/mockData';
+import TopCards from '../components/TopCards';
 import Sidebar from '../components/Sidebar';
-import RecommendationsPanel from '../components/RecommendationsPanel';
 import FieldMap from '../components/FieldMap';
-import SensorDetailsModal from '../components/SensorDetailsModal';
-import { Sensor } from '../types';
+import Recommendations from '../components/Recommendations';
+import SensorModal from '../components/SensorModal';
+import { LayerKey, Sensor, MapMode } from '../types';
+import { useLocale } from '../hooks/useLocale';
+
+const defaultVisible: LayerKey[] = ['soilMoisture', 'temperature', 'pH', 'electricalConductivity', 'gasComposition', 'vibroacousticAnalysis'];
 
 export default function Dashboard() {
-  const { width } = useWindowDimensions();
-  const isLargeScreen = width >= 1024; // Web/Tablet landscape
-  
-  // Local UI State (replacing Zustand entirely to keep strictly lightweight map architecture)
-  const [lang, setLang] = useState(i18n.locale);
-  const [activeLayer, setActiveLayer] = useState('moisture');
+  const { t } = useTranslation();
+  const { locale, setLanguage } = useLocale();
+  const [activeFieldId, setActiveFieldId] = useState(fields[0].id);
+  const [visibleLayers, setVisibleLayers] = useState<LayerKey[]>(defaultVisible);
   const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
+  const [sensorModalVisible, setSensorModalVisible] = useState(false);
+  const [mapMode, setMapMode] = useState<MapMode>('zones');
 
-  const toggleLang = () => {
-    const nextLang = lang === 'en' ? 'ru' : lang === 'ru' ? 'kk' : 'en';
-    i18n.locale = nextLang;
-    setLang(nextLang);
+  const activeField = fields.find((f) => f.id === activeFieldId) ?? fields[0];
+
+  const onSelectSensor = (sensor: Sensor) => {
+    setSelectedSensor(sensor);
+    setSensorModalVisible(true);
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>{i18n.t('dashboard.title')}</Text>
-          <Text style={styles.subtitle}>{i18n.t('dashboard.subtitle')} • {Platform.OS.toUpperCase()}</Text>
-        </View>
-        <TouchableOpacity onPress={toggleLang} style={styles.langBtn}>
-          <Text style={styles.langText}>{lang.toUpperCase()}</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Top Cards */}
-      <TopSummaryCards />
+  const onToggleLayer = (layer: LayerKey) => {
+    setVisibleLayers((previous) =>
+      previous.includes(layer) ? previous.filter((item) => item !== layer) : [...previous, layer]
+    );
+  };
 
-      {/* Main Body */}
-      {isLargeScreen ? (
-        <View style={styles.mainBodyLarge}>
-          <View style={styles.sidebarWrapper}>
-            <Sidebar activeLayer={activeLayer} setActiveLayer={setActiveLayer} />
+  const languageButtons = [
+    { code: 'en', label: t('english') },
+    { code: 'ru', label: t('russian') },
+    { code: 'kk', label: t('kazakh') }
+  ];
+
+  return (
+    <ScrollView style={styles.root} contentContainerStyle={styles.contentContainer}>
+      <View style={styles.localeRow}>
+        <Text style={styles.localeLabel}>{t('chooseLanguage')}:</Text>
+        {languageButtons.map((item) => (
+          <TouchableOpacity key={item.code} style={[styles.langButton, locale === item.code ? styles.langActive : undefined]} onPress={() => setLanguage(item.code)}>
+            <Text>{item.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.sectionTitle}>{t('topSummary')}</Text>
+      <TopCards stats={statistics} />
+
+      {Platform.OS === 'web' ? (
+        <View style={styles.webLayout}>
+          <Sidebar fields={fields} selectedFieldId={activeFieldId} onSelectField={setActiveFieldId} visibleLayers={visibleLayers} onToggleLayer={onToggleLayer} />
+          <View style={styles.mapRegion}>
+            <View style={styles.mapHeaderRow}>
+              <Text style={styles.mapLabel}>{t('map')}</Text>
+              <View style={styles.mapModeGroup}>
+                <Text style={styles.mapModeLabel}>{t('mapMode')}:</Text>
+                <TouchableOpacity style={[styles.mapModeButton, mapMode === 'zones' ? styles.mapModeButtonActive : undefined]} onPress={() => setMapMode('zones')}>
+                  <Text>{t('zonesView')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.mapModeButton, mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined]} onPress={() => setMapMode('heatmap')}>
+                  <Text>{t('heatmapView')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <FieldMap fieldCenter={activeField.center} zones={zones} sensors={sensors} onSelectSensor={onSelectSensor} visibleLayers={visibleLayers} mapMode={mapMode} />
           </View>
-          <View style={styles.mapWrapper}>
-            <FieldMap onSelectSensor={setSelectedSensor} />
-          </View>
-          <View style={styles.recWrapper}>
-            <RecommendationsPanel />
-          </View>
+          <Recommendations recommendations={recommendations} />
         </View>
       ) : (
-        <ScrollView style={styles.mobileScroll} showsVerticalScrollIndicator={false}>
-          {/* Map is at the top for context */}
-          <View style={styles.mobileMapWrapper}>
-            <FieldMap onSelectSensor={setSelectedSensor} />
+        <View style={styles.mobileLayout}>
+          <View style={styles.mapHeaderRow}>
+            <Text style={styles.mapLabel}>{t('map')}</Text>
+            <View style={styles.mapModeGroup}>
+              <Text style={styles.mapModeLabel}>{t('mapMode')}:</Text>
+              <TouchableOpacity style={[styles.mapModeButton, mapMode === 'zones' ? styles.mapModeButtonActive : undefined]} onPress={() => setMapMode('zones')}>
+                <Text>{t('zonesView')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.mapModeButton, mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined]} onPress={() => setMapMode('heatmap')}>
+                <Text>{t('heatmapView')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          {/* Recommendations and Layers follow */}
-          <View style={styles.mobileSection}>
-            <RecommendationsPanel />
-          </View>
-          <View style={styles.mobileSection}>
-            <Sidebar activeLayer={activeLayer} setActiveLayer={setActiveLayer} />
-          </View>
-        </ScrollView>
+          <FieldMap fieldCenter={activeField.center} zones={zones} sensors={sensors} onSelectSensor={onSelectSensor} visibleLayers={visibleLayers} mapMode={mapMode} />
+          <Sidebar fields={fields} selectedFieldId={activeFieldId} onSelectField={setActiveFieldId} visibleLayers={visibleLayers} onToggleLayer={onToggleLayer} />
+          <Recommendations recommendations={recommendations} />
+        </View>
       )}
 
-      {/* Modals */}
-      <SensorDetailsModal selectedSensor={selectedSensor} onClose={() => setSelectedSensor(null)} />
-    </SafeAreaView>
+      <SensorModal visible={sensorModalVisible} sensor={selectedSensor} onClose={() => setSensorModalVisible(false)} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#fff', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  title: { fontSize: 22, fontWeight: '800', color: '#1B5E20' },
-  subtitle: { fontSize: 13, color: '#888', marginTop: 2, fontWeight: '600' },
-  langBtn: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#E8F5E9', borderRadius: 20 },
-  langText: { color: '#2E7D32', fontWeight: '700', fontSize: 13 },
-  
-  // Large Screen (Web)
-  mainBodyLarge: { flex: 1, flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, gap: 16, marginTop: 8 },
-  sidebarWrapper: { width: 300 },
-  mapWrapper: { flex: 1 },
-  recWrapper: { width: 320 },
-
-  // Mobile
-  mobileScroll: { flex: 1, marginHorizontal: 16, paddingBottom: 32, marginTop: 8 },
-  mobileMapWrapper: { height: 400, marginBottom: 16 },
-  mobileSection: { marginBottom: 16, minHeight: 300 }
+  root: { flex: 1, backgroundColor: '#f3f4f6' },
+  contentContainer: { padding: 12, paddingBottom: 80 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 10 },
+  localeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' },
+  localeLabel: { fontWeight: '600', marginRight: 8 },
+  langButton: { borderWidth: 1, borderColor: '#d1d5db', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 8, marginRight: 8, marginBottom: 6 },
+  langActive: { backgroundColor: '#dbeafe', borderColor: '#3b82f6' },
+  webLayout: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  mobileLayout: {
+    gap: 10
+  },
+  mapRegion: { flex: 1, minHeight: 460 },
+  mapHeaderRow: {
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap'
+  },
+  mapLabel: { fontWeight: '700' },
+  mapModeGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  },
+  mapModeLabel: {
+    fontSize: 12,
+    color: '#374151',
+    marginRight: 6
+  },
+  mapModeButton: {
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 6
+  },
+  mapModeButtonActive: {
+    borderColor: '#0f766e',
+    backgroundColor: '#ccfbf1'
+  }
 });
