@@ -1,15 +1,32 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["DOM", "ES2020"],
+    "jsx": "react-jsx",
+    "allowJs": false,
+    "skipLibCheck": true,
     "strict": true,
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["*"]
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx"
+    "app/**/*.tsx",
+    "components/**/*.tsx",
+    "data/**/*.ts",
+    "hooks/**/*.ts",
+    "i18n/**/*.ts",
+    "types/**/*.ts",
+    "utils/**/*.ts",
+    "App.tsx",
+    "index.ts"
   ]
 }

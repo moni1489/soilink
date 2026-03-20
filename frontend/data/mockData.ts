@@ -1,113 +1,163 @@
-import { Sensor, Zone, Recommendation } from '../types';
+import { Field, Sensor, SoilZone, StatisticCard, Recommendation } from '../types';
 
-export const MOOK_FIELD_COORDS = {
-  latitude: 49.9483,
-  longitude: 82.6278,
-  latitudeDelta: 0.005,
-  longitudeDelta: 0.005,
-};
-
-export const MOCK_SENSORS: Sensor[] = [
+export const fields: Field[] = [
   {
-    id: "sensor-main",
-    name: "Main Hub (Ust-Kamenogorsk)",
-    coordinates: { latitude: 49.9483, longitude: 82.6278 },
-    status: "active",
-    lastUpdated: new Date().toISOString(),
-    premiumFeatures: true,
-    data: {
-      ph: 6.5,
-      temperature: 22.4,
-      moisture: 45,
-      electricalConductivity: 1.2,
-      gasComposition: { co2: 400, o2: 21 },
-      vibroacoustic: "Normal - No compaction detected",
-    },
+    id: 'field-1',
+    name: 'Field 1',
+    areaHectares: 20,
+    center: {
+      latitude: 49.9689,
+      longitude: 82.5946
+    }
   },
   {
-    id: "sensor-2",
-    name: "North Point (Warning)",
-    coordinates: { latitude: 49.9490, longitude: 82.6285 },
-    status: "warning",
-    lastUpdated: new Date().toISOString(),
-    premiumFeatures: false,
-    data: {
-      ph: 5.8,
-      temperature: 23.1,
-      moisture: 30, // low
-      electricalConductivity: 1.5,
-      gasComposition: { co2: 420, o2: 20.8 },
-    },
+    id: 'field-2',
+    name: 'Field 2',
+    areaHectares: 18.5,
+    center: {
+      latitude: 49.9715,
+      longitude: 82.6021
+    }
   },
   {
-    id: "sensor-3",
-    name: "West Point (Critical)",
-    coordinates: { latitude: 49.9475, longitude: 82.6265 },
-    status: "critical",
-    lastUpdated: new Date().toISOString(),
-    premiumFeatures: false,
-    data: {
-      ph: 7.2,
-      temperature: 26.5,
-      moisture: 15, // very low
-      electricalConductivity: 2.1,
-      gasComposition: { co2: 450, o2: 20.5 },
-    },
-  },
-  {
-    id: "sensor-4",
-    name: "South-East (Healthy)",
-    coordinates: { latitude: 49.9472, longitude: 82.6288 },
-    status: "active",
-    lastUpdated: new Date().toISOString(),
-    premiumFeatures: true,
-    data: {
-      ph: 6.8,
-      temperature: 21.5,
-      moisture: 42,
-      electricalConductivity: 1.1,
-      gasComposition: { co2: 395, o2: 21 },
-      vibroacoustic: "Optimal aeration levels",
-    },
+    id: 'field-3',
+    name: 'Field 3',
+    areaHectares: 22.2,
+    center: {
+      latitude: 49.9632,
+      longitude: 82.6137
+    }
   }
 ];
 
-export const MOCK_ZONES: Zone[] = [
+export const sensors: Sensor[] = [
   {
-    id: "zone-1",
-    status: "healthy",
-    coordinates: [
-      { latitude: 49.9495, longitude: 82.6270 },
-      { latitude: 49.9495, longitude: 82.6295 },
-      { latitude: 49.9485, longitude: 82.6295 },
-      { latitude: 49.9485, longitude: 82.6270 },
-    ],
+    id: 'sensor-1',
+    name: 'Moisture Probe 01',
+    coordinates: { latitude: 49.9698, longitude: 82.5979 },
+    status: 'healthy',
+    lastUpdated: '2026-03-20T09:10:00Z',
+    pH: 6.8,
+    soilTemperature: 16.4,
+    soilMoisture: 42,
+    electricalConductivity: 1.2,
+    gasComposition: 'N2 78%, O2 21%, CO2 0.04%',
+    premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Stable structure with minimal compaction' }
   },
   {
-    id: "zone-2",
-    status: "warning",
-    coordinates: [
-      { latitude: 49.9485, longitude: 82.6270 },
-      { latitude: 49.9485, longitude: 82.6295 },
-      { latitude: 49.9470, longitude: 82.6295 },
-      { latitude: 49.9470, longitude: 82.6270 },
-    ],
+    id: 'sensor-2',
+    name: 'Temperature Probe 02',
+    coordinates: { latitude: 49.9674, longitude: 82.5912 },
+    status: 'warning',
+    lastUpdated: '2026-03-20T09:08:00Z',
+    pH: 5.9,
+    soilTemperature: 21.1,
+    soilMoisture: 34,
+    electricalConductivity: 1.45,
+    gasComposition: 'N2 77%, O2 20%, CO2 0.05%',
+    premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Medium structure irregularities detected' }
   },
   {
-    id: "zone-3",
-    status: "critical",
-    coordinates: [
-      { latitude: 49.9480, longitude: 82.6250 },
-      { latitude: 49.9480, longitude: 82.6270 },
-      { latitude: 49.9470, longitude: 82.6270 },
-      { latitude: 49.9470, longitude: 82.6250 },
-    ],
+    id: 'sensor-3',
+    name: 'Accuracy Sensor 03',
+    coordinates: { latitude: 49.9711, longitude: 82.5996 },
+    status: 'critical',
+    lastUpdated: '2026-03-20T09:03:00Z',
+    pH: 4.8,
+    soilTemperature: 26.5,
+    soilMoisture: 21,
+    electricalConductivity: 2.3,
+    gasComposition: 'N2 75%, O2 19%, CO2 0.10%',
+    premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Severe compaction detected; recommend remediation' }
   },
+  {
+    id: 'sensor-4',
+    name: 'Gas Sensor 04',
+    coordinates: { latitude: 49.9668, longitude: 82.6039 },
+    status: 'healthy',
+    lastUpdated: '2026-03-20T09:00:00Z',
+    pH: 7.1,
+    soilTemperature: 15.3,
+    soilMoisture: 48,
+    electricalConductivity: 1.1,
+    gasComposition: 'N2 78%, O2 21%, CO2 0.03%'
+  }
 ];
 
-export const MOCK_RECOMMENDATIONS: Recommendation[] = [
-  { id: "rec-1", type: "critical", messageKey: "rec.lowMoisture" },
-  { id: "rec-2", type: "warning", messageKey: "rec.phImbalance" },
-  { id: "rec-3", type: "plan", messageKey: "rec.weatherPlan" },
-  { id: "rec-4", type: "premium", messageKey: "rec.compaction" },
+export const zones: SoilZone[] = [
+  {
+    id: 'zone-green',
+    name: 'Healthy zone',
+    color: 'green',
+    center: { latitude: 49.969, longitude: 82.596 },
+    radiusMeters: 500
+  },
+  {
+    id: 'zone-yellow',
+    name: 'Warning zone',
+    color: 'yellow',
+    center: { latitude: 49.967, longitude: 82.605 },
+    radiusMeters: 320
+  },
+  {
+    id: 'zone-red',
+    name: 'Critical zone',
+    color: 'red',
+    center: { latitude: 49.971, longitude: 82.598 },
+    radiusMeters: 250
+  }
+];
+
+export const statistics: StatisticCard[] = [
+  { id: 'stats-soil', label: 'overallSoilHealth', value: '78%' },
+  { id: 'stats-water', label: 'dailyWaterUsage', value: '5.4 m3' },
+  { id: 'stats-sensors', label: 'activeSensors', value: '4' },
+  { id: 'stats-alerts', label: 'alertsToday', value: '3' }
+];
+
+export const recommendations: Recommendation[] = [
+  {
+    id: 'rec-1',
+    level: 'critical',
+    titleKey: 'recIrrigationOverloadTitle',
+    messageKey: 'recIrrigationOverloadMessage',
+    sensorId: 'sensor-3',
+    timeline: [
+      { id: 'rec-1-step-1', labelKey: 'rec1Step1', dueAt: '2026-03-20 17:30', completed: true },
+      { id: 'rec-1-step-2', labelKey: 'rec1Step2', dueAt: '2026-03-20 20:00', completed: false },
+      { id: 'rec-1-step-3', labelKey: 'rec1Step3', dueAt: '2026-03-21 08:00', completed: false }
+    ]
+  },
+  {
+    id: 'rec-2',
+    level: 'warning',
+    titleKey: 'recLowPhTitle',
+    messageKey: 'recLowPhMessage',
+    sensorId: 'sensor-2',
+    timeline: [
+      { id: 'rec-2-step-1', labelKey: 'rec2Step1', dueAt: '2026-03-20 19:00', completed: true },
+      { id: 'rec-2-step-2', labelKey: 'rec2Step2', dueAt: '2026-03-21 06:30', completed: false }
+    ]
+  },
+  {
+    id: 'rec-3',
+    level: 'plan',
+    titleKey: 'recAerialSurveyTitle',
+    messageKey: 'recAerialSurveyMessage',
+    timeline: [
+      { id: 'rec-3-step-1', labelKey: 'rec3Step1', dueAt: '2026-03-21 09:00', completed: false },
+      { id: 'rec-3-step-2', labelKey: 'rec3Step2', dueAt: '2026-03-21 13:30', completed: false }
+    ]
+  },
+  {
+    id: 'rec-4',
+    level: 'premium',
+    titleKey: 'recVibroAlertTitle',
+    messageKey: 'recVibroAlertMessage',
+    sensorId: 'sensor-3',
+    timeline: [
+      { id: 'rec-4-step-1', labelKey: 'rec4Step1', dueAt: '2026-03-20 18:45', completed: true },
+      { id: 'rec-4-step-2', labelKey: 'rec4Step2', dueAt: '2026-03-21 07:15', completed: false }
+    ]
+  }
 ];

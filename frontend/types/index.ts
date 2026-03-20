@@ -1,18 +1,14 @@
-export type SensorStatus = 'active' | 'warning' | 'critical';
-
-export interface GasComposition {
-  co2: number; 
-  o2: number;  
-}
-
-export interface SensorData {
-  ph: number;
-  temperature: number; // °C
-  moisture: number; // %
-  electricalConductivity: number; // dS/m
-  gasComposition: GasComposition;
-  vibroacoustic?: string; // Premium only
-}
+export type SensorStatus = 'healthy' | 'warning' | 'critical';
+export type RecommendationLevel = 'critical' | 'warning' | 'plan' | 'premium';
+export type RecommendationTimelineStatus = 'pending' | 'inProgress' | 'done';
+export type LayerKey =
+  | 'soilMoisture'
+  | 'temperature'
+  | 'pH'
+  | 'electricalConductivity'
+  | 'gasComposition'
+  | 'vibroacousticAnalysis';
+export type MapMode = 'zones' | 'heatmap';
 
 export interface Sensor {
   id: string;
@@ -23,25 +19,55 @@ export interface Sensor {
   };
   status: SensorStatus;
   lastUpdated: string;
-  premiumFeatures: boolean;
-  data: SensorData;
+  pH: number;
+  soilTemperature: number;
+  soilMoisture: number;
+  electricalConductivity: number;
+  gasComposition: string;
+  premiumFeatures?: {
+    vibroacousticSoilStructureAnalysis?: string;
+  };
 }
 
-export type ZoneStatus = 'healthy' | 'warning' | 'critical';
-
-export interface Zone {
+export interface SoilZone {
   id: string;
-  status: ZoneStatus;
-  coordinates: {
+  name: string;
+  color: 'green' | 'yellow' | 'red';
+  center: {
     latitude: number;
     longitude: number;
-  }[];
+  };
+  radiusMeters: number;
 }
 
-export type RecType = 'critical' | 'warning' | 'plan' | 'premium';
+export interface Field {
+  id: string;
+  name: string;
+  areaHectares: number;
+  center: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+export interface StatisticCard {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface RecommendationTimelineStep {
+  id: string;
+  labelKey: string;
+  dueAt: string;
+  completed: boolean;
+}
 
 export interface Recommendation {
   id: string;
-  type: RecType;
+  level: RecommendationLevel;
+  titleKey: string;
   messageKey: string;
+  sensorId?: string;
+  timeline: RecommendationTimelineStep[];
 }
