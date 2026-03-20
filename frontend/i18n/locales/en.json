@@ -1,0 +1,43 @@
+{
+  "dashboard": {
+    "title": "Soilink MVP Rebuild",
+    "subtitle": "No backend prototype",
+    "recommendations": "Smart Recommendations",
+    "fields": "Fields & Zones",
+    "layers": "Map Layers"
+  },
+  "metrics": {
+    "ph": "pH Level",
+    "temperature": "Soil Temp",
+    "moisture": "Moisture",
+    "ec": "Electrical Cond.",
+    "gas": "Gas (CO2/O2)",
+    "vibroacoustic": "Vibroacoustic API"
+  },
+  "status": {
+    "active": "Active",
+    "healthy": "Healthy",
+    "warning": "Warning",
+    "critical": "Critical"
+  },
+  "cards": {
+    "overallHealth": "Overall Health",
+    "waterUsage": "H2O Usage/24h",
+    "activeSensors": "Active Sensors",
+    "alerts": "System Alerts"
+  },
+  "rec": {
+    "lowMoisture": "CRITICAL: Very low moisture. Urgent irrigation needed.",
+    "phImbalance": "WARNING: Minor acidity deviation. Monitor for 48h.",
+    "weatherPlan": "PLAN: Rain incoming. Halt manual watering.",
+    "compaction": "PREMIUM: Vibroacoustic analysis confirms good soil aeration."
+  },
+  "layers": {
+    "moisture": "Moisture Map",
+    "temperature": "Thermal Map",
+    "ph": "Acidity Map",
+    "ec": "Conductivity Map",
+    "gas": "Gas Distribution",
+    "vibroacoustic": "Structure Map"
+  }
+}
