@@ -7,11 +7,11 @@ interface Props {
   recommendations: Recommendation[];
 }
 
-const levelColorMap = {
-  critical: '#fca5a5',
-  warning: '#fde68a',
-  plan: '#bfdbfe',
-  premium: '#c7d2fe'
+const levelColorMap: Record<Recommendation['level'], string> = {
+  critical: '#fee2e2',
+  warning: '#fef3c7',
+  plan: '#dcfce7',
+  premium: '#d1fae5'
 };
 
 const levelLabelKeyMap = {
@@ -22,8 +22,8 @@ const levelLabelKeyMap = {
 } as const;
 
 const statusColorMap: Record<RecommendationTimelineStatus, string> = {
-  pending: '#f59e0b',
-  inProgress: '#2563eb',
+  pending: '#b45309',
+  inProgress: '#166534',
   done: '#0f766e'
 };
 
@@ -62,7 +62,7 @@ export default function Recommendations({ recommendations }: Props) {
         const status = getTimelineStatus(item);
 
         return (
-          <View key={item.id} style={[styles.item, { backgroundColor: levelColorMap[item.level] || '#fff' }]}>
+          <View key={item.id} style={[styles.item, { backgroundColor: levelColorMap[item.level] }]}> 
             <View style={styles.itemHeaderRow}>
               <Text style={styles.level}>{t(levelLabelKeyMap[item.level])}</Text>
               <View style={[styles.statePill, { borderColor: statusColorMap[status] }]}>
@@ -84,8 +84,12 @@ export default function Recommendations({ recommendations }: Props) {
                       <Text style={styles.checkboxText}>{isChecked ? 'x' : ''}</Text>
                     </View>
                     <View style={styles.timelineTextWrap}>
-                      <Text style={[styles.timelineText, isChecked ? styles.timelineTextDone : undefined]}>{t(step.labelKey)}</Text>
-                      <Text style={styles.timelineDue}>{t('due')}: {step.dueAt}</Text>
+                      <Text style={[styles.timelineText, isChecked ? styles.timelineTextDone : undefined]}>
+                        {t(step.labelKey)}
+                      </Text>
+                      <Text style={styles.timelineDue}>
+                        {t('due')}: {step.dueAt}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 );
@@ -100,19 +104,26 @@ export default function Recommendations({ recommendations }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    width: 300,
+    width: 310,
     maxWidth: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#f4fbf2',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#b7d4b1',
     padding: 10
   },
-  header: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
+  header: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 10,
+    color: '#1f4d2a'
+  },
   item: {
     borderRadius: 10,
     padding: 10,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(22, 101, 52, 0.14)',
     elevation: 1
   },
   itemHeaderRow: {
@@ -120,14 +131,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center'
   },
-  level: { fontWeight: '800', textTransform: 'uppercase', fontSize: 12, marginBottom: 4 },
-  title: { fontWeight: '700', marginBottom: 2 },
-  message: { color: '#555', fontSize: 12, marginBottom: 8 },
+  level: {
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    fontSize: 12,
+    marginBottom: 4,
+    color: '#1f2937'
+  },
+  title: {
+    fontWeight: '700',
+    marginBottom: 2,
+    color: '#1f2937'
+  },
+  message: {
+    color: '#374151',
+    fontSize: 12,
+    marginBottom: 8
+  },
   statePill: {
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 8,
-    paddingVertical: 2
+    paddingVertical: 2,
+    backgroundColor: '#ffffffaa'
   },
   stateText: {
     fontSize: 11,
@@ -136,7 +162,8 @@ const styles = StyleSheet.create({
   timelineLabel: {
     fontSize: 12,
     fontWeight: '700',
-    marginBottom: 6
+    marginBottom: 6,
+    color: '#1f2937'
   },
   timelineItem: {
     flexDirection: 'row',
@@ -148,15 +175,15 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#9ca3af',
+    borderColor: '#86b38f',
     marginRight: 8,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff'
   },
   checkboxActive: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e'
+    backgroundColor: '#166534',
+    borderColor: '#166534'
   },
   checkboxText: {
     color: '#fff',

@@ -10,13 +10,16 @@ export type LayerKey =
   | 'vibroacousticAnalysis';
 export type MapMode = 'zones' | 'heatmap';
 
+export interface Coordinate {
+  latitude: number;
+  longitude: number;
+}
+
 export interface Sensor {
   id: string;
+  fieldId: string;
   name: string;
-  coordinates: {
-    latitude: number;
-    longitude: number;
-  };
+  coordinates: Coordinate;
   status: SensorStatus;
   lastUpdated: string;
   pH: number;
@@ -31,23 +34,18 @@ export interface Sensor {
 
 export interface SoilZone {
   id: string;
+  fieldId: string;
   name: string;
   color: 'green' | 'yellow' | 'red';
-  center: {
-    latitude: number;
-    longitude: number;
-  };
-  radiusMeters: number;
+  polygon: Coordinate[];
 }
 
 export interface Field {
   id: string;
   name: string;
   areaHectares: number;
-  center: {
-    latitude: number;
-    longitude: number;
-  };
+  center: Coordinate;
+  boundary: Coordinate[];
 }
 
 export interface StatisticCard {
@@ -65,6 +63,7 @@ export interface RecommendationTimelineStep {
 
 export interface Recommendation {
   id: string;
+  fieldId?: string;
   level: RecommendationLevel;
   titleKey: string;
   messageKey: string;
