@@ -21,7 +21,9 @@ interface TrendMetric {
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 const seedFrom = (input: string) =>
-  input.split('').reduce((accumulator, character, index) => accumulator + character.charCodeAt(0) * (index + 1), 0);
+  input
+    .split('')
+    .reduce((accumulator, character, index) => accumulator + character.charCodeAt(0) * (index + 1), 0);
 
 const generateTrendValues = (seed: number, currentValue: number, min: number, max: number) => {
   const amplitude = (max - min) * 0.12;
@@ -36,6 +38,12 @@ const generateTrendValues = (seed: number, currentValue: number, min: number, ma
   });
 };
 
+const statusColor = (status: Sensor['status']) => {
+  if (status === 'healthy') return '#166534';
+  if (status === 'warning') return '#a16207';
+  return '#b91c1c';
+};
+
 export default function SensorModal({ visible, sensor, onClose }: Props) {
   const { t } = useTranslation();
 
@@ -43,8 +51,22 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
     if (!sensor) return [];
 
     return [
-      { key: 'soilMoisture', labelKey: 'soilMoistureValue', unit: '%', value: sensor.soilMoisture, min: 0, max: 100 },
-      { key: 'soilTemperature', labelKey: 'soilTemperature', unit: 'C', value: sensor.soilTemperature, min: -5, max: 40 },
+      {
+        key: 'soilMoisture',
+        labelKey: 'soilMoistureValue',
+        unit: '%',
+        value: sensor.soilMoisture,
+        min: 0,
+        max: 100
+      },
+      {
+        key: 'soilTemperature',
+        labelKey: 'soilTemperature',
+        unit: 'C',
+        value: sensor.soilTemperature,
+        min: -5,
+        max: 40
+      },
       { key: 'pH', labelKey: 'pH', unit: '', value: sensor.pH, min: 3.5, max: 8.5 },
       {
         key: 'electricalConductivity',
@@ -61,7 +83,12 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
     if (!sensor) return {} as Record<string, number[]>;
 
     return metrics.reduce<Record<string, number[]>>((collection, metric) => {
-      collection[metric.key] = generateTrendValues(seedFrom(`${sensor.id}-${metric.key}`), metric.value, metric.min, metric.max);
+      collection[metric.key] = generateTrendValues(
+        seedFrom(`${sensor.id}-${metric.key}`),
+        metric.value,
+        metric.min,
+        metric.max
+      );
       return collection;
     }, {});
   }, [metrics, sensor]);
@@ -74,14 +101,33 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
         <View style={styles.card}>
           <Text style={styles.title}>{t('sensorDetails')}</Text>
           <Text style={styles.name}>{sensor.name}</Text>
-          <Text>{t('status')}: {sensor.status}</Text>
-          <Text>{t('lastUpdated')}: {sensor.lastUpdated}</Text>
-          <Text>{t('soilTemperature')}: {sensor.soilTemperature}C</Text>
-          <Text>{t('soilMoistureValue')}: {sensor.soilMoisture}%</Text>
-          <Text>{t('electricalConductivityValue')}: {sensor.electricalConductivity} mS/cm</Text>
-          <Text>{t('gasCompositionValue')}: {sensor.gasComposition}</Text>
+
+          <View style={[styles.statusBadge, { backgroundColor: statusColor(sensor.status) }]}>
+            <Text style={styles.statusBadgeText}>
+              {t('status')}: {sensor.status.toUpperCase()}
+            </Text>
+          </View>
+
+          <Text style={styles.infoLine}>
+            {t('lastUpdated')}: {sensor.lastUpdated}
+          </Text>
+          <Text style={styles.infoLine}>
+            {t('soilTemperature')}: {sensor.soilTemperature}C
+          </Text>
+          <Text style={styles.infoLine}>
+            {t('soilMoistureValue')}: {sensor.soilMoisture}%
+          </Text>
+          <Text style={styles.infoLine}>
+            {t('electricalConductivityValue')}: {sensor.electricalConductivity} mS/cm
+          </Text>
+          <Text style={styles.infoLine}>
+            {t('gasCompositionValue')}: {sensor.gasComposition}
+          </Text>
+
           {sensor.premiumFeatures?.vibroacousticSoilStructureAnalysis ? (
-            <Text>{t('vibroacousticAnalysis')}: {sensor.premiumFeatures.vibroacousticSoilStructureAnalysis}</Text>
+            <Text style={styles.premiumLine}>
+              {t('vibroacousticAnalysis')}: {sensor.premiumFeatures.vibroacousticSoilStructureAnalysis}
+            </Text>
           ) : null}
 
           <Text style={styles.trendTitle}>{t('sensorTrends')}</Text>
@@ -93,7 +139,10 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
                 <View key={metric.key} style={styles.trendCard}>
                   <View style={styles.trendRowTop}>
                     <Text style={styles.trendLabel}>{t(metric.labelKey)}</Text>
-                    <Text style={styles.trendValue}>{metric.value.toFixed(metric.key === 'pH' ? 1 : 0)}{metric.unit}</Text>
+                    <Text style={styles.trendValue}>
+                      {metric.value.toFixed(metric.key === 'pH' ? 1 : 0)}
+                      {metric.unit}
+                    </Text>
                   </View>
 
                   <View style={styles.sparklineRow}>
@@ -107,7 +156,8 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
                             styles.sparklineBar,
                             {
                               height: 10 + normalized * 30,
-                              backgroundColor: index === values.length - 1 ? '#0f766e' : '#99f6e4'
+                              backgroundColor:
+                                index === values.length - 1 ? '#166534' : 'rgba(34,197,94,0.44)'
                             }
                           ]}
                         />
@@ -131,31 +181,65 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(4, 22, 8, 0.38)',
     justifyContent: 'center',
     alignItems: 'center'
   },
   card: {
     width: '90%',
     maxWidth: 460,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#f7fcf4',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#bdd8b6',
     padding: 20
   },
-  title: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
-  name: { fontWeight: '700', marginBottom: 6 },
+  title: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+    color: '#1f4d2a'
+  },
+  name: {
+    fontWeight: '700',
+    marginBottom: 6,
+    color: '#1f2937'
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginBottom: 8
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  infoLine: {
+    color: '#2f3f34',
+    marginBottom: 2
+  },
+  premiumLine: {
+    color: '#14532d',
+    marginTop: 6,
+    marginBottom: 2,
+    fontWeight: '600'
+  },
   trendTitle: {
     marginTop: 14,
     marginBottom: 8,
-    fontWeight: '700'
+    fontWeight: '700',
+    color: '#1f4d2a'
   },
   trendCard: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
+    borderColor: '#d4e7cf',
+    borderRadius: 10,
     padding: 8,
     marginBottom: 8,
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#f0f9ec'
   },
   trendRowTop: {
     flexDirection: 'row',
@@ -164,13 +248,13 @@ const styles = StyleSheet.create({
   },
   trendLabel: {
     fontSize: 12,
-    color: '#374151',
+    color: '#375744',
     fontWeight: '600'
   },
   trendValue: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f172a'
+    color: '#14532d'
   },
   sparklineRow: {
     flexDirection: 'row',
@@ -186,7 +270,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 10,
     borderRadius: 8,
-    backgroundColor: '#0f766e',
+    backgroundColor: '#166534',
     alignItems: 'center'
   },
   closeText: { color: '#fff', fontWeight: '700' }

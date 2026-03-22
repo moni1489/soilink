@@ -1,13 +1,15 @@
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { StatisticCard } from '../types';
 import { useTranslation } from 'react-i18next';
 
-interface Props { stats: StatisticCard[]; }
+interface Props {
+  stats: StatisticCard[];
+}
 
 export default function TopCards({ stats }: Props) {
   const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       {stats.map((stat) => (
@@ -32,17 +34,26 @@ const styles = StyleSheet.create({
   card: {
     minWidth: '45%',
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#f8fdf5',
+    borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#ddd',
-    shadowColor: '#000',
+    borderColor: '#c4debf',
+    shadowColor: '#14532d',
     shadowOpacity: 0.08,
     shadowRadius: 5,
     elevation: 2,
     margin: 4
   },
-  label: { fontSize: 12, color: '#777', marginBottom: 6, fontWeight:'600' },
-  value: { fontSize: 18, fontWeight: '800', color: '#1f2937' }
+  label: {
+    fontSize: 12,
+    color: '#4d6b53',
+    marginBottom: 6,
+    fontWeight: '600'
+  },
+  value: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1f5f2e'
+  }
 });

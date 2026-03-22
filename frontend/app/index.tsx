@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Platform } from 'react-native';
 import '../i18n/i18n';
 import { useTranslation } from 'react-i18next';
@@ -8,10 +8,24 @@ import Sidebar from '../components/Sidebar';
 import FieldMap from '../components/FieldMap';
 import Recommendations from '../components/Recommendations';
 import SensorModal from '../components/SensorModal';
-import { LayerKey, Sensor, MapMode } from '../types';
+import ZoneModal from '../components/ZoneModal';
+import { LayerKey, Sensor, SoilZone, MapMode } from '../types';
 import { useLocale } from '../hooks/useLocale';
 
-const defaultVisible: LayerKey[] = ['soilMoisture', 'temperature', 'pH', 'electricalConductivity', 'gasComposition', 'vibroacousticAnalysis'];
+const defaultVisible: LayerKey[] = [
+  'soilMoisture',
+  'temperature',
+  'pH',
+  'electricalConductivity',
+  'gasComposition',
+  'vibroacousticAnalysis'
+];
+
+const getStatusHealthScore = (status: Sensor['status']) => {
+  if (status === 'healthy') return 95;
+  if (status === 'warning') return 66;
+  return 34;
+};
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -20,20 +34,77 @@ export default function Dashboard() {
   const [visibleLayers, setVisibleLayers] = useState<LayerKey[]>(defaultVisible);
   const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
   const [sensorModalVisible, setSensorModalVisible] = useState(false);
+  const [selectedZone, setSelectedZone] = useState<SoilZone | null>(null);
+  const [zoneModalVisible, setZoneModalVisible] = useState(false);
   const [mapMode, setMapMode] = useState<MapMode>('zones');
 
-  const activeField = fields.find((f) => f.id === activeFieldId) ?? fields[0];
+  const activeField = useMemo(
+    () => fields.find((field) => field.id === activeFieldId) ?? fields[0],
+    [activeFieldId]
+  );
 
-  const onSelectSensor = (sensor: Sensor) => {
+  const activeSensors = useMemo(
+    () => sensors.filter((sensor) => sensor.fieldId === activeFieldId),
+    [activeFieldId]
+  );
+
+  const activeZones = useMemo(
+    () => zones.filter((zone) => zone.fieldId === activeFieldId),
+    [activeFieldId]
+  );
+
+  const activeRecommendations = useMemo(
+    () => recommendations.filter((item) => !item.fieldId || item.fieldId === activeFieldId),
+    [activeFieldId]
+  );
+
+  useEffect(() => {
+    setSelectedZone(null);
+    setZoneModalVisible(false);
+  }, [activeFieldId]);
+
+  const dynamicStats = useMemo(() => {
+    if (activeSensors.length === 0) return statistics;
+
+    const healthScore = Math.round(
+      activeSensors.reduce((sum, sensor) => sum + getStatusHealthScore(sensor.status), 0) /
+        activeSensors.length
+    );
+
+    const warningCount = activeSensors.filter((sensor) => sensor.status === 'warning').length;
+    const criticalCount = activeSensors.filter((sensor) => sensor.status === 'critical').length;
+    const alerts = warningCount + criticalCount;
+
+    const averageMoisture =
+      activeSensors.reduce((sum, sensor) => sum + sensor.soilMoisture, 0) / activeSensors.length;
+    const baseWaterUsage = activeField.areaHectares * (0.19 + (60 - averageMoisture) * 0.004);
+
+    const waterUsage = Math.max(2.8, baseWaterUsage);
+
+    return statistics.map((stat) => {
+      if (stat.id === 'stats-soil') return { ...stat, value: `${healthScore}%` };
+      if (stat.id === 'stats-water') return { ...stat, value: `${waterUsage.toFixed(1)} m3` };
+      if (stat.id === 'stats-sensors') return { ...stat, value: String(activeSensors.length) };
+      if (stat.id === 'stats-alerts') return { ...stat, value: String(alerts) };
+      return stat;
+    });
+  }, [activeField.areaHectares, activeSensors]);
+
+  const onSelectSensor = useCallback((sensor: Sensor) => {
     setSelectedSensor(sensor);
     setSensorModalVisible(true);
-  };
+  }, []);
 
-  const onToggleLayer = (layer: LayerKey) => {
+  const onSelectZone = useCallback((zone: SoilZone) => {
+    setSelectedZone(zone);
+    setZoneModalVisible(true);
+  }, []);
+
+  const onToggleLayer = useCallback((layer: LayerKey) => {
     setVisibleLayers((previous) =>
       previous.includes(layer) ? previous.filter((item) => item !== layer) : [...previous, layer]
     );
-  };
+  }, []);
 
   const languageButtons = [
     { code: 'en', label: t('english') },
@@ -46,34 +117,66 @@ export default function Dashboard() {
       <View style={styles.localeRow}>
         <Text style={styles.localeLabel}>{t('chooseLanguage')}:</Text>
         {languageButtons.map((item) => (
-          <TouchableOpacity key={item.code} style={[styles.langButton, locale === item.code ? styles.langActive : undefined]} onPress={() => setLanguage(item.code)}>
-            <Text>{item.label}</Text>
+          <TouchableOpacity
+            key={item.code}
+            style={[styles.langButton, locale === item.code ? styles.langActive : undefined]}
+            onPress={() => setLanguage(item.code)}
+          >
+            <Text style={styles.langText}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       <Text style={styles.sectionTitle}>{t('topSummary')}</Text>
-      <TopCards stats={statistics} />
+      <TopCards stats={dynamicStats} />
 
       {Platform.OS === 'web' ? (
         <View style={styles.webLayout}>
-          <Sidebar fields={fields} selectedFieldId={activeFieldId} onSelectField={setActiveFieldId} visibleLayers={visibleLayers} onToggleLayer={onToggleLayer} />
+          <Sidebar
+            fields={fields}
+            selectedFieldId={activeFieldId}
+            onSelectField={setActiveFieldId}
+            visibleLayers={visibleLayers}
+            onToggleLayer={onToggleLayer}
+          />
           <View style={styles.mapRegion}>
             <View style={styles.mapHeaderRow}>
               <Text style={styles.mapLabel}>{t('map')}</Text>
               <View style={styles.mapModeGroup}>
                 <Text style={styles.mapModeLabel}>{t('mapMode')}:</Text>
-                <TouchableOpacity style={[styles.mapModeButton, mapMode === 'zones' ? styles.mapModeButtonActive : undefined]} onPress={() => setMapMode('zones')}>
-                  <Text>{t('zonesView')}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.mapModeButton,
+                    mapMode === 'zones' ? styles.mapModeButtonActive : undefined
+                  ]}
+                  onPress={() => setMapMode('zones')}
+                >
+                  <Text style={styles.mapModeButtonText}>{t('zonesView')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.mapModeButton, mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined]} onPress={() => setMapMode('heatmap')}>
-                  <Text>{t('heatmapView')}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.mapModeButton,
+                    mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined
+                  ]}
+                  onPress={() => setMapMode('heatmap')}
+                >
+                  <Text style={styles.mapModeButtonText}>{t('heatmapView')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
-            <FieldMap fieldCenter={activeField.center} zones={zones} sensors={sensors} onSelectSensor={onSelectSensor} visibleLayers={visibleLayers} mapMode={mapMode} />
+            <FieldMap
+              fieldCenter={activeField.center}
+              fieldBoundary={activeField.boundary}
+              zones={activeZones}
+              sensors={activeSensors}
+              onSelectSensor={onSelectSensor}
+              onSelectZone={onSelectZone}
+              activeZoneId={selectedZone?.id}
+              visibleLayers={visibleLayers}
+              mapMode={mapMode}
+            />
           </View>
-          <Recommendations recommendations={recommendations} />
+          <Recommendations recommendations={activeRecommendations} />
         </View>
       ) : (
         <View style={styles.mobileLayout}>
@@ -81,38 +184,91 @@ export default function Dashboard() {
             <Text style={styles.mapLabel}>{t('map')}</Text>
             <View style={styles.mapModeGroup}>
               <Text style={styles.mapModeLabel}>{t('mapMode')}:</Text>
-              <TouchableOpacity style={[styles.mapModeButton, mapMode === 'zones' ? styles.mapModeButtonActive : undefined]} onPress={() => setMapMode('zones')}>
-                <Text>{t('zonesView')}</Text>
+              <TouchableOpacity
+                style={[styles.mapModeButton, mapMode === 'zones' ? styles.mapModeButtonActive : undefined]}
+                onPress={() => setMapMode('zones')}
+              >
+                <Text style={styles.mapModeButtonText}>{t('zonesView')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.mapModeButton, mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined]} onPress={() => setMapMode('heatmap')}>
-                <Text>{t('heatmapView')}</Text>
+              <TouchableOpacity
+                style={[styles.mapModeButton, mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined]}
+                onPress={() => setMapMode('heatmap')}
+              >
+                <Text style={styles.mapModeButtonText}>{t('heatmapView')}</Text>
               </TouchableOpacity>
             </View>
           </View>
-          <FieldMap fieldCenter={activeField.center} zones={zones} sensors={sensors} onSelectSensor={onSelectSensor} visibleLayers={visibleLayers} mapMode={mapMode} />
-          <Sidebar fields={fields} selectedFieldId={activeFieldId} onSelectField={setActiveFieldId} visibleLayers={visibleLayers} onToggleLayer={onToggleLayer} />
-          <Recommendations recommendations={recommendations} />
+          <FieldMap
+            fieldCenter={activeField.center}
+            fieldBoundary={activeField.boundary}
+            zones={activeZones}
+            sensors={activeSensors}
+            onSelectSensor={onSelectSensor}
+            onSelectZone={onSelectZone}
+            activeZoneId={selectedZone?.id}
+            visibleLayers={visibleLayers}
+            mapMode={mapMode}
+          />
+          <Sidebar
+            fields={fields}
+            selectedFieldId={activeFieldId}
+            onSelectField={setActiveFieldId}
+            visibleLayers={visibleLayers}
+            onToggleLayer={onToggleLayer}
+          />
+          <Recommendations recommendations={activeRecommendations} />
         </View>
       )}
 
-      <SensorModal visible={sensorModalVisible} sensor={selectedSensor} onClose={() => setSensorModalVisible(false)} />
+      <SensorModal
+        visible={sensorModalVisible}
+        sensor={selectedSensor}
+        onClose={() => setSensorModalVisible(false)}
+      />
+
+      <ZoneModal
+        visible={zoneModalVisible}
+        zone={selectedZone}
+        sensors={activeSensors}
+        onClose={() => setZoneModalVisible(false)}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f3f4f6' },
+  root: { flex: 1, backgroundColor: '#edf5ea' },
   contentContainer: { padding: 12, paddingBottom: 80 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 10 },
-  localeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' },
-  localeLabel: { fontWeight: '600', marginRight: 8 },
-  langButton: { borderWidth: 1, borderColor: '#d1d5db', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 8, marginRight: 8, marginBottom: 6 },
-  langActive: { backgroundColor: '#dbeafe', borderColor: '#3b82f6' },
+  sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 10, color: '#2c5f37' },
+  localeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    flexWrap: 'wrap',
+    backgroundColor: '#f7fbf4',
+    borderWidth: 1,
+    borderColor: '#d6e7cf',
+    padding: 8,
+    borderRadius: 12
+  },
+  localeLabel: { fontWeight: '600', marginRight: 8, color: '#355e3b' },
+  langButton: {
+    borderWidth: 1,
+    borderColor: '#b7d4b4',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginRight: 8,
+    marginBottom: 6,
+    backgroundColor: '#fff'
+  },
+  langText: { color: '#2f4f37' },
+  langActive: { backgroundColor: '#dff3df', borderColor: '#4f8f5a' },
   webLayout: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   mobileLayout: {
     gap: 10
   },
-  mapRegion: { flex: 1, minHeight: 460 },
+  mapRegion: { flex: 1, minHeight: 620 },
   mapHeaderRow: {
     marginBottom: 8,
     flexDirection: 'row',
@@ -120,7 +276,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap'
   },
-  mapLabel: { fontWeight: '700' },
+  mapLabel: { fontWeight: '700', color: '#2b5a35' },
   mapModeGroup: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -128,19 +284,23 @@ const styles = StyleSheet.create({
   },
   mapModeLabel: {
     fontSize: 12,
-    color: '#374151',
+    color: '#355e3b',
     marginRight: 6
   },
   mapModeButton: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#a9c8a9',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    marginRight: 6
+    marginRight: 6,
+    backgroundColor: '#f6fbf4'
+  },
+  mapModeButtonText: {
+    color: '#355e3b'
   },
   mapModeButtonActive: {
-    borderColor: '#0f766e',
-    backgroundColor: '#ccfbf1'
+    borderColor: '#2f7a3b',
+    backgroundColor: '#d6efda'
   }
 });
