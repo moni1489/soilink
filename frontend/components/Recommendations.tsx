@@ -8,10 +8,10 @@ interface Props {
 }
 
 const levelColorMap: Record<Recommendation['level'], string> = {
-  critical: '#fee2e2',
-  warning: '#fef3c7',
-  plan: '#dcfce7',
-  premium: '#d1fae5'
+  critical: '#FF4D4D',
+  warning: '#FFB02E',
+  plan: '#38BDF8',
+  premium: '#00F59B'
 };
 
 const levelLabelKeyMap = {
@@ -62,7 +62,8 @@ export default function Recommendations({ recommendations }: Props) {
         const status = getTimelineStatus(item);
 
         return (
-          <View key={item.id} style={[styles.item, { backgroundColor: levelColorMap[item.level] }]}> 
+          <View key={item.id} style={styles.item}>
+            <View style={[styles.statusStrip, { backgroundColor: levelColorMap[item.level] }]} />
             <View style={styles.itemHeaderRow}>
               <Text style={styles.level}>{t(levelLabelKeyMap[item.level])}</Text>
               <View style={[styles.statePill, { borderColor: statusColorMap[status] }]}>
@@ -81,13 +82,19 @@ export default function Recommendations({ recommendations }: Props) {
                 return (
                   <TouchableOpacity key={step.id} style={styles.timelineItem} onPress={() => toggleStep(step.id)}>
                     <View style={[styles.checkbox, isChecked ? styles.checkboxActive : undefined]}>
-                      <Text style={styles.checkboxText}>{isChecked ? 'x' : ''}</Text>
+                      <Text style={styles.checkboxText}>{isChecked ? '✓' : ''}</Text>
                     </View>
                     <View style={styles.timelineTextWrap}>
-                      <Text style={[styles.timelineText, isChecked ? styles.timelineTextDone : undefined]}>
+                      <Text
+                        style={[
+                          styles.timelineText,
+                          isChecked ? styles.timelineTextDone : undefined,
+                          isChecked ? styles.timelineDimmed : undefined
+                        ]}
+                      >
                         {t(step.labelKey)}
                       </Text>
-                      <Text style={styles.timelineDue}>
+                      <Text style={[styles.timelineDue, isChecked ? styles.timelineDimmed : undefined]}>
                         {t('due')}: {step.dueAt}
                       </Text>
                     </View>
@@ -106,25 +113,39 @@ const styles = StyleSheet.create({
   container: {
     width: 310,
     maxWidth: '100%',
-    backgroundColor: '#f4fbf2',
-    borderRadius: 14,
+    backgroundColor: '#16191E',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#b7d4b1',
-    padding: 10
+    borderColor: 'rgba(255,255,255,0.05)',
+    padding: 24
   },
   header: {
-    fontSize: 16,
+    fontSize: 11,
     fontWeight: '700',
-    marginBottom: 10,
-    color: '#1f4d2a'
+    marginBottom: 12,
+    color: '#97A3B2',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6
   },
   item: {
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 8,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(22, 101, 52, 0.14)',
+    borderColor: '#2A303A',
+    backgroundColor: '#11151B',
+    flexDirection: 'column',
+    position: 'relative',
+    overflow: 'hidden',
     elevation: 1
+  },
+  statusStrip: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4
   },
   itemHeaderRow: {
     flexDirection: 'row',
@@ -134,17 +155,18 @@ const styles = StyleSheet.create({
   level: {
     fontWeight: '800',
     textTransform: 'uppercase',
-    fontSize: 12,
+    fontSize: 11,
     marginBottom: 4,
-    color: '#1f2937'
+    color: '#B7C5D4',
+    letterSpacing: 0.6
   },
   title: {
     fontWeight: '700',
     marginBottom: 2,
-    color: '#1f2937'
+    color: '#EAF1F7'
   },
   message: {
-    color: '#374151',
+    color: '#9BA7B5',
     fontSize: 12,
     marginBottom: 8
   },
@@ -153,7 +175,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    backgroundColor: '#ffffffaa'
+    backgroundColor: 'rgba(15,17,21,0.7)'
   },
   stateText: {
     fontSize: 11,
@@ -163,7 +185,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 6,
-    color: '#1f2937'
+    color: '#CBD6E2'
   },
   timelineItem: {
     flexDirection: 'row',
@@ -173,17 +195,17 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 18,
     height: 18,
-    borderRadius: 4,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#86b38f',
+    borderColor: '#607282',
     marginRight: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff'
+    backgroundColor: 'transparent'
   },
   checkboxActive: {
-    backgroundColor: '#166534',
-    borderColor: '#166534'
+    backgroundColor: 'rgba(0,245,155,0.2)',
+    borderColor: '#00F59B'
   },
   checkboxText: {
     color: '#fff',
@@ -196,14 +218,17 @@ const styles = StyleSheet.create({
   },
   timelineText: {
     fontSize: 12,
-    color: '#1f2937'
+    color: '#DBE5EF'
   },
   timelineTextDone: {
     textDecorationLine: 'line-through',
-    color: '#6b7280'
+    color: '#93A1B2'
   },
   timelineDue: {
     fontSize: 11,
-    color: '#6b7280'
+    color: '#7E8C9D'
+  },
+  timelineDimmed: {
+    opacity: 0.4
   }
 });
