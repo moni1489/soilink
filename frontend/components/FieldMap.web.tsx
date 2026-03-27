@@ -21,10 +21,15 @@ const mapContainerStyle: React.CSSProperties = {
   height: '68vh',
   minHeight: '620px',
   maxHeight: '860px',
-  borderRadius: '14px',
+  borderRadius: '18px',
   overflow: 'hidden',
-  background: '#08111f',
-  border: '1px solid #233247'
+  background: '#0F1115',
+  border: '1px solid rgba(255,255,255,0.05)'
+};
+const STATUS_COLOR: Record<Sensor['status'], string> = {
+  healthy: '#00F59B',
+  warning: '#FFB02E',
+  critical: '#FF4D4D'
 };
 
 const toLngLat = (point: Coordinate) => [point.longitude, point.latitude] as [number, number];
@@ -81,6 +86,7 @@ export default function FieldMap({
   const onSelectSensorRef = useRef(onSelectSensor);
   const onSelectZoneRef = useRef(onSelectZone);
   const zonesRef = useRef(zones);
+  const popupRef = useRef<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const zonesGeoJson = useMemo(() => getZonesGeoJson(zones), [zones]);
@@ -122,10 +128,23 @@ export default function FieldMap({
         if (cancelled) return;
 
         mapboxgl.accessToken = token;
+        if (!document.getElementById('sensor-pulse-style')) {
+          const styleElement = document.createElement('style');
+          styleElement.id = 'sensor-pulse-style';
+          styleElement.textContent = `
+            .sensor-node-halo { animation: sensorPulse 1.7s ease-out infinite; }
+            @keyframes sensorPulse {
+              0% { transform: scale(0.8); opacity: 0.65; }
+              70% { transform: scale(1.8); opacity: 0.05; }
+              100% { transform: scale(2.1); opacity: 0; }
+            }
+          `;
+          document.head.appendChild(styleElement);
+        }
 
         const map = new mapboxgl.Map({
           container: containerRef.current,
-          style: 'mapbox://styles/mapbox/dark-v11',
+          style: 'mapbox://styles/mapbox/navigation-night-v1',
           center: [fieldCenter.longitude, fieldCenter.latitude],
           zoom: 15.5,
           pitch: 0,
@@ -193,8 +212,8 @@ export default function FieldMap({
             type: 'fill',
             source: 'field-boundary',
             paint: {
-              'fill-color': '#0b2f23',
-              'fill-opacity': 0.12
+              'fill-color': '#0F1115',
+              'fill-opacity': 0.08
             }
           });
 
@@ -210,14 +229,14 @@ export default function FieldMap({
                 'match',
                 ['get', 'color'],
                 'green',
-                '#166534',
+                '#00F59B',
                 'yellow',
-                '#a16207',
+                '#FFB02E',
                 'red',
-                '#991b1b',
-                '#166534'
+                '#FF4D4D',
+                '#00F59B'
               ],
-              'fill-opacity': 0.28
+              'fill-opacity': 0.1
             }
           });
 
@@ -261,13 +280,13 @@ export default function FieldMap({
                 ['linear'],
                 ['zoom'],
                 11,
-                18,
+                24,
                 13,
-                26,
+                34,
                 15,
-                36,
+                48,
                 17,
-                48
+                64
               ],
               'heatmap-opacity': [
                 'interpolate',
@@ -285,15 +304,15 @@ export default function FieldMap({
                 ['linear'],
                 ['heatmap-density'],
                 0,
-                'rgba(34,197,94,0)',
-                0.18,
-                'rgba(34,197,94,0.62)',
+                'rgba(30,58,138,0)',
+                0.15,
+                'rgba(30,64,175,0.45)',
                 0.38,
-                'rgba(250,204,21,0.74)',
+                'rgba(0,245,155,0.72)',
                 0.62,
-                'rgba(251,146,60,0.82)',
+                'rgba(255,176,46,0.84)',
                 1,
-                'rgba(239,68,68,0.94)'
+                'rgba(210,105,79,0.94)'
               ]
             }
           });
@@ -307,8 +326,8 @@ export default function FieldMap({
               'line-cap': 'round'
             },
             paint: {
-              'line-color': '#9ee6b5',
-              'line-width': 2.3
+              'line-color': '#00F59B',
+              'line-width': 2
             }
           });
 
@@ -322,8 +341,8 @@ export default function FieldMap({
               'line-cap': 'round'
             },
             paint: {
-              'line-color': '#e2f7ec',
-              'line-width': 2.1
+              'line-color': '#00F59B',
+              'line-width': 2
             }
           });
 
@@ -411,34 +430,67 @@ export default function FieldMap({
           map.on('mouseleave', 'heat-surface', unsetPointer);
 
           markerRef.current.forEach((marker) => marker.remove());
-          markerRef.current = sensors.map((sensor) => {
+          markerRef.current = sensors.slice(0, 5).map((sensor, index) => {
             const markerElement = document.createElement('button');
-            markerElement.style.width = '22px';
-            markerElement.style.height = '22px';
+            markerElement.style.width = '26px';
+            markerElement.style.height = '26px';
             markerElement.style.borderRadius = '999px';
-            markerElement.style.backgroundColor =
-              sensor.status === 'healthy'
-                ? '#16a34a'
-                : sensor.status === 'warning'
-                  ? '#d97706'
-                  : '#dc2626';
-            markerElement.style.border = '3px solid #ffffff';
+            markerElement.style.backgroundColor = 'transparent';
+            markerElement.style.border = 'none';
             markerElement.style.cursor = 'pointer';
             markerElement.style.padding = '0';
             markerElement.style.outline = 'none';
             markerElement.style.display = 'flex';
             markerElement.style.alignItems = 'center';
             markerElement.style.justifyContent = 'center';
-            markerElement.style.boxShadow = '0 0 0 1px rgba(8,17,31,0.45), 0 6px 18px rgba(8,17,31,0.45)';
-            markerElement.title = sensor.name;
+            markerElement.style.position = 'relative';
+            markerElement.style.boxShadow =
+              sensor.status === 'critical' ? '0 0 20px rgba(255,77,77,0.62)' : '0 0 10px rgba(255,255,255,0.25)';
+            markerElement.title = `S${index + 1}`;
             markerElement.onclick = () => onSelectSensorRef.current(sensor);
 
-            const centerDot = document.createElement('span');
-            centerDot.style.width = '6px';
-            centerDot.style.height = '6px';
+            const halo = document.createElement('span');
+            halo.className = 'sensor-node-halo';
+            halo.style.position = 'absolute';
+            halo.style.width = '26px';
+            halo.style.height = '26px';
+            halo.style.borderRadius = '999px';
+            halo.style.border = `1px solid ${sensor.status === 'critical' ? '#FF4D4D' : '#FFFFFF'}`;
+            halo.style.backgroundColor =
+              sensor.status === 'critical' ? 'rgba(255,77,77,0.25)' : 'rgba(255,255,255,0.16)';
+            markerElement.appendChild(halo);
+
+            const centerDot = document.createElement('div');
+            centerDot.style.width = '10px';
+            centerDot.style.height = '10px';
             centerDot.style.borderRadius = '999px';
             centerDot.style.backgroundColor = '#ffffff';
+            centerDot.style.border = `1px solid ${STATUS_COLOR[sensor.status]}`;
+            centerDot.style.zIndex = '2';
             markerElement.appendChild(centerDot);
+
+            markerElement.onmouseenter = () => {
+              if (!popupRef.current) {
+                popupRef.current = new mapboxgl.Popup({
+                  closeButton: false,
+                  closeOnClick: false,
+                  offset: 16
+                });
+              }
+              popupRef.current
+                .setLngLat([sensor.coordinates.longitude, sensor.coordinates.latitude])
+                .setHTML(`
+                  <div style="min-width:150px;padding:10px 12px;border-radius:12px;background:rgba(15,17,21,0.72);backdrop-filter: blur(12px);-webkit-backdrop-filter: blur(12px);border:1px solid rgba(255,255,255,0.08);color:#E7EEF6;font-family:Inter,system-ui,sans-serif;">
+                    <div style="font-size:10px;letter-spacing:0.05em;color:#99A7B7;text-transform:uppercase;margin-bottom:4px;">S${index + 1}</div>
+                    <div style="font-size:12px;line-height:1.4;">Temp: ${sensor.soilTemperature.toFixed(0)}°C</div>
+                    <div style="font-size:12px;line-height:1.4;">Moisture: ${sensor.soilMoisture}%</div>
+                  </div>
+                `)
+                .addTo(map);
+            };
+            markerElement.onmouseleave = () => {
+              if (popupRef.current) popupRef.current.remove();
+            };
 
             return new mapboxgl.Marker(markerElement)
               .setLngLat([sensor.coordinates.longitude, sensor.coordinates.latitude])
@@ -459,6 +511,10 @@ export default function FieldMap({
       cancelled = true;
       markerRef.current.forEach((marker) => marker.remove());
       markerRef.current = [];
+      if (popupRef.current) {
+        popupRef.current.remove();
+        popupRef.current = null;
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;

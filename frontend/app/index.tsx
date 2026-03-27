@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Platform } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Platform, Animated } from 'react-native';
 import '../i18n/i18n';
 import { useTranslation } from 'react-i18next';
 import { fields, zones, sensors, statistics, recommendations } from '../data/mockData';
@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [selectedZone, setSelectedZone] = useState<SoilZone | null>(null);
   const [zoneModalVisible, setZoneModalVisible] = useState(false);
   const [mapMode, setMapMode] = useState<MapMode>('zones');
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const activeField = useMemo(
     () => fields.find((field) => field.id === activeFieldId) ?? fields[0],
@@ -62,6 +63,14 @@ export default function Dashboard() {
     setSelectedZone(null);
     setZoneModalVisible(false);
   }, [activeFieldId]);
+  useEffect(() => {
+    fadeAnim.setValue(0);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true
+    }).start();
+  }, [activeFieldId, fadeAnim]);
 
   const dynamicStats = useMemo(() => {
     if (activeSensors.length === 0) return statistics;
@@ -131,7 +140,7 @@ export default function Dashboard() {
       <TopCards stats={dynamicStats} />
 
       {Platform.OS === 'web' ? (
-        <View style={styles.webLayout}>
+        <Animated.View style={[styles.webLayout, { opacity: fadeAnim }]}>
           <Sidebar
             fields={fields}
             selectedFieldId={activeFieldId}
@@ -177,9 +186,9 @@ export default function Dashboard() {
             />
           </View>
           <Recommendations recommendations={activeRecommendations} />
-        </View>
+        </Animated.View>
       ) : (
-        <View style={styles.mobileLayout}>
+        <Animated.View style={[styles.mobileLayout, { opacity: fadeAnim }]}>
           <View style={styles.mapHeaderRow}>
             <Text style={styles.mapLabel}>{t('map')}</Text>
             <View style={styles.mapModeGroup}>
@@ -217,7 +226,7 @@ export default function Dashboard() {
             onToggleLayer={onToggleLayer}
           />
           <Recommendations recommendations={activeRecommendations} />
-        </View>
+        </Animated.View>
       )}
 
       <SensorModal
@@ -237,70 +246,83 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#edf5ea' },
-  contentContainer: { padding: 12, paddingBottom: 80 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 10, color: '#2c5f37' },
+  root: { flex: 1, backgroundColor: '#0F1115' },
+  contentContainer: { padding: 24, paddingBottom: 80 },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#93A1B2',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase'
+  },
   localeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 14,
     flexWrap: 'wrap',
-    backgroundColor: '#f7fbf4',
+    backgroundColor: '#16191E',
     borderWidth: 1,
-    borderColor: '#d6e7cf',
-    padding: 8,
-    borderRadius: 12
+    borderColor: 'rgba(255,255,255,0.05)',
+    padding: 12,
+    borderRadius: 14
   },
-  localeLabel: { fontWeight: '600', marginRight: 8, color: '#355e3b' },
+  localeLabel: { fontWeight: '600', marginRight: 8, color: '#A1ADBC' },
   langButton: {
     borderWidth: 1,
-    borderColor: '#b7d4b4',
+    borderColor: '#2E3440',
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 8,
     marginRight: 8,
     marginBottom: 6,
-    backgroundColor: '#fff'
+    backgroundColor: '#0F1115'
   },
-  langText: { color: '#2f4f37' },
-  langActive: { backgroundColor: '#dff3df', borderColor: '#4f8f5a' },
-  webLayout: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  langText: { color: '#CBD6E2' },
+  langActive: { backgroundColor: 'rgba(56,189,248,0.16)', borderColor: '#38BDF8' },
+  webLayout: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
   mobileLayout: {
-    gap: 10
+    gap: 16
   },
   mapRegion: { flex: 1, minHeight: 620 },
   mapHeaderRow: {
-    marginBottom: 8,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap'
   },
-  mapLabel: { fontWeight: '700', color: '#2b5a35' },
+  mapLabel: {
+    fontWeight: '700',
+    color: '#97A5B3',
+    textTransform: 'uppercase',
+    fontSize: 11,
+    letterSpacing: 0.7
+  },
   mapModeGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap'
   },
   mapModeLabel: {
-    fontSize: 12,
-    color: '#355e3b',
+    fontSize: 11,
+    color: '#93A1B2',
     marginRight: 6
   },
   mapModeButton: {
     borderWidth: 1,
-    borderColor: '#a9c8a9',
+    borderColor: '#323946',
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     marginRight: 6,
-    backgroundColor: '#f6fbf4'
+    backgroundColor: 'rgba(22,25,30,0.72)'
   },
   mapModeButtonText: {
-    color: '#355e3b'
+    color: '#BEC9D8'
   },
   mapModeButtonActive: {
-    borderColor: '#2f7a3b',
-    backgroundColor: '#d6efda'
+    borderColor: 'rgba(56,189,248,0.5)',
+    backgroundColor: 'rgba(56,189,248,0.16)'
   }
 });

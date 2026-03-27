@@ -11,6 +11,14 @@ const availableLayers: { key: LayerKey; label: string }[] = [
   { key: 'gasComposition', label: 'gasComposition' },
   { key: 'vibroacousticAnalysis', label: 'vibroacousticAnalysis' }
 ];
+const layerGlyphMap: Record<LayerKey, string> = {
+  soilMoisture: 'D',
+  temperature: 'T',
+  pH: 'pH',
+  electricalConductivity: 'E',
+  gasComposition: 'G',
+  vibroacousticAnalysis: 'V'
+};
 
 interface Props {
   fields: Field[];
@@ -43,19 +51,27 @@ export default function Sidebar({
       ))}
 
       <Text style={[styles.header, styles.layersHeader]}>{t('layers')}</Text>
-      {availableLayers.map((layer) => {
-        const active = visibleLayers.includes(layer.key);
-
-        return (
-          <TouchableOpacity
-            key={layer.key}
-            onPress={() => onToggleLayer(layer.key)}
-            style={[styles.button, active ? styles.selected : undefined]}
-          >
-            <Text style={styles.buttonText}>{t(layer.label)}</Text>
-          </TouchableOpacity>
-        );
-      })}
+      <View style={styles.segmentContainer}>
+        {availableLayers.map((layer) => {
+          const active = visibleLayers.includes(layer.key);
+          return (
+            <TouchableOpacity
+              key={layer.key}
+              onPress={() => onToggleLayer(layer.key)}
+              style={[styles.layerButton, active ? styles.layerButtonActive : undefined]}
+            >
+              <View style={[styles.layerIconBadge, active ? styles.layerIconBadgeActive : undefined]}>
+                <Text style={[styles.layerIconText, active ? styles.layerIconTextActive : undefined]}>
+                  {layerGlyphMap[layer.key]}
+                </Text>
+              </View>
+              <Text style={[styles.layerButtonText, active ? styles.layerButtonTextActive : undefined]}>
+                {t(layer.label)}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -63,18 +79,20 @@ export default function Sidebar({
 const styles = StyleSheet.create({
   container: {
     width: 260,
-    padding: 12,
-    backgroundColor: '#f4fbf2',
-    borderRadius: 14,
+    padding: 24,
+    backgroundColor: '#16191E',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#b7d4b1',
-    gap: 8
+    borderColor: 'rgba(255,255,255,0.05)',
+    gap: 10
   },
   header: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#1f4d2a',
-    marginBottom: 4
+    color: '#96A2B2',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6
   },
   layersHeader: {
     marginTop: 10
@@ -82,18 +100,73 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 8,
     paddingHorizontal: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#d0e3cb',
+    borderColor: '#29303A',
     marginBottom: 5,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#11151B'
   },
   buttonText: {
-    color: '#2f4f37',
+    color: '#DCE3EA',
     fontWeight: '500'
   },
   selected: {
-    backgroundColor: '#dcf4dd',
-    borderColor: '#63a46c'
+    backgroundColor: 'rgba(0,245,155,0.16)',
+    borderColor: '#00F59B'
+  },
+  segmentContainer: {
+    borderWidth: 1,
+    borderColor: '#28303A',
+    borderRadius: 14,
+    backgroundColor: '#11151B',
+    padding: 4
+  },
+  layerButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2
+  },
+  layerButtonActive: {
+    borderColor: 'rgba(56,189,248,0.35)',
+    backgroundColor: 'rgba(56,189,248,0.12)',
+    shadowColor: '#38BDF8',
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4
+  },
+  layerIconBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#3A4554',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8
+  },
+  layerIconBadgeActive: {
+    borderColor: '#9AEFD2',
+    backgroundColor: 'rgba(0,245,155,0.15)'
+  },
+  layerIconText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#90A2B6'
+  },
+  layerIconTextActive: {
+    color: '#D7FFEF'
+  },
+  layerButtonText: {
+    color: '#8DA0B5',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  layerButtonTextActive: {
+    color: '#E4F4FF'
   }
 });
