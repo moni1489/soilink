@@ -147,7 +147,8 @@ export default function FieldMap({
           style: 'mapbox://styles/mapbox/navigation-night-v1',
           center: [fieldCenter.longitude, fieldCenter.latitude],
           zoom: 15.5,
-          pitch: 0,
+          pitch: 55,
+          bearing: -15,
           attributionControl: false
         });
 
@@ -177,7 +178,7 @@ export default function FieldMap({
               new mapboxgl.LngLatBounds(focusCoordinates[0], focusCoordinates[0])
             );
 
-            map.fitBounds(bounds, { padding: 44, duration: 0, maxZoom: 16.2 });
+            map.fitBounds(bounds, { padding: 44, duration: 1400, maxZoom: 16.2 });
           }
 
           map.addSource('field-boundary', {
@@ -205,6 +206,17 @@ export default function FieldMap({
           map.addSource('heat-points', {
             type: 'geojson',
             data: heatGeoJson
+          });
+
+          // Add a beautiful sky layer for 3D horizon
+          map.addLayer({
+            id: 'sky',
+            type: 'sky',
+            paint: {
+              'sky-type': 'atmosphere',
+              'sky-atmosphere-sun': [0.0, 0.0],
+              'sky-atmosphere-sun-intensity': 15
+            }
           });
 
           map.addLayer({
@@ -480,10 +492,13 @@ export default function FieldMap({
               popupRef.current
                 .setLngLat([sensor.coordinates.longitude, sensor.coordinates.latitude])
                 .setHTML(`
-                  <div style="min-width:150px;padding:10px 12px;border-radius:12px;background:rgba(15,17,21,0.72);backdrop-filter: blur(12px);-webkit-backdrop-filter: blur(12px);border:1px solid rgba(255,255,255,0.08);color:#E7EEF6;font-family:Inter,system-ui,sans-serif;">
-                    <div style="font-size:10px;letter-spacing:0.05em;color:#99A7B7;text-transform:uppercase;margin-bottom:4px;">S${index + 1}</div>
-                    <div style="font-size:12px;line-height:1.4;">Temp: ${sensor.soilTemperature.toFixed(0)}°C</div>
-                    <div style="font-size:12px;line-height:1.4;">Moisture: ${sensor.soilMoisture}%</div>
+                  <div style="min-width:160px;padding:12px 14px;border-radius:14px;background:rgba(20,24,30,0.85);backdrop-filter: blur(14px);-webkit-backdrop-filter: blur(14px);border:1px solid rgba(255,255,255,0.12);box-shadow: 0 8px 32px rgba(0,0,0,0.4);color:#F8FAFC;font-family:Inter,system-ui,sans-serif;transform: translateY(-4px);transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                      <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;color:#94A3B8;text-transform:uppercase;">${sensor.name || 'S' + (index + 1)}</span>
+                      <span style="width:8px;height:8px;border-radius:999px;background-color:${STATUS_COLOR[sensor.status]};box-shadow: 0 0 8px ${STATUS_COLOR[sensor.status]}"></span>
+                    </div>
+                    <div style="font-size:13px;font-weight:600;line-height:1.6;">Temp: <span style="font-weight:400;color:#cbd5e1">${sensor.soilTemperature.toFixed(0)}°C</span></div>
+                    <div style="font-size:13px;font-weight:600;line-height:1.6;">Moisture: <span style="font-weight:400;color:#cbd5e1">${sensor.soilMoisture}%</span></div>
                   </div>
                 `)
                 .addTo(map);
@@ -520,7 +535,7 @@ export default function FieldMap({
         mapRef.current = null;
       }
     };
-  }, [fieldCenter.latitude, fieldCenter.longitude, fieldBoundary, zones, sensors, activeZoneId, mapMode, visibleLayers, zonesGeoJson, heatGeoJson]);
+  }, [fieldCenter.latitude, fieldCenter.longitude, fieldBoundary, sensors]);
 
   useEffect(() => {
     const map = mapRef.current;
