@@ -85,10 +85,17 @@ export default function FieldMap({
       key={fieldCenter.latitude + '-' + fieldCenter.longitude}
       style={styles.map}
       provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-      initialRegion={region}
+      initialCamera={{
+        center: { latitude: region.latitude, longitude: region.longitude },
+        pitch: 45,
+        heading: -15,
+        altitude: 2000,
+        zoom: 15.5
+      }}
       mapType="standard"
       customMapStyle={Platform.OS === 'android' ? darkMapStyle : undefined}
       showsUserLocation={false}
+      pitchEnabled={true}
     >
       <Polygon
         coordinates={fieldBoundary}
@@ -124,7 +131,7 @@ export default function FieldMap({
                 coordinates={zone.polygon}
                 fillColor="rgba(0,0,0,0)"
                 strokeColor="rgba(103,232,249,0.98)"
-                strokeWidth={3.4}
+                strokeWidth={4.2}
               />
             ))
         : null}
@@ -141,7 +148,8 @@ export default function FieldMap({
               styles.marker,
               {
                 backgroundColor: statusColor(sensor.status),
-                opacity: 0.92 + getSensorHeatIntensity(sensor, visibleLayers) * 0.08
+                opacity: 0.95 + getSensorHeatIntensity(sensor, visibleLayers) * 0.05,
+                shadowColor: statusColor(sensor.status)
               }
             ]}
           >
