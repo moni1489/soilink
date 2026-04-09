@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 
+import { SoilDepth, SoilGridsProperty } from '../types';
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
 interface Props {
-  fieldId: string;
+  visible: boolean;
   onClose: () => void;
+  context?: {
+    field: any;
+    sensors: any[];
+    depth: SoilDepth;
+    property: SoilGridsProperty;
+  };
 }
 
-export default function ChatInterface({ fieldId, onClose }: Props) {
+export default function ChatInterface({ visible, onClose, context }: Props) {
+  if (!visible) return null;
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Привет! Я твой агроном-помощник. Чем могу помочь сегодня?' }
   ]);
@@ -27,11 +36,14 @@ export default function ChatInterface({ fieldId, onClose }: Props) {
     setLoading(true);
 
     try {
-      // Note: In real app replace localhost with actual IP/URL
       const response = await fetch('http://localhost:8000/api/chat/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ field_id: fieldId, message: userMsg }),
+        body: JSON.stringify({ 
+          field_id: context?.field?.id || 'unknown', 
+          message: userMsg,
+          context: context 
+        }),
       });
 
       const data = await response.json();
@@ -107,10 +119,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500,
     height: '80%',
-    backgroundColor: '#121820',
-    borderRadius: 32,
+    backgroundColor: '#000000',
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(0,245,155,0.2)',
+    borderColor: '#064E3B',
     overflow: 'hidden'
   },
   header: {
@@ -122,40 +134,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.02)'
   },
-  title: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
-  subtitle: { color: '#00F59B', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
+  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
+  subtitle: { color: '#059669', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  closeBtnText: { color: '#FFFFFF', fontSize: 14 },
+  closeBtnText: { color: '#FFFFFF', fontSize: 12 },
   msgList: { flex: 1, padding: 20 },
   msgContent: { paddingBottom: 20 },
   msgBubble: {
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 12,
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 10,
     maxWidth: '85%'
   },
   userBubble: {
     alignSelf: 'flex-end',
-    backgroundColor: '#00F59B',
+    backgroundColor: '#059669',
     borderBottomRightRadius: 4
   },
   aiBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
     borderBottomLeftRadius: 4,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)'
   },
-  msgText: { color: '#FFFFFF', fontSize: 15, lineHeight: 22 },
+  msgText: { color: '#FFFFFF', fontSize: 14, lineHeight: 20 },
   inputRow: {
-    padding: 20,
+    padding: 16,
     flexDirection: 'row',
     gap: 12,
     borderTopWidth: 1,
@@ -163,20 +175,20 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 16,
-    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
     color: '#FFFFFF',
-    fontSize: 15,
-    height: 54
+    fontSize: 14,
+    height: 48
   },
   sendBtn: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: '#00F59B',
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#059669',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  sendBtnText: { color: '#0A0F14', fontSize: 24, fontWeight: '900' }
+  sendBtnText: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' }
 });

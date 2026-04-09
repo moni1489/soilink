@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Recommendation, RecommendationTimelineStatus } from '../types';
 import { useTranslation } from 'react-i18next';
 
@@ -8,10 +8,10 @@ interface Props {
 }
 
 const levelColorMap: Record<Recommendation['level'], string> = {
-  critical: '#FF4D4D',
-  warning: '#FFB02E',
-  plan: '#38BDF8',
-  premium: '#00F59B'
+  critical: '#EF4444',
+  warning: '#F59E0B',
+  plan: '#6366F1',
+  premium: '#059669'
 };
 
 const levelLabelKeyMap = {
@@ -22,9 +22,9 @@ const levelLabelKeyMap = {
 } as const;
 
 const statusColorMap: Record<RecommendationTimelineStatus, string> = {
-  pending: '#b45309',
-  inProgress: '#166534',
-  done: '#0f766e'
+  pending: '#D97706',
+  inProgress: '#059669',
+  done: '#065F46'
 };
 
 export default function Recommendations({ recommendations }: Props) {
@@ -58,82 +58,84 @@ export default function Recommendations({ recommendations }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>{t('recommendations')}</Text>
-      {recommendations.map((item) => {
-        const status = getTimelineStatus(item);
+      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+        {recommendations.map((item) => {
+          const status = getTimelineStatus(item);
 
-        return (
-          <View key={item.id} style={styles.item}>
-            <View style={[styles.statusStrip, { backgroundColor: levelColorMap[item.level] }]} />
-            <View style={styles.itemHeaderRow}>
-              <View style={styles.badgeRow}>
-                <Text style={styles.level}>{t(levelLabelKeyMap[item.level])}</Text>
-                {item.level === 'premium' && (
-                  <View style={styles.aiBadge}>
-                    <Text style={styles.aiBadgeText}>AI INSIGHT</Text>
-                  </View>
-                )}
+          return (
+            <View key={item.id} style={styles.item}>
+              <View style={[styles.statusStrip, { backgroundColor: levelColorMap[item.level] }]} />
+              <View style={styles.itemHeaderRow}>
+                <View style={styles.badgeRow}>
+                  <Text style={styles.level}>{t(levelLabelKeyMap[item.level])}</Text>
+                  {item.level === 'premium' && (
+                    <View style={styles.aiBadge}>
+                      <Text style={styles.aiBadgeText}>AI INSIGHT</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={[styles.statePill, { borderColor: statusColorMap[status] }]}>
+                  <Text style={[styles.stateText, { color: statusColorMap[status] }]}>{t(status)}</Text>
+                </View>
               </View>
-              <View style={[styles.statePill, { borderColor: statusColorMap[status] }]}>
-                <Text style={[styles.stateText, { color: statusColorMap[status] }]}>{t(status)}</Text>
+
+              <Text style={styles.title}>{t(item.titleKey)}</Text>
+              <Text style={styles.message}>{t(item.messageKey)}</Text>
+
+              <Text style={styles.timelineLabel}>{t('timeline')}</Text>
+              <View>
+                {item.timeline.map((step) => {
+                  const isChecked = !!checkedByStepId[step.id];
+
+                  return (
+                    <TouchableOpacity key={step.id} style={styles.timelineItem} onPress={() => toggleStep(step.id)}>
+                      <View style={[styles.checkbox, isChecked ? styles.checkboxActive : undefined]}>
+                        <Text style={styles.checkboxText}>{isChecked ? '✓' : ''}</Text>
+                      </View>
+                      <View style={styles.timelineTextWrap}>
+                        <Text
+                          style={[
+                            styles.timelineText,
+                            isChecked ? styles.timelineTextDone : undefined,
+                            isChecked ? styles.timelineDimmed : undefined
+                          ]}
+                        >
+                          {t(step.labelKey)}
+                        </Text>
+                        <Text style={[styles.timelineDue, isChecked ? styles.timelineDimmed : undefined]}>
+                          {t('due')}: {step.dueAt}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
-
-            <Text style={styles.title}>{t(item.titleKey)}</Text>
-            <Text style={styles.message}>{t(item.messageKey)}</Text>
-
-            <Text style={styles.timelineLabel}>{t('timeline')}</Text>
-            <View>
-              {item.timeline.map((step) => {
-                const isChecked = !!checkedByStepId[step.id];
-
-                return (
-                  <TouchableOpacity key={step.id} style={styles.timelineItem} onPress={() => toggleStep(step.id)}>
-                    <View style={[styles.checkbox, isChecked ? styles.checkboxActive : undefined]}>
-                      <Text style={styles.checkboxText}>{isChecked ? '✓' : ''}</Text>
-                    </View>
-                    <View style={styles.timelineTextWrap}>
-                      <Text
-                        style={[
-                          styles.timelineText,
-                          isChecked ? styles.timelineTextDone : undefined,
-                          isChecked ? styles.timelineDimmed : undefined
-                        ]}
-                      >
-                        {t(step.labelKey)}
-                      </Text>
-                      <Text style={[styles.timelineDue, isChecked ? styles.timelineDimmed : undefined]}>
-                        {t('due')}: {step.dueAt}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        );
-      })}
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: 320,
-    maxWidth: '100%',
-    backgroundColor: '#0A0F14',
+    flex: 1,
+    width: 340,
+    backgroundColor: '#000000',
     padding: 0
   },
   header: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '900',
     marginBottom: 20,
-    color: 'rgba(255, 255, 255, 0.3)',
+    color: 'rgba(255, 255, 255, 0.2)',
     textTransform: 'uppercase',
     letterSpacing: 2
   },
   item: {
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
@@ -141,16 +143,13 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     position: 'relative',
     overflow: 'hidden',
-    shadowColor: '#00F59B',
-    shadowOpacity: 0.03,
-    shadowRadius: 20
   },
   statusStrip: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    width: 4
+    width: 3
   },
   itemHeaderRow: {
     flexDirection: 'row',
@@ -166,54 +165,54 @@ const styles = StyleSheet.create({
   level: {
     fontWeight: '900',
     textTransform: 'uppercase',
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.4)',
+    fontSize: 9,
+    color: 'rgba(255, 255, 255, 0.3)',
     letterSpacing: 1.2
   },
   aiBadge: {
-    backgroundColor: 'rgba(0, 245, 155, 0.1)',
-    borderColor: 'rgba(0, 245, 155, 0.3)',
+    backgroundColor: 'rgba(5, 150, 105, 0.1)',
+    borderColor: 'rgba(5, 150, 105, 0.3)',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1
   },
   aiBadgeText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '900',
-    color: '#00F59B',
+    color: '#059669',
     letterSpacing: 1
   },
   title: {
     fontWeight: '800',
-    fontSize: 18,
-    marginBottom: 8,
+    fontSize: 16,
+    marginBottom: 6,
     color: '#FFFFFF'
   },
   message: {
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: 14,
-    lineHeight: 20,
+    color: 'rgba(255, 255, 255, 0.4)',
+    fontSize: 13,
+    lineHeight: 18,
     marginBottom: 20
   },
   statePill: {
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)'
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)'
   },
   stateText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.5
   },
   timelineLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '900',
     marginBottom: 16,
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: 'rgba(255, 255, 255, 0.2)',
     textTransform: 'uppercase',
     letterSpacing: 1
   },
@@ -223,33 +222,32 @@ const styles = StyleSheet.create({
     marginBottom: 12
   },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
+    width: 18,
+    height: 18,
+    borderRadius: 5,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    marginRight: 12,
+    marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent'
   },
   checkboxActive: {
-    backgroundColor: '#00F59B',
-    borderColor: '#00F59B'
+    backgroundColor: '#059669',
+    borderColor: '#059669'
   },
   checkboxText: {
-    color: '#0A0F14',
+    color: '#000000',
     fontWeight: '900',
-    fontSize: 14,
-    lineHeight: 16
+    fontSize: 10,
   },
   timelineTextWrap: {
     flex: 1,
-    paddingTop: 1
+    paddingTop: 0
   },
   timelineText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
     fontWeight: '600'
   },
   timelineTextDone: {
@@ -257,8 +255,8 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.2)'
   },
   timelineDue: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.3)',
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.25)',
     marginTop: 2
   },
   timelineDimmed: {

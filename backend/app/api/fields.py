@@ -89,3 +89,30 @@ def get_field(field_id: str, db: Session = Depends(get_db)):
     if not field:
         raise HTTPException(status_code=404, detail="Field not found")
     return field
+
+
+@router.get("/{field_id}/soilgrids")
+def get_field_soilgrids(
+    field_id: str, 
+    depth: str = "0-5cm", 
+    db: Session = Depends(get_db)
+):
+    field = db.query(Field).filter(Field.id == field_id).first()
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+    
+    from app.services.soilgrid_service import get_soilgrid_properties
+    return get_soilgrid_properties(field.latitude, field.longitude, field.soil_type, depth)
+
+
+@router.get("/{field_id}/scanner")
+def get_field_scanner(
+    field_id: str, 
+    db: Session = Depends(get_db)
+):
+    field = db.query(Field).filter(Field.id == field_id).first()
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+    
+    from app.services.soilgrid_service import get_soilgrid_all_depths
+    return get_soilgrid_all_depths(field.latitude, field.longitude, field.soil_type)
