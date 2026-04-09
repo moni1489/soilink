@@ -112,73 +112,96 @@ export default function ZoneModal({ visible, zone, sensors, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(4, 22, 8, 0.38)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
-    alignItems: 'center'
-  },
-  card: {
-    width: '90%',
-    maxWidth: 460,
-    backgroundColor: '#f7fcf4',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#bdd8b6',
+    alignItems: 'center',
     padding: 20
   },
+  card: {
+    width: '100%',
+    maxWidth: 480,
+    backgroundColor: '#000000',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#064E3B',
+    padding: 32,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5
+  },
   title: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
-    color: '#1f4d2a'
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#059669',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 8
   },
   zoneName: {
-    fontWeight: '700',
-    marginBottom: 6,
-    color: '#1f2937'
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 16
   },
   statusBadge: {
     alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    marginBottom: 8
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 24
   },
   statusBadgeText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '700'
+    fontWeight: '900',
+    textTransform: 'uppercase'
   },
   infoLine: {
-    color: '#2f3f34',
-    marginBottom: 3
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4
   },
   metricsBlock: {
-    marginTop: 8,
+    marginTop: 24,
+    padding: 20,
+    backgroundColor: 'rgba(5, 150, 105, 0.05)',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#d4e7cf',
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: '#f0f9ec'
+    borderColor: 'rgba(5, 150, 105, 0.1)'
   },
   metricLine: {
-    color: '#2f3f34',
-    marginBottom: 3
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 8
   },
   sensorList: {
-    color: '#14532d',
-    marginTop: 5,
-    fontWeight: '600'
+    color: '#059669',
+    marginTop: 12,
+    fontSize: 13,
+    fontWeight: '700'
   },
   emptyText: {
-    marginTop: 10,
-    color: '#365643'
+    marginTop: 20,
+    color: 'rgba(255, 255, 255, 0.4)',
+    fontSize: 14,
+    textAlign: 'center'
   },
   closeButton: {
-    marginTop: 12,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: '#166534',
+    marginTop: 32,
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: '#059669',
     alignItems: 'center'
   },
-  closeText: { color: '#fff', fontWeight: '700' }
+  closeText: { 
+    color: '#FFFFFF', 
+    fontSize: 16, 
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1
+  }
 });

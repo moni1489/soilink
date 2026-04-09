@@ -236,7 +236,7 @@ export default function Dashboard() {
                 
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={styles.mapModeGroup}>
-                    <Text style={styles.mapModeLabel}>Theme:</Text>
+                    <Text style={styles.mapModeLabel}>{t('theme')}:</Text>
                     <TouchableOpacity
                       style={[
                         styles.mapModeButton,
@@ -244,7 +244,7 @@ export default function Dashboard() {
                       ]}
                       onPress={() => setMapTheme('light')}
                     >
-                      <Text style={styles.mapModeButtonText}>Light</Text>
+                      <Text style={styles.mapModeButtonText}>{t('light')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[
@@ -253,7 +253,7 @@ export default function Dashboard() {
                       ]}
                       onPress={() => setMapTheme('dark')}
                     >
-                      <Text style={styles.mapModeButtonText}>Dark</Text>
+                      <Text style={styles.mapModeButtonText}>{t('dark')}</Text>
                     </TouchableOpacity>
                   </View>
 
@@ -276,6 +276,15 @@ export default function Dashboard() {
                       onPress={() => setMapMode('heatmap')}
                     >
                       <Text style={styles.mapModeButtonText}>{t('heatmapView')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.mapModeButton,
+                        mapMode === 'satellite' ? styles.mapModeButtonActive : undefined
+                      ]}
+                      onPress={() => setMapMode('satellite')}
+                    >
+                      <Text style={styles.mapModeButtonText}>{t('satelliteView') || 'Satellite'}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -426,7 +435,13 @@ export default function Dashboard() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000000', height: (Platform.OS === 'web' ? '100vh' : '100%') as any, overflow: 'hidden' },
-  contentContainer: { flex: 1, padding: 32 },
+  contentContainer: { 
+    flex: 1, 
+    padding: 20,
+    height: (Platform.OS === 'web' ? '100vh' : '100%') as any,
+    display: 'flex',
+    flexDirection: 'column'
+  },
   sectionTitle: {
     fontSize: 12,
     fontWeight: '900',
@@ -451,10 +466,18 @@ const styles = StyleSheet.create({
   },
   langText: { color: 'rgba(255, 255, 255, 0.5)', fontWeight: '600', fontSize: 12 },
   langActive: { backgroundColor: 'rgba(0, 245, 155, 0.1)', borderColor: '#059669', borderWidth: 1 },
-  webLayout: { flex: 1, flexDirection: 'row', gap: 24 },
+  webLayout: { flex: 1, flexDirection: 'row', gap: 16 },
   mobileLayout: { flex: 1 },
   mapContainerOuter: { flex: 1, flexDirection: 'column' },
-  mapRegion: { flex: 1, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: '#064E3B' },
+  mapRegion: { 
+    flex: 1, 
+    borderRadius: 24, 
+    overflow: 'hidden', 
+    borderWidth: 1, 
+    borderColor: '#064E3B',
+    minHeight: Platform.OS === 'web' ? 400 : undefined,
+    backgroundColor: '#000'
+  },
   recommendationsRegion: { width: 340 },
   mapHeaderRow: {
     marginBottom: 16,
