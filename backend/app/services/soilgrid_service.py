@@ -101,3 +101,11 @@ def get_soilgrid_properties(
     if lat is not None and lon is not None:
         return fetch_soilgrid_properties(lat, lon, soil_type)
     return _DEFAULTS_BY_SOIL_TYPE.get(soil_type, _DEFAULT_FALLBACK).copy()
+
+
+def get_soilgrid_defaults(soil_type: str = "Loamy") -> dict[str, float]:
+    """
+    Returns soil-type-specific defaults without any API call.
+    Used at inference time — SoilGrids API is only used during model training.
+    """
+    return _DEFAULTS_BY_SOIL_TYPE.get(soil_type, _DEFAULT_FALLBACK).copy()
