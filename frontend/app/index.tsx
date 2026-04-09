@@ -76,10 +76,19 @@ export default function Dashboard() {
     [activeFieldId]
   );
 
-  const activePrediction = useMemo(
-    () => predictions.find((p) => p.fieldId === activeFieldId),
-    [activeFieldId]
-  );
+  const activePrediction = useMemo(() => {
+    const base = predictions.find((p) => p.fieldId === activeFieldId);
+    if (!base || selectedDaysAgo === 0) return base;
+
+    // Simulate historical prediction data
+    return {
+      ...base,
+      cropConfidence: Math.max(0.6, base.cropConfidence - (selectedDaysAgo * 0.02)),
+      soilStateConfidence: Math.max(0.55, base.soilStateConfidence - (selectedDaysAgo * 0.012)),
+      isHistorical: true,
+      historicalDate: selectedDaysAgo
+    };
+  }, [activeFieldId, selectedDaysAgo]);
 
   useEffect(() => {
     setSelectedZone(null);
