@@ -1,8 +1,24 @@
+import anthropic
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.reading import SensorReading
 from app.models.prediction import Prediction
 from app.models.recommendation import Recommendation
+
+
+_SYSTEM_PROMPT = """You are an expert agricultural advisor for the SoiLink soil monitoring platform.
+You have access to real-time sensor readings, ML model predictions, and active field recommendations.
+Your role is to help farmers understand their soil health and give actionable, specific advice.
+
+Guidelines:
+- Base all advice strictly on the provided sensor data and ML predictions
+- Explain WHY each action is needed (link to specific sensor values)
+- Prioritize critical issues first, then warnings, then optimization
+- Be concise and practical — farmers need clear, actionable steps
+- Use metric units (°C, mS/cm, %, kg/ha)
+- If data is missing or insufficient, say so clearly
+"""
 
 
 def build_chat_context(db: Session, field_id: str) -> dict:
@@ -49,6 +65,8 @@ def build_chat_context(db: Session, field_id: str) -> dict:
             "crop_confidence": prediction.crop_confidence,
             "fertilizer_recommendation": prediction.fertilizer_recommendation,
             "fertilizer_source": prediction.fertilizer_source,
+            "soil_state": prediction.soil_state,
+            "soil_state_confidence": prediction.soil_state_confidence,
             "timestamp": prediction.timestamp.isoformat() if prediction.timestamp else None,
         }
 
@@ -66,10 +84,79 @@ def build_chat_context(db: Session, field_id: str) -> dict:
         "sensor_readings": sensor_summary,
         "prediction": prediction_summary,
         "active_recommendations": rec_summary,
-        "system_instruction": (
-            "You are a soil health advisory assistant for the SoiLink agricultural monitoring system. "
-            "Use the sensor readings, ML predictions, and recommendations above to explain the current "
-            "field status to the farmer. Do NOT invent agronomic decisions beyond what the backend data shows. "
-            "Explain why each recommendation was made based on the sensor values and thresholds."
-        ),
+        "system_instruction": _SYSTEM_PROMPT,
+    }
+
+
+def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
+    """
+    Send a question to Claude with full ML + sensor context for the given field.
+    Returns {reply, context_used}.
+    """
+    if not settings.ANTHROPIC_API_KEY:
+        return {
+            "reply": "Chatbot is not configured. Please set ANTHROPIC_API_KEY in the backend .env file.",
+            "context_used": False,
+        }
+
+    ctx = build_chat_context(db, field_id)
+
+    # Build a rich context block from ML results
+    context_lines = [f"Field ID: {field_id}"]
+
+    if ctx["prediction"]:
+        p = ctx["prediction"]
+        context_lines.append(
+            f"\nML Predictions (as of {p['timestamp']}):"
+            f"\n  • Soil state: {p['soil_state']} (confidence: {(p['soil_state_confidence'] or 0):.0%})"
+            f"\n  • Recommended crop: {p['crop_recommendation']} (confidence: {(p['crop_confidence'] or 0):.0%})"
+            f"\n  • Fertilizer: {p['fertilizer_recommendation']} ({p['fertilizer_source']})"
+        )
+    else:
+        context_lines.append("\nNo ML predictions available yet.")
+
+    if ctx["sensor_readings"]:
+        context_lines.append("\nLatest sensor readings:")
+        for r in ctx["sensor_readings"][:5]:
+            context_lines.append(
+                f"  Sensor {r['sensor_id']} @ {r['timestamp']}: "
+                f"pH={r['pH']}, moisture={r['soil_moisture_pct']}%, "
+                f"temp={r['soil_temperature_c']}°C, EC={r['ec_ms_cm']} mS/cm"
+            )
+    else:
+        context_lines.append("\nNo sensor readings available.")
+
+    if ctx["active_recommendations"]:
+        context_lines.append("\nActive recommendations:")
+        for rec in ctx["active_recommendations"]:
+            context_lines.append(f"  [{rec['level'].upper()}] {rec['title']}: {rec['message']}")
+    else:
+        context_lines.append("\nNo active recommendations.")
+
+    context_block = "\n".join(context_lines)
+
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"<field_data>\n{context_block}\n</field_data>\n\n"
+                f"Farmer question: {user_message}"
+            ),
+        }
+    ]
+
+    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    response = client.messages.create(
+        model="claude-opus-4-6",
+        max_tokens=1024,
+        system=_SYSTEM_PROMPT,
+        messages=messages,
+    )
+
+    reply = response.content[0].text if response.content else "No response generated."
+    return {
+        "reply": reply,
+        "context_used": True,
+        "field_id": field_id,
+        "ml_prediction": ctx["prediction"],
     }
