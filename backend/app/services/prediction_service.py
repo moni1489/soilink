@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from app.models.reading import SensorReading
 from app.models.field import Field
 from app.models.prediction import Prediction
-from app.ml.inference import predict_crop, predict_fertilizer_ml
-from app.services.feature_service import build_crop_features, build_fertilizer_features
+from app.ml.inference import predict_crop, predict_fertilizer_ml, predict_soil_state
+from app.services.feature_service import build_crop_features, build_fertilizer_features, build_soil_state_features
+from app.services.soilgrid_service import get_soilgrid_properties
 from app.utils.rules import rule_based_fertilizer
 
 
@@ -28,16 +29,27 @@ def run_inference(db: Session, field_id: str, sensor_id: str | None = None) -> P
         db.add(field)
         db.flush()
 
+    # Fetch SoilGrids physical composition for this field's location
+    soilgrid = get_soilgrid_properties(
+        lat=field.latitude,
+        lon=field.longitude,
+        soil_type=field.soil_type,
+    )
+
     crop_features = build_crop_features(reading, field)
     fert_features = build_fertilizer_features(reading, field)
+    soil_state_features = build_soil_state_features(reading, field, soilgrid)
 
     crop_result = predict_crop(**crop_features)
     crop_name = crop_result[0] if crop_result else None
     crop_conf = crop_result[1] if crop_result else None
 
     fertilizer_rule = rule_based_fertilizer(field.nitrogen, field.phosphorus, field.potassium)
-
     fertilizer_ml = predict_fertilizer_ml(**fert_features)
+
+    soil_state_result = predict_soil_state(**soil_state_features)
+    soil_state = soil_state_result[0] if soil_state_result else None
+    soil_state_conf = soil_state_result[1] if soil_state_result else None
 
     prediction = Prediction(
         field_id=field_id,
@@ -46,9 +58,13 @@ def run_inference(db: Session, field_id: str, sensor_id: str | None = None) -> P
         crop_confidence=crop_conf,
         fertilizer_recommendation=fertilizer_rule,
         fertilizer_source="rule_based",
+        soil_state=soil_state,
+        soil_state_confidence=soil_state_conf,
         feature_snapshot={
             "crop_features": crop_features,
             "fert_features": fert_features,
+            "soil_state_features": soil_state_features,
+            "soilgrid_data": soilgrid,
             "fertilizer_ml_output": fertilizer_ml,
         },
     )

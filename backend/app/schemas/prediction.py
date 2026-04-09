@@ -17,6 +17,8 @@ class PredictionOut(BaseModel):
     crop_confidence: Optional[float] = None
     fertilizer_recommendation: Optional[str] = None
     fertilizer_source: str = "rule_based"
+    soil_state: Optional[str] = None
+    soil_state_confidence: Optional[float] = None
     feature_snapshot: Optional[dict] = None
 
     model_config = {"from_attributes": True}
