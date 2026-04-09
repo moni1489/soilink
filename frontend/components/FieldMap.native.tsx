@@ -17,6 +17,7 @@ interface Props {
   selectedDepth?: SoilDepth;
   mapMode: MapMode;
   theme?: 'light' | 'dark';
+  historicalOffset?: number;
 }
 
 const SOILGRIDS_CONFIG: Record<SoilGridsProperty, { id: number; slug: string }> = {
@@ -69,7 +70,8 @@ export default function FieldMap({
   selectedSoilProperty = 'clay',
   selectedDepth = '0-5cm',
   mapMode,
-  theme = 'dark'
+  theme = 'dark',
+  historicalOffset = 0
 }: Props) {
   const [loading, setLoading] = React.useState(false);
   const loadingTimeoutRef = React.useRef<any>(null);

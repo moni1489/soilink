@@ -15,6 +15,7 @@ interface Props {
   selectedDepth?: SoilDepth;
   mapMode: MapMode;
   theme?: 'light' | 'dark';
+  historicalOffset?: number;
 }
 
 type FieldMapComponent = React.ComponentType<Props>;

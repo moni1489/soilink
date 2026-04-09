@@ -100,7 +100,7 @@ export default function Recommendations({ recommendations }: Props) {
                             isChecked ? styles.timelineDimmed : undefined
                           ]}
                         >
-                          {t(step.labelKey)}
+                          {step.labelOpen || t(step.labelKey)}
                         </Text>
                         <Text style={[styles.timelineDue, isChecked ? styles.timelineDimmed : undefined]}>
                           {t('due')}: {step.dueAt}
