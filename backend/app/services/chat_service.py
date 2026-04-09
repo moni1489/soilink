@@ -1,4 +1,5 @@
 import httpx
+from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -68,6 +69,7 @@ def build_chat_context(db: Session, field_id: str) -> dict:
             "soil_state": prediction.soil_state,
             "soil_state_confidence": prediction.soil_state_confidence,
             "timestamp": prediction.timestamp.isoformat() if prediction.timestamp else None,
+            "soilgrids": prediction.feature_snapshot.get("soilgrid_data", {}) if prediction.feature_snapshot else {},
         }
 
     rec_summary = []
@@ -88,9 +90,10 @@ def build_chat_context(db: Session, field_id: str) -> dict:
     }
 
 
-def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
+def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Optional[dict] = None) -> dict:
     """
     Send a question to Claude with full ML + sensor context for the given field.
+    Includes optional rich_context from the UI (depth, selected layers).
     Returns {reply, context_used}.
     """
     if not settings.GROQ_API_KEY:
@@ -112,6 +115,19 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
             f"\n  • Recommended crop: {p['crop_recommendation']} (confidence: {(p['crop_confidence'] or 0):.0%})"
             f"\n  • Fertilizer: {p['fertilizer_recommendation']} ({p['fertilizer_source']})"
         )
+        
+        # Add Geographic Soil Context (SoilGrids)
+        snapshot = p.get("original_prediction", {}).feature_snapshot if hasattr(p, "get") else None # Prediction model instance
+        # Since ctx["prediction"] is a summary dict, we might need to get real data
+        # Actually, let's update build_chat_context to include it.
+        if "soilgrids" in p:
+            s = p["soilgrids"]
+            context_lines.append(
+                f"\nGeological Context (SoilGrids 250m):"
+                f"\n  • Clay: {s.get('clay_content')} g/kg, Sand: {s.get('sand_content')} g/kg"
+                f"\n  • pH (H2O): {s.get('phh2o', 0)/10.0:.1f}, Nitrogen: {s.get('nitrogen')} cg/kg"
+                f"\n  • Organic Carbon (SOC): {s.get('soc')} dg/kg"
+            )
     else:
         context_lines.append("\nNo ML predictions available yet.")
 
@@ -132,6 +148,13 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
             context_lines.append(f"  [{rec['level'].upper()}] {rec['title']}: {rec['message']}")
     else:
         context_lines.append("\nNo active recommendations.")
+
+    if rich_context:
+        context_lines.append("\nUser UI Context (What the farmer is looking at):")
+        context_lines.append(f"  • Current Map Depth: {rich_context.get('depth')}")
+        context_lines.append(f"  • Active Property Layer: {rich_context.get('property')}")
+        if "sensors" in rich_context:
+            context_lines.append(f"  • Active Sensors in view: {len(rich_context['sensors'])}")
 
     context_block = "\n".join(context_lines)
 

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import type { Sensor, SoilZone, LayerKey, MapMode, Coordinate } from '../types';
+import type { Sensor, SoilZone, LayerKey, MapMode, Coordinate, SoilGridsProperty, SoilDepth } from '../types';
 import mapboxConfig from '../config/mapbox';
 import { closeRing, generateHeatGridPoints, getPolygonCentroid, pointInPolygon } from '../utils/map';
 
@@ -13,9 +13,21 @@ interface Props {
   onSelectZone: (zone: SoilZone) => void;
   activeZoneId?: string;
   visibleLayers: LayerKey[];
+  selectedSoilProperty?: SoilGridsProperty;
+  selectedDepth?: SoilDepth;
   mapMode: MapMode;
   theme?: 'light' | 'dark';
 }
+
+const SOILGRIDS_CONFIG: Record<SoilGridsProperty, { id: number; slug: string }> = {
+  clay: { id: 6, slug: 'clay' },
+  sand: { id: 2, slug: 'sand' },
+  silt: { id: 4, slug: 'silt' },
+  phh2o: { id: 10, slug: 'phh2o' },
+  nitrogen: { id: 26, slug: 'nitrogen' },
+  soc: { id: 30, slug: 'soc' },
+  bdod: { id: 13, slug: 'bdod' },
+};
 
 const mapContainerStyle: React.CSSProperties = {
   width: '100%',
@@ -69,7 +81,6 @@ const getHeatGeoJson = (
     }
   }))
 });
-
 export default function FieldMap({
   fieldCenter,
   fieldBoundary,
@@ -79,11 +90,15 @@ export default function FieldMap({
   onSelectZone,
   activeZoneId,
   visibleLayers,
+  selectedSoilProperty = 'clay',
+  selectedDepth = '0-5cm',
   mapMode,
-  theme = 'light'
+  theme = 'dark'
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
+  const [mapLoading, setMapLoading] = useState(false);
+  const loadingTimeoutRef = useRef<any>(null);
   const markerRef = useRef<any[]>([]);
   const onSelectSensorRef = useRef(onSelectSensor);
   const onSelectZoneRef = useRef(onSelectZone);
@@ -120,33 +135,14 @@ export default function FieldMap({
 
       try {
         const mapboxgl = (await import('mapbox-gl')).default;
-
-        try {
-          await import('mapbox-gl/dist/mapbox-gl.css');
-        } catch {
-          // CSS import can fail in some bundler setups.
-        }
+        try { await import('mapbox-gl/dist/mapbox-gl.css'); } catch {}
 
         if (cancelled) return;
-
         mapboxgl.accessToken = token;
-        if (!document.getElementById('sensor-pulse-style')) {
-          const styleElement = document.createElement('style');
-          styleElement.id = 'sensor-pulse-style';
-          styleElement.textContent = `
-            .sensor-node-halo { animation: sensorPulse 1.7s ease-out infinite; }
-            @keyframes sensorPulse {
-              0% { transform: scale(0.8); opacity: 0.65; }
-              70% { transform: scale(1.8); opacity: 0.05; }
-              100% { transform: scale(2.1); opacity: 0; }
-            }
-          `;
-          document.head.appendChild(styleElement);
-        }
 
         const map = new mapboxgl.Map({
           container: containerRef.current,
-          style: theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/navigation-night-v1',
+          style: theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11',
           center: [fieldCenter.longitude, fieldCenter.latitude],
           zoom: 15.5,
           pitch: 55,
@@ -155,394 +151,302 @@ export default function FieldMap({
         });
 
         mapRef.current = map;
-
         map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
-        map.on('error', (event: any) => {
-          const message = event?.error?.message as string | undefined;
-          if (message) setError(`Mapbox error: ${message}`);
-        });
+        const addSourcesAndLayers = () => {
+          if (cancelled || !mapRef.current) return;
+          const currentMap = mapRef.current;
 
-        map.on('load', () => {
-          const showZones = mapMode === 'zones' && visibleLayers.length > 0;
-          const showHeatmap = mapMode === 'heatmap' && visibleLayers.length > 0;
-          const boundaryCoordinates = closeRing(fieldBoundary).map(toLngLat);
-          const focusCoordinates = [
-            ...boundaryCoordinates,
-            ...sensors.map(
-              (sensor) => [sensor.coordinates.longitude, sensor.coordinates.latitude] as [number, number]
-            )
-          ];
-
-          if (focusCoordinates.length > 1) {
-            const bounds = focusCoordinates.reduce(
-              (collection, coordinate) => collection.extend(coordinate),
-              new mapboxgl.LngLatBounds(focusCoordinates[0], focusCoordinates[0])
-            );
-
-            map.fitBounds(bounds, { padding: 44, duration: 1400, maxZoom: 16.2 });
+          // Sources
+          if (!currentMap.getSource('field-boundary')) {
+            currentMap.addSource('field-boundary', {
+              type: 'geojson',
+              data: {
+                type: 'FeatureCollection',
+                features: [{
+                  type: 'Feature',
+                  geometry: { type: 'Polygon', coordinates: [closeRing(fieldBoundary).map(toLngLat)] },
+                  properties: {}
+                }]
+              }
+            });
           }
 
-          map.addSource('field-boundary', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: [
-                {
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Polygon',
-                    coordinates: [boundaryCoordinates]
-                  },
-                  properties: {}
-                }
-              ]
-            }
-          });
+          if (!currentMap.getSource('zones')) {
+            currentMap.addSource('zones', { type: 'geojson', data: zonesGeoJson });
+          }
 
-          map.addSource('zones', {
-            type: 'geojson',
-            data: zonesGeoJson
-          });
+          if (!currentMap.getSource('heat-points')) {
+            currentMap.addSource('heat-points', { type: 'geojson', data: heatGeoJson });
+          }
 
-          map.addSource('soilgrids-clay', {
-            type: 'raster',
-            tiles: [
-              'https://maps.isric.org/mapserv?map=/srv/isric.org/www/maps/node/6/mapfiles/soilgrids.map&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/png&TRANSPARENT=TRUE&LAYERS=clay_0-5cm_mean&WIDTH=256&HEIGHT=256&CRS=EPSG:3857&BBOX={bbox-epsg-3857}'
-            ],
-            tileSize: 256
-          });
-
-          // Add a beautiful sky layer for 3D horizon
-          map.addLayer({
-            id: 'sky',
-            type: 'sky',
-            paint: {
-              'sky-type': 'atmosphere',
-              'sky-atmosphere-sun': [0.0, 0.0],
-              'sky-atmosphere-sun-intensity': 15
-            }
-          });
-
-          map.addLayer(
-            {
-              id: 'soilgrids-clay-layer',
+          if (!currentMap.getSource('soilgrids-source')) {
+            const config = SOILGRIDS_CONFIG[selectedSoilProperty];
+            const layerName = `${config.slug}_${selectedDepth}_mean`;
+            currentMap.addSource('soilgrids-source', {
               type: 'raster',
-              source: 'soilgrids-clay',
-              paint: {
-                'raster-opacity': 0.6
-              },
-              layout: {
-                visibility: 'none'
+              tiles: [`https://maps.isric.org/mapserv?map=/srv/node/mappings/${config.id}.map&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=${layerName}&STYLES=&FORMAT=image/png&TRANSPARENT=TRUE&HEIGHT=256&WIDTH=256&CRS=EPSG:3857&BBOX={bbox-epsg-3857}`],
+              tileSize: 256
+            });
+          }
+
+          if (!currentMap.getSource('zone-labels')) {
+            currentMap.addSource('zone-labels', {
+              type: 'geojson',
+              data: {
+                type: 'FeatureCollection',
+                features: zonesRef.current.map((zone) => {
+                  const centroid = getPolygonCentroid(zone.polygon);
+                  return {
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [centroid.longitude, centroid.latitude] },
+                    properties: { name: zone.name }
+                  };
+                })
               }
-            },
-            'sky' // Add below sky
+            });
+          }
+
+          // Layers
+          if (!currentMap.getLayer('sky')) {
+            currentMap.addLayer({
+              id: 'sky',
+              type: 'sky',
+              paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 0.0], 'sky-atmosphere-sun-intensity': 15 }
+            });
+          }
+
+          if (!currentMap.getLayer('soilgrids-layer')) {
+            currentMap.addLayer({
+              id: 'soilgrids-layer',
+              type: 'raster',
+              source: 'soilgrids-source',
+              paint: { 'raster-opacity': 0.7 },
+              layout: { visibility: visibleLayers.includes('soilGrids') ? 'visible' : 'none' }
+            }, 'zone-polygons-fill');
+          }
+
+          if (!currentMap.getLayer('field-boundary-fill')) {
+            currentMap.addLayer({
+              id: 'field-boundary-fill',
+              type: 'fill',
+              source: 'field-boundary',
+              paint: {
+                'fill-color': theme === 'light' ? '#F1F5F9' : '#000000',
+                'fill-opacity': theme === 'light' ? 0.3 : 0.2
+              }
+            });
+          }
+
+          if (!currentMap.getLayer('zone-polygons-fill')) {
+            currentMap.addLayer({
+              id: 'zone-polygons-fill',
+              type: 'fill',
+              source: 'zones',
+              paint: {
+                'fill-color': ['get', 'color'],
+                'fill-opacity': mapMode === 'zones' ? 0.4 : 0
+              }
+            });
+          }
+
+          if (!currentMap.getLayer('zone-polygons-line')) {
+            currentMap.addLayer({
+              id: 'zone-polygons-line',
+              type: 'line',
+              source: 'zones',
+              paint: {
+                'line-color': '#00F59B',
+                'line-width': 1.5,
+                'line-opacity': 0.5
+              }
+            });
+          }
+
+          if (!currentMap.getLayer('heat-surface')) {
+            currentMap.addLayer({
+              id: 'heat-surface',
+              type: 'heatmap',
+              source: 'heat-points',
+              layout: { visibility: mapMode === 'heatmap' ? 'visible' : 'none' },
+              paint: {
+                'heatmap-weight': ['interpolate', ['linear'], ['get', 'intensity'], 0, 0.08, 1, 1.15],
+                'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 11, 0.9, 17, 1.75],
+                'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 11, 24, 17, 64],
+                'heatmap-opacity': 0.8,
+                'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'], 0, 'rgba(30,58,138,0)', 0.38, 'rgba(0,245,155,0.72)', 1, 'rgba(210,105,79,0.94)']
+              }
+            });
+          }
+
+          if (!currentMap.getLayer('field-boundary-line')) {
+            currentMap.addLayer({
+              id: 'field-boundary-line',
+              type: 'line',
+              source: 'field-boundary',
+              paint: { 'line-color': '#00F59B', 'line-width': 2.5 }
+            });
+          }
+
+          if (!currentMap.getLayer('active-zone-line')) {
+            currentMap.addLayer({
+              id: 'active-zone-line',
+              type: 'line',
+              source: 'zones',
+              layout: { visibility: activeZoneId ? 'visible' : 'none' },
+              paint: { 'line-color': '#67e8f9', 'line-width': 3.5 },
+              filter: ['==', ['get', 'id'], activeZoneId ?? '__none__']
+            });
+          }
+
+          if (!currentMap.getLayer('zone-label-layer')) {
+            currentMap.addLayer({
+              id: 'zone-label-layer',
+              type: 'symbol',
+              source: 'zone-labels',
+              layout: {
+                visibility: mapMode === 'zones' ? 'visible' : 'none',
+                'text-field': ['get', 'name'],
+                'text-size': 12,
+                'text-font': ['Open Sans Semibold']
+              },
+              paint: {
+                'text-color': theme === 'light' ? '#334155' : '#f8fafc',
+                'text-halo-color': theme === 'light' ? '#ffffff' : '#020617',
+                'text-halo-width': 1.2
+              }
+            });
+          }
+        };
+
+        map.on('load', () => {
+          if (cancelled) return;
+          addSourcesAndLayers();
+
+          // Focus logic
+          const bounds = closeRing(fieldBoundary).reduce(
+            (col, coord) => col.extend([coord.longitude, coord.latitude]),
+            new mapboxgl.LngLatBounds(toLngLat(fieldBoundary[0]), toLngLat(fieldBoundary[0]))
           );
+          map.fitBounds(bounds, { padding: 44, duration: 1000, maxZoom: 16 });
 
-          map.addLayer({
-            id: 'field-boundary-fill',
-            type: 'fill',
-            source: 'field-boundary',
-            paint: {
-              'fill-color': theme === 'light' ? '#F1F5F9' : '#0F1115',
-              'fill-opacity': theme === 'light' ? 0.4 : 0.08
-            }
+          // Interactivity
+          map.on('click', 'zone-polygons-fill', (e: any) => {
+            const props = e.features[0].properties;
+            const zone = zones.find((z) => z.id === props.id);
+            if (zone) onSelectZone(zone);
           });
 
-          map.addLayer({
-            id: 'zone-polygons-fill',
-            type: 'fill',
-            source: 'zones',
-            layout: {
-              visibility: showZones ? 'visible' : 'none'
-            },
-            paint: {
-              'fill-color': [
-                'match',
-                ['get', 'color'],
-                'green',
-                '#00F59B',
-                'yellow',
-                '#FFB02E',
-                'red',
-                '#FF4D4D',
-                '#00F59B'
-              ],
-              'fill-opacity': 0.1
-            }
-          });
-
-          map.addSource('heat-points', {
-            type: 'geojson',
-            data: heatGeoJson
-          });
-
-          map.addLayer({
-            id: 'heat-surface',
-            type: 'heatmap',
-            source: 'heat-points',
-            maxzoom: 18,
-            layout: {
-              visibility: showHeatmap ? 'visible' : 'none'
-            },
-            paint: {
-              'heatmap-weight': [
-                'interpolate',
-                ['linear'],
-                ['get', 'intensity'],
-                0,
-                0.08,
-                0.4,
-                0.4,
-                0.7,
-                0.75,
-                1,
-                1.15
-              ],
-              'heatmap-intensity': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                11,
-                0.9,
-                13,
-                1.15,
-                15,
-                1.45,
-                17,
-                1.75
-              ],
-              'heatmap-radius': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                11,
-                24,
-                13,
-                34,
-                15,
-                48,
-                17,
-                64
-              ],
-              'heatmap-opacity': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                11,
-                0.72,
-                14,
-                0.82,
-                17,
-                0.9
-              ],
-              'heatmap-color': [
-                'interpolate',
-                ['linear'],
-                ['heatmap-density'],
-                0,
-                'rgba(30,58,138,0)',
-                0.15,
-                'rgba(30,64,175,0.45)',
-                0.38,
-                'rgba(0,245,155,0.72)',
-                0.62,
-                'rgba(255,176,46,0.84)',
-                1,
-                'rgba(210,105,79,0.94)'
-              ]
-            }
-          });
-
-          map.addLayer({
-            id: 'field-boundary-line',
-            type: 'line',
-            source: 'field-boundary',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': '#00F59B',
-              'line-width': 2
-            }
-          });
-
-          map.addLayer({
-            id: 'zone-polygons-line',
-            type: 'line',
-            source: 'zones',
-            layout: {
-              visibility: showZones || showHeatmap ? 'visible' : 'none',
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': '#00F59B',
-              'line-width': 2
-            }
-          });
-
-          map.addLayer({
-            id: 'active-zone-line',
-            type: 'line',
-            source: 'zones',
-            layout: {
-              visibility: activeZoneId ? 'visible' : 'none',
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': '#67e8f9',
-              'line-width': 3.3
-            },
-            filter: ['==', ['get', 'id'], activeZoneId ?? '__none__']
-          });
-
-          map.addSource('zone-labels', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: zones.map((zone) => {
-                const centroid = getPolygonCentroid(zone.polygon);
-                return {
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Point',
-                    coordinates: [centroid.longitude, centroid.latitude]
-                  },
-                  properties: { name: zone.name }
-                };
-              })
-            }
-          });
-
-          map.addLayer({
-            id: 'zone-label-layer',
-            type: 'symbol',
-            source: 'zone-labels',
-            layout: {
-              visibility: showZones ? 'visible' : 'none',
-              'text-field': ['get', 'name'],
-              'text-size': 12,
-              'text-font': ['Open Sans Semibold']
-            },
-            paint: {
-              'text-color': theme === 'light' ? '#334155' : '#f8fafc',
-              'text-halo-color': theme === 'light' ? '#ffffff' : '#020617',
-              'text-halo-width': 1.2
-            }
-          });
-
-          const handleZoneClick = (event: any) => {
-            const zoneId = event?.features?.[0]?.properties?.id as string | undefined;
-            if (!zoneId) return;
-            const zone = zonesRef.current.find((item) => item.id === zoneId);
-            if (zone) onSelectZoneRef.current(zone);
-          };
-
-          const handleHeatClick = (event: any) => {
-            const longitude = event?.lngLat?.lng as number | undefined;
-            const latitude = event?.lngLat?.lat as number | undefined;
-            if (typeof latitude !== 'number' || typeof longitude !== 'number') return;
-            const zone = zonesRef.current.find((item) =>
-              pointInPolygon({ latitude, longitude }, item.polygon)
-            );
-            if (zone) onSelectZoneRef.current(zone);
-          };
-
-          map.on('click', 'zone-polygons-fill', handleZoneClick);
-          map.on('click', 'heat-surface', handleHeatClick);
-
-          const setPointer = () => {
-            map.getCanvas().style.cursor = 'pointer';
-          };
-          const unsetPointer = () => {
-            map.getCanvas().style.cursor = '';
-          };
-
-          map.on('mouseenter', 'zone-polygons-fill', setPointer);
-          map.on('mouseleave', 'zone-polygons-fill', unsetPointer);
-          map.on('mouseenter', 'heat-surface', setPointer);
-          map.on('mouseleave', 'heat-surface', unsetPointer);
-
-          // Removed sensor markers logic as requested
-          
-          map.resize();
-
-          map.resize();
+          const setPtr = () => { map.getCanvas().style.cursor = 'pointer'; };
+          const unsetPtr = () => { map.getCanvas().style.cursor = ''; };
+          map.on('mouseenter', 'zone-polygons-fill', setPtr);
+          map.on('mouseleave', 'zone-polygons-fill', unsetPtr);
         });
+
+        map.on('style.load', () => {
+          if (cancelled) return;
+          addSourcesAndLayers();
+        });
+
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        setError(`Mapbox failed to load: ${message}`);
+        setError(`Mapbox failed: ${err instanceof Error ? err.message : 'Unknown'}`);
       }
     };
 
     init();
-
     return () => {
       cancelled = true;
-      if (popupRef.current) {
-        popupRef.current.remove();
-        popupRef.current = null;
-      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [fieldCenter.latitude, fieldCenter.longitude, fieldBoundary, sensors]);
+  }, [fieldCenter.latitude, fieldCenter.longitude, fieldBoundary]);
+
+  // Update heatmap and interaction layer opacity
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    
+    if (map.getLayer('zone-polygons-fill')) {
+      map.setPaintProperty('zone-polygons-fill', 'fill-opacity', mapMode === 'zones' ? 0.4 : 0);
+    }
+    
+    if (map.getLayer('heat-surface')) {
+      map.setLayoutProperty('heat-surface', 'visibility', mapMode === 'heatmap' ? 'visible' : 'none');
+    }
+  }, [mapMode]);
+
+  // Update SoilGrids Layer with Loading UX
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const isVisible = visibleLayers.includes('soilGrids');
+
+    clearTimeout(loadingTimeoutRef.current);
+
+    if (!isVisible) {
+      if (map.getLayer('soilgrids-layer')) map.removeLayer('soilgrids-layer');
+      if (map.getSource('soilgrids-source')) map.removeSource('soilgrids-source');
+      setMapLoading(false);
+      return;
+    }
+
+    const config = SOILGRIDS_CONFIG[selectedSoilProperty];
+    const layerName = `${config.slug}_${selectedDepth}_mean`;
+    const wmsUrl = `https://maps.isric.org/mapserv?map=/srv/node/mappings/${config.id}.map&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=${layerName}&STYLES=&FORMAT=image/png&TRANSPARENT=TRUE&HEIGHT=256&WIDTH=256&CRS=EPSG:3857&BBOX={bbox-epsg-3857}`;
+
+    setMapLoading(true);
+
+    if (map.getLayer('soilgrids-layer')) map.removeLayer('soilgrids-layer');
+    if (map.getSource('soilgrids-source')) map.removeSource('soilgrids-source');
+
+    map.addSource('soilgrids-source', {
+      type: 'raster',
+      tiles: [wmsUrl],
+      tileSize: 256
+    });
+
+    map.addLayer(
+      {
+        id: 'soilgrids-layer',
+        type: 'raster',
+        source: 'soilgrids-source',
+        paint: { 'raster-opacity': 0.7 }
+      },
+      'zone-polygons-fill'
+    );
+
+    loadingTimeoutRef.current = setTimeout(() => {
+      setMapLoading(false);
+    }, 800);
+
+  }, [visibleLayers, selectedSoilProperty, selectedDepth]);
+
+  const currentThemeRef = useRef(theme);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !map.isStyleLoaded()) return;
 
-    const showZones = mapMode === 'zones' && visibleLayers.length > 0;
-    const showHeatmap = mapMode === 'heatmap' && visibleLayers.length > 0;
+    // Theme switching safety
+    if (currentThemeRef.current !== theme) {
+      currentThemeRef.current = theme;
+      const targetStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
+      map.setStyle(targetStyle);
+      return;
+    }
 
-    if (map.getLayer('zone-polygons-fill')) {
-      map.setLayoutProperty('zone-polygons-fill', 'visibility', showZones ? 'visible' : 'none');
-    }
-    if (map.getLayer('heat-surface')) {
-      map.setLayoutProperty('heat-surface', 'visibility', showHeatmap ? 'visible' : 'none');
-    }
-    if (map.getLayer('zone-polygons-line')) {
-      map.setLayoutProperty(
-        'zone-polygons-line',
-        'visibility',
-        showZones || showHeatmap ? 'visible' : 'none'
-      );
-    }
-    if (map.getLayer('zone-label-layer')) {
-      map.setLayoutProperty('zone-label-layer', 'visibility', showZones ? 'visible' : 'none');
-    }
     if (map.getLayer('active-zone-line')) {
       map.setLayoutProperty('active-zone-line', 'visibility', activeZoneId ? 'visible' : 'none');
       map.setFilter('active-zone-line', ['==', ['get', 'id'], activeZoneId ?? '__none__']);
     }
-    if (map.getLayer('soilgrids-clay-layer')) {
-      map.setLayoutProperty(
-        'soilgrids-clay-layer',
-        'visibility',
-        visibleLayers.includes('soilGrids') ? 'visible' : 'none'
-      );
-    }
 
-    const zoneSource = map.getSource('zones') as any;
-    if (zoneSource?.setData) zoneSource.setData(zonesGeoJson);
-
-    const heatSource = map.getSource('heat-points') as any;
-    if (heatSource?.setData) heatSource.setData(heatGeoJson);
-
-    // Dynamic style update
-    const currentStyle = map.getStyle()?.metadata?.['mapbox:origin'] === 'light-v11' ? 'light' : 'dark';
-    const targetStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/navigation-night-v1';
-    
-    // Note: setStyle resets sources/layers. For simplicity in this demo, 
-    // we might just let the style stick or re-initialize.
-    // However, best practice is to check if style actually changed.
-    // But since the whole component re-mounts on field change, we'll keep it simple.
-  }, [mapMode, visibleLayers, zonesGeoJson, heatGeoJson, activeZoneId, theme]);
+    const zSrc = map.getSource('zones') as any;
+    if (zSrc?.setData) zSrc.setData(zonesGeoJson);
+    const hSrc = map.getSource('heat-points') as any;
+    if (hSrc?.setData) hSrc.setData(heatGeoJson);
+  }, [mapMode, visibleLayers, zonesGeoJson, heatGeoJson, activeZoneId, theme, selectedSoilProperty]);
 
   if (error) {
     return (
@@ -552,10 +456,31 @@ export default function FieldMap({
     );
   }
 
-  return <div ref={containerRef} style={mapContainerStyle} />;
+  return (
+    <View style={styles.container}>
+      <div 
+        ref={containerRef} 
+        style={mapContainerStyle}
+        id="map-container"
+      />
+      
+      {mapLoading && (
+        <View style={styles.loadingOverlay}>
+          <Text style={styles.loadingText}>Fetching Soil Data...</Text>
+          <View style={styles.loaderBar}>
+            <View style={styles.loaderProgress} />
+          </View>
+        </View>
+      )}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: 'relative'
+  },
   webError: {
     padding: 20,
     borderRadius: 12,
@@ -565,5 +490,41 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#fecaca'
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'rgba(5, 150, 105, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    flexDirection: 'column',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+    zIndex: 1000
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1,
+    textTransform: 'uppercase'
+  },
+  loaderBar: {
+    width: '100%',
+    height: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 1,
+    overflow: 'hidden'
+  },
+  loaderProgress: {
+    width: '40%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 1,
+    // Note: CSS Animation would be better here for web
   }
 });

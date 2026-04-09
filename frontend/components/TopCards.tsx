@@ -56,53 +56,49 @@ const styles = StyleSheet.create({
     minWidth: '22%',
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    shadowColor: '#00F59B',
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 4
+    borderColor: 'rgba(6, 78, 59, 0.3)',
   },
   label: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.4)',
-    marginBottom: 12,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.3)',
+    marginBottom: 8,
     fontWeight: '800',
     letterSpacing: 1.5,
     textTransform: 'uppercase'
   },
   value: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: '900',
     color: '#FFFFFF'
   },
   sparklineRow: {
-    marginTop: 16,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 4,
-    height: 32
+    gap: 3,
+    height: 24
   },
   sparklineBar: {
-    width: 6,
-    borderRadius: 3,
-    backgroundColor: '#00F59B'
+    width: 4,
+    borderRadius: 2,
+    backgroundColor: '#059669'
   },
   signalRow: {
-    marginTop: 16,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 5
+    gap: 4
   },
   signalBar: {
-    width: 8,
-    height: 12,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+    width: 6,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)'
   },
   signalBarActive: {
-    backgroundColor: '#00F59B'
+    backgroundColor: '#059669'
   }
 });

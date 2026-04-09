@@ -297,7 +297,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-north-west',
     fieldId: 'field-2',
-    name: 'Northwest block',
+    name: 'Sector 1',
     color: 'green',
     polygon: [
       { latitude: 49.9698, longitude: 82.392 },
@@ -311,7 +311,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-east-strip',
     fieldId: 'field-2',
-    name: 'East strip',
+    name: 'Sector 2',
     color: 'yellow',
     polygon: [
       { latitude: 49.9677, longitude: 82.3967 },
@@ -323,7 +323,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-south-core',
     fieldId: 'field-2',
-    name: 'South core',
+    name: 'Sector 3',
     color: 'red',
     polygon: [
       { latitude: 49.9663, longitude: 82.3964 },
@@ -335,7 +335,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-west-band',
     fieldId: 'field-2',
-    name: 'West band',
+    name: 'Sector 4',
     color: 'green',
     polygon: [
       { latitude: 49.9679, longitude: 82.3908 },
@@ -347,7 +347,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-center-lane',
     fieldId: 'field-2',
-    name: 'Center lane',
+    name: 'Sector 5',
     color: 'yellow',
     polygon: [
       { latitude: 49.9671, longitude: 82.3923 },
@@ -360,7 +360,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-north-strip',
     fieldId: 'field-3',
-    name: 'North strip',
+    name: 'Sector 1',
     color: 'green',
     polygon: [
       { latitude: 49.9592, longitude: 82.3745 },
@@ -372,7 +372,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-center',
     fieldId: 'field-3',
-    name: 'Center bed',
+    name: 'Sector 2',
     color: 'yellow',
     polygon: [
       { latitude: 49.958, longitude: 82.3766 },
@@ -384,7 +384,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-south-hotspot',
     fieldId: 'field-3',
-    name: 'South hotspot',
+    name: 'Sector 3',
     color: 'red',
     polygon: [
       { latitude: 49.956, longitude: 82.3788 },
@@ -396,7 +396,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-west',
     fieldId: 'field-3',
-    name: 'West reserve',
+    name: 'Sector 4',
     color: 'green',
     polygon: [
       { latitude: 49.9592, longitude: 82.3745 },
@@ -408,7 +408,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-south-west',
     fieldId: 'field-3',
-    name: 'Southwest shoulder',
+    name: 'Sector 5',
     color: 'yellow',
     polygon: [
       { latitude: 49.9557, longitude: 82.3736 },

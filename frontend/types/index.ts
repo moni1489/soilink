@@ -1,6 +1,9 @@
 export type SensorStatus = 'healthy' | 'warning' | 'critical';
 export type RecommendationLevel = 'critical' | 'warning' | 'plan' | 'premium';
 export type RecommendationTimelineStatus = 'pending' | 'inProgress' | 'done';
+export type SoilGridsProperty = 'clay' | 'sand' | 'silt' | 'phh2o' | 'nitrogen' | 'soc' | 'bdod';
+export type SoilDepth = '0-5cm' | '5-15cm' | '15-30cm' | '30-60cm' | '60-100cm';
+
 export type LayerKey =
   | 'soilMoisture'
   | 'temperature'
@@ -23,6 +26,8 @@ export interface Sensor {
   status: SensorStatus;
   lastUpdated: string;
   pH: number;
+  nitrogen: number;
+  soc: number;
   soilTemperature: number;
   soilMoisture: number;
   electricalConductivity: number;
