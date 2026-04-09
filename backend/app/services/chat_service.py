@@ -149,7 +149,7 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     prompt = messages[0]["content"]
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.0-flash-lite",
         contents=prompt,
         config=types.GenerateContentConfig(
             system_instruction=_SYSTEM_PROMPT,
