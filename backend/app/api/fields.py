@@ -20,6 +20,8 @@ class FieldIn(BaseModel):
     potassium: float = 40.0
     humidity: float = 60.0
     rainfall: float = 100.0
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class FieldOut(BaseModel):
@@ -33,6 +35,8 @@ class FieldOut(BaseModel):
     potassium: float
     humidity: float
     rainfall: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -46,6 +50,8 @@ class FieldUpdate(BaseModel):
     potassium: Optional[float] = None
     humidity: Optional[float] = None
     rainfall: Optional[float] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 @router.get("", response_model=list[FieldOut])
