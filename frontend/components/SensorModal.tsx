@@ -124,11 +124,6 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
             {t('gasCompositionValue')}: {sensor.gasComposition}
           </Text>
 
-          {sensor.premiumFeatures?.vibroacousticSoilStructureAnalysis ? (
-            <Text style={styles.premiumLine}>
-              {t('vibroacousticAnalysis')}: {sensor.premiumFeatures.vibroacousticSoilStructureAnalysis}
-            </Text>
-          ) : null}
 
           <Text style={styles.trendTitle}>{t('sensorTrends')}</Text>
           <View>

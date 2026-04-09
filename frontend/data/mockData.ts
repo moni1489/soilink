@@ -65,7 +65,7 @@ export const sensors: Sensor[] = [
     soilMoisture: 54,
     electricalConductivity: 1.08,
     gasComposition: 'N2 78%, O2 21%, CO2 0.04%',
-    premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Loose and stable profile, low compaction risk' }
+    premiumFeatures: {}
   },
   {
     id: 'sensor-2',
@@ -463,16 +463,4 @@ export const recommendations: Recommendation[] = [
       { id: 'rec-3-step-2', labelKey: 'rec3Step2', dueAt: '2026-03-23 13:30', completed: false }
     ]
   },
-  {
-    id: 'rec-4',
-    fieldId: 'field-3',
-    level: 'premium',
-    titleKey: 'recVibroAlertTitle',
-    messageKey: 'recVibroAlertMessage',
-    sensorId: 'sensor-13',
-    timeline: [
-      { id: 'rec-4-step-1', labelKey: 'rec4Step1', dueAt: '2026-03-22 18:45', completed: true },
-      { id: 'rec-4-step-2', labelKey: 'rec4Step2', dueAt: '2026-03-23 07:15', completed: false }
-    ]
-  }
 ];

@@ -10,7 +10,7 @@
   "pH": "pH",
   "electricalConductivity": "Электропроводность",
   "gasComposition": "Состав газов",
-  "vibroacousticAnalysis": "Виброакустический анализ",
+  "soilGrids": "Данные SoilGrids (Глина)",
   "critical": "КРИТИЧНО",
   "warning": "ПРЕДУПРЕЖДЕНИЕ",
   "plan": "ПЛАН",

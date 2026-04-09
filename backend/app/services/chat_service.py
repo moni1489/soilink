@@ -1,5 +1,4 @@
-from google import genai
-from google.genai import types
+import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -94,9 +93,9 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
     Send a question to Claude with full ML + sensor context for the given field.
     Returns {reply, context_used}.
     """
-    if not settings.GEMINI_API_KEY:
+    if not settings.GROQ_API_KEY:
         return {
-            "reply": "Chatbot is not configured. Please set GEMINI_API_KEY in the backend .env file.",
+            "reply": "Chatbot is not configured. Please set GROQ_API_KEY in the backend .env file.",
             "context_used": False,
         }
 
@@ -146,18 +145,34 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
         }
     ]
 
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    prompt = messages[0]["content"]
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=_SYSTEM_PROMPT,
-            max_output_tokens=1024,
-        ),
-    )
+    headers = {
+        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": messages[0]["content"]}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1024
+    }
 
-    reply = response.text if response.text else "No response generated."
+    try:
+        with httpx.Client() as client:
+            response = client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            reply = data["choices"][0]["message"]["content"]
+    except Exception as e:
+        reply = f"Error calling Groq API: {str(e)}"
     return {
         "reply": reply,
         "context_used": True,

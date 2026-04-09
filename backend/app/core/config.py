@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./soilink.db"
     ML_MODELS_DIR: str = "ml_models"
     GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
     OPENMETEO_API_URL: str = "https://api.open-meteo.com/v1/forecast"
 
     class Config:

@@ -10,7 +10,7 @@
   "pH": "pH",
   "electricalConductivity": "Electrical Conductivity",
   "gasComposition": "Gas Composition",
-  "vibroacousticAnalysis": "Vibroacoustic Analysis",
+  "soilGrids": "SoilGrids Data (Clay)",
   "critical": "CRITICAL",
   "warning": "WARNING",
   "plan": "PLAN",
