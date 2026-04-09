@@ -1,4 +1,5 @@
-import anthropic
+from google import genai
+from google.genai import types
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -93,9 +94,9 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
     Send a question to Claude with full ML + sensor context for the given field.
     Returns {reply, context_used}.
     """
-    if not settings.ANTHROPIC_API_KEY:
+    if not settings.GEMINI_API_KEY:
         return {
-            "reply": "Chatbot is not configured. Please set ANTHROPIC_API_KEY in the backend .env file.",
+            "reply": "Chatbot is not configured. Please set GEMINI_API_KEY in the backend .env file.",
             "context_used": False,
         }
 
@@ -145,15 +146,18 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
         }
     ]
 
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-    response = client.messages.create(
-        model="claude-opus-4-6",
-        max_tokens=1024,
-        system=_SYSTEM_PROMPT,
-        messages=messages,
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    prompt = messages[0]["content"]
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            system_instruction=_SYSTEM_PROMPT,
+            max_output_tokens=1024,
+        ),
     )
 
-    reply = response.content[0].text if response.content else "No response generated."
+    reply = response.text if response.text else "No response generated."
     return {
         "reply": reply,
         "context_used": True,
