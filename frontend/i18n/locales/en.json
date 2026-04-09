@@ -127,5 +127,6 @@
   "soilStable": "Stable, Slightly Acidic",
   "today": "Today",
   "daysAgo": "days ago",
-  "historicalTimeline": "Soil Condition History"
+  "historicalTimeline": "Soil Condition History",
+  "askAgronomist": "Ask Agronomist"
 }

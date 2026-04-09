@@ -55,11 +55,11 @@ const styles = StyleSheet.create({
   card: {
     minWidth: '22%',
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(6, 78, 59, 0.3)',
+    borderColor: 'rgba(5, 245, 155, 0.1)',
   },
   label: {
     fontSize: 11,

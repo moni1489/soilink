@@ -72,11 +72,11 @@ export default function PredictionCard({ prediction }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(5, 150, 105, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(5, 150, 105, 0.2)',
+    borderColor: 'rgba(5, 245, 155, 0.1)',
     marginBottom: 20,
   },
   header: {
@@ -86,13 +86,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   aiBadge: {
-    backgroundColor: '#059669',
+    backgroundColor: '#05F59B',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   aiBadgeText: {
-    color: '#FFFFFF',
+    color: '#052A1D',
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,
@@ -163,12 +163,12 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#059669',
+    backgroundColor: '#05F59B',
     borderRadius: 2,
   },
   confidenceText: {
     fontSize: 10,
-    color: '#059669',
+    color: '#05F59B',
     fontWeight: '800',
     marginTop: 8,
   },
