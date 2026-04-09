@@ -88,4 +88,6 @@ export interface Prediction {
   soilStateConfidence: number;
   featureSnapshot?: any;
   lastUpdated: string;
+  isHistorical?: boolean;
+  historicalDate?: number;
 }

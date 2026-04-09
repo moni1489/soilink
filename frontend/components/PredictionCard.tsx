@@ -13,11 +13,22 @@ export default function PredictionCard({ prediction }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.aiBadge}>
-          <Text style={styles.aiBadgeText}>{t('aiPrediction')}</Text>
+        <View style={styles.aiBadgeContainer}>
+          <View style={[styles.aiBadge, prediction.isHistorical && styles.historicalBadge]}>
+            <Text style={styles.aiBadgeText}>
+              {prediction.isHistorical ? 'HISTORICAL DATA' : t('aiPrediction')}
+            </Text>
+          </View>
+          {prediction.isHistorical && (
+            <View style={styles.archiveTag}>
+              <Text style={styles.archiveTagText}>-{prediction.historicalDate}d</Text>
+            </View>
+          )}
         </View>
         <Text style={styles.updateTime}>
-          {t('lastUpdated')}: {new Date(prediction.lastUpdated).toLocaleDateString()}
+          {prediction.isHistorical 
+            ? `${prediction.historicalDate} ${t('daysAgo')}`
+            : `${t('lastUpdated')}: ${new Date(prediction.lastUpdated).toLocaleDateString()}`}
         </Text>
       </View>
 
@@ -85,6 +96,27 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,
+  },
+  aiBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  historicalBadge: {
+    backgroundColor: '#6B7280',
+  },
+  archiveTag: {
+    backgroundColor: 'rgba(107, 114, 128, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(107, 114, 128, 0.3)',
+  },
+  archiveTagText: {
+    color: '#9CA3AF',
+    fontSize: 9,
+    fontWeight: 'bold',
   },
   updateTime: {
     fontSize: 11,
