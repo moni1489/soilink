@@ -4,33 +4,33 @@ import { Field, LayerKey, SoilGridsProperty, SoilDepth } from '../types';
 import { useTranslation } from 'react-i18next';
 
 const availableLayers: { key: LayerKey; label: string }[] = [
-  { key: 'soilMoisture', label: 'Влажность почвы' },
-  { key: 'temperature', label: 'Температура' },
-  { key: 'pH', label: 'pH (Кислотность)' },
-  { key: 'electricalConductivity', label: 'Электропроводность' },
-  { key: 'gasComposition', label: 'Состав газов' },
-  { key: 'soilGrids', label: 'Глобальная карта почв (250м)' }
+  { key: 'soilMoisture', label: 'soilMoisture' },
+  { key: 'temperature', label: 'temperature' },
+  { key: 'pH', label: 'pH' },
+  { key: 'electricalConductivity', label: 'electricalConductivity' },
+  { key: 'gasComposition', label: 'gasComposition' },
+  { key: 'soilGrids', label: 'soilGrids' }
 ];
 
 const soilGridsProperties: { key: SoilGridsProperty; label: string }[] = [
-  { key: 'clay', label: 'Глина' },
-  { key: 'sand', label: 'Песок' },
-  { key: 'silt', label: 'Ил' },
-  { key: 'phh2o', label: 'pH (Кислотность)' },
-  { key: 'nitrogen', label: 'Азот' },
-  { key: 'soc', label: 'Орг. углерод' },
-  { key: 'bdod', label: 'Плотность' },
+  { key: 'clay', label: 'clay' },
+  { key: 'sand', label: 'sand' },
+  { key: 'silt', label: 'silt' },
+  { key: 'phh2o', label: 'phh2o' },
+  { key: 'nitrogen', label: 'nitrogen' },
+  { key: 'soc', label: 'soc' },
+  { key: 'bdod', label: 'bdod' },
 ];
 
 const depthLevels: SoilDepth[] = ['0-5cm', '5-15cm', '15-30cm', '30-60cm', '60-100cm'];
 
 const layerGlyphMap: Record<LayerKey, string> = {
-  soilMoisture: '💧',
-  temperature: '🌡️',
-  pH: '🧪',
-  electricalConductivity: '⚡',
-  gasComposition: '💨',
-  soilGrids: '🌍'
+  soilMoisture: '',
+  temperature: '',
+  pH: '',
+  electricalConductivity: '',
+  gasComposition: '',
+  soilGrids: ''
 };
 
 interface Props {
@@ -85,13 +85,13 @@ export default function Sidebar({
           onPress={() => onSelectTab('map')}
           style={[styles.tab, activeTab === 'map' && styles.tabActive]}
         >
-          <Text style={[styles.tabText, activeTab === 'map' && styles.tabTextActive]}>Интерактивная карта</Text>
+          <Text style={[styles.tabText, activeTab === 'map' && styles.tabTextActive]}>{t('interactiveMap')}</Text>
         </Pressable>
         <Pressable 
           onPress={() => onSelectTab('ai')}
           style={[styles.tab, activeTab === 'ai' && styles.tabActive]}
         >
-          <Text style={[styles.tabText, activeTab === 'ai' && styles.tabTextActive]}>ИИ Агроном</Text>
+          <Text style={[styles.tabText, activeTab === 'ai' && styles.tabTextActive]}>{t('aiAgronomist')}</Text>
         </Pressable>
       </View>
 
@@ -121,25 +121,21 @@ export default function Sidebar({
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Слои карты</Text>
+            <Text style={styles.sectionTitle}>{t('mapLayers')}</Text>
             {availableLayers.map((layer) => {
               const isActive = visibleLayers.includes(layer.key);
               return (
                 <React.Fragment key={layer.key}>
-                  <Pressable
-                    onPress={() => onToggleLayer(layer.key)}
-                    style={[styles.layerItem, isActive && styles.layerItemActive]}
-                  >
-                    <View style={styles.layerLeft}>
-                      <Text style={styles.layerIcon}>{layerGlyphMap[layer.key] || '📍'}</Text>
-                      <Text style={[styles.layerLabel, isActive && styles.layerLabelActive]}>
-                        {t(layer.label)}
-                      </Text>
-                    </View>
-                    <View style={[styles.checkbox, isActive && styles.checkboxActive]}>
-                      {isActive && <Text style={styles.checkMark}>✓</Text>}
-                    </View>
-                  </Pressable>
+                    <Pressable
+                      onPress={() => onToggleLayer(layer.key)}
+                      style={[styles.layerItem, isActive && styles.layerItemActive]}
+                    >
+                      <View style={styles.layerLeft}>
+                        <Text style={[styles.layerLabel, isActive && styles.layerLabelActive]}>
+                          {t(layer.label)}
+                        </Text>
+                      </View>
+                    </Pressable>
                   
                       {layer.key === 'soilGrids' && isActive && (
                         <>
@@ -157,13 +153,13 @@ export default function Sidebar({
                                   styles.subPropertyLabel,
                                   selectedSoilProperty === p.key && styles.subPropertyLabelActive
                                 ]}>
-                                  {p.label}
+                                  {t(p.label)}
                                 </Text>
                               </Pressable>
                             ))}
                           </View>
                           <View style={styles.depthSelector}>
-                            <Text style={styles.depthTitle}>ВЫБОР ГЛУБИНЫ</Text>
+                            <Text style={styles.depthTitle}>{t('depthSelector')}</Text>
                             <View style={styles.depthChips}>
                               {depthLevels.map((d) => (
                                 <Pressable 
@@ -178,7 +174,7 @@ export default function Sidebar({
                               ))}
                             </View>
                             <TouchableOpacity style={styles.scannerBtn} onPress={onOpenScanner}>
-                              <Text style={styles.scannerBtnText}>Вертикальный сканер</Text>
+                              <Text style={styles.scannerBtnText}>{t('verticalScannerBtn')}</Text>
                             </TouchableOpacity>
                           </View>
                         </>
@@ -189,29 +185,36 @@ export default function Sidebar({
           </View>
         </>
       ) : (
-        <View style={styles.aiTab}>
-          <Text style={styles.aiTabTitle}>ИИ Агроном-консультант</Text>
+          <View style={styles.aiTab}>
+          <Text style={styles.aiTabTitle}>{t('aiConsultantTitle')}</Text>
           <Text style={styles.aiTabDesc}>
-            Ваш автоматизированный эксперт. Он всегда в курсе текущих слоев карты и данных с ваших датчиков.
+            {t('aiConsultantDesc')}
           </Text>
           
           <View style={styles.aiContextCard}>
             <View style={styles.contextHeader}>
-              <Text style={styles.contextHeaderTitle}>Текущий контекст</Text>
+              <Text style={styles.contextHeaderTitle}>{t('currentContext')}</Text>
               <View style={styles.liveBadge} />
             </View>
             <View style={styles.contextRow}>
-              <Text style={styles.contextKey}>Слой:</Text>
-              <Text style={styles.contextVal}>{selectedSoilProperty}</Text>
+              <Text style={styles.contextKey}>{t('layer')}:</Text>
+              <Text style={styles.contextVal}>{t(selectedSoilProperty)}</Text>
             </View>
             <View style={styles.contextRow}>
-              <Text style={styles.contextKey}>Глубина:</Text>
+              <Text style={styles.contextKey}>{t('depth')}:</Text>
               <Text style={styles.contextVal}>{selectedDepth}</Text>
             </View>
           </View>
 
+          <View style={styles.suggestionsContainer}>
+            <Text style={styles.suggestionsTitle}>{t('tryAsking')}</Text>
+            <Text style={styles.suggestionText}>• {t('suggestQ1')}</Text>
+            <Text style={styles.suggestionText}>• {t('suggestQ2')}</Text>
+            <Text style={styles.suggestionText}>• {t('suggestQ3')}</Text>
+          </View>
+
           <TouchableOpacity style={styles.aiActionButton} onPress={onOpenAI}>
-            <Text style={styles.aiActionButtonText}>ОТПРАВИТЬ КОНТЕКСТ В ЧАТ</Text>
+            <Text style={styles.aiActionButtonText}>{t('sendToChat')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -537,6 +540,23 @@ const styles: any = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.5
+  },
+  suggestionsContainer: {
+    gap: 8,
+    marginTop: 10
+  },
+  suggestionsTitle: {
+    color: 'rgba(255, 255, 255, 0.2)',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 4
+  },
+  suggestionText: {
+    color: 'rgba(5, 150, 105, 0.8)',
+    fontSize: 12,
+    fontWeight: '600',
+    fontStyle: 'italic'
   },
   footerText: {
     color: 'rgba(255, 255, 255, 0.1)',

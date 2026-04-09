@@ -11,7 +11,7 @@ export type LayerKey =
   | 'electricalConductivity'
   | 'gasComposition'
   | 'soilGrids';
-export type MapMode = 'zones' | 'heatmap';
+export type MapMode = 'zones' | 'heatmap' | 'satellite';
 
 export interface Coordinate {
   latitude: number;

@@ -12,6 +12,9 @@ _SYSTEM_PROMPT = """You are an expert agricultural advisor for the SoiLink soil 
 You have access to real-time sensor readings, ML model predictions, and active field recommendations.
 Your role is to help farmers understand their soil health and give actionable, specific advice.
 
+IMPORTANT: Respond strictly in the language requested by the user or the language parameter provided.
+Languages supported: English, Russian, Kazakh.
+
 Guidelines:
 - Base all advice strictly on the provided sensor data and ML predictions
 - Explain WHY each action is needed (link to specific sensor values)
@@ -90,7 +93,7 @@ def build_chat_context(db: Session, field_id: str) -> dict:
     }
 
 
-def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Optional[dict] = None) -> dict:
+def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Optional[dict] = None, language: str = "ru") -> dict:
     """
     Send a question to Claude with full ML + sensor context for the given field.
     Includes optional rich_context from the UI (depth, selected layers).
@@ -163,6 +166,7 @@ def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Opt
             "role": "user",
             "content": (
                 f"<field_data>\n{context_block}\n</field_data>\n\n"
+                f"Language required: {language}\n"
                 f"Farmer question: {user_message}"
             ),
         }

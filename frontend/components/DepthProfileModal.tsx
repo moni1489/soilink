@@ -1,5 +1,5 @@
-import React from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, ScrollView, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SoilDepth, SoilGridsProperty } from '../types';
 
 interface Props {
@@ -9,27 +9,6 @@ interface Props {
   data: Record<SoilDepth, Record<string, number>> | null;
 }
 
-const DEPTH_LABELS: Record<SoilDepth, string> = {
-  '0-5cm': 'Поверхность',
-  '5-15cm': 'Верхний слой',
-  '15-30cm': 'Корневая зона',
-  '30-60cm': 'Подпочва',
-  '60-100cm': 'Глубокий слой'
-};
-
-const getPropertyLabel = (prop: SoilGridsProperty) => {
-  const labels: Record<SoilGridsProperty, string> = {
-    phh2o: 'Уровень pH',
-    nitrogen: 'Азот (N)',
-    soc: 'Орг. углерод',
-    clay: 'Глина',
-    sand: 'Песок',
-    silt: 'Ил',
-    bdod: 'Плотность'
-  };
-  return labels[prop] || prop;
-};
-
 const normalizeVal = (prop: string, val: number) => {
   if (prop === 'phh2o') return val / 10;
   if (prop === 'nitrogen' || prop === 'soc' || prop.includes('content') || prop === 'clay' || prop === 'sand' || prop === 'silt') return val / 10;
@@ -38,6 +17,20 @@ const normalizeVal = (prop: string, val: number) => {
 };
 
 export default function DepthProfileModal({ visible, onClose, property, data }: Props) {
+  const { t } = useTranslation();
+
+  const DEPTH_LABELS: Record<SoilDepth, string> = {
+    '0-5cm': t('surface'),
+    '5-15cm': t('topLayer'),
+    '15-30cm': t('rootZone'),
+    '30-60cm': t('subsoil'),
+    '60-100cm': t('deepLayer')
+  };
+
+  const getPropertyLabel = (prop: SoilGridsProperty) => {
+    return t(prop === 'phh2o' ? 'phh2o' : prop);
+  };
+
   if (!data) return null;
 
   const depths: SoilDepth[] = ['0-5cm', '5-15cm', '15-30cm', '30-60cm', '60-100cm'];
@@ -62,8 +55,8 @@ export default function DepthProfileModal({ visible, onClose, property, data }: 
         <View style={styles.content}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>Вертикальный профиль</Text>
-              <Text style={styles.subtitle}>Анализ: {getPropertyLabel(property)} (0-100см)</Text>
+              <Text style={styles.title}>{t('verticalProfile')}</Text>
+              <Text style={styles.subtitle}>{t('analysis')}: {getPropertyLabel(property)} (0-100см)</Text>
             </View>
             <Pressable onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeText}>✕</Text>
@@ -90,15 +83,18 @@ export default function DepthProfileModal({ visible, onClose, property, data }: 
           </View>
 
           <View style={styles.footerInsight}>
-            <Text style={styles.insightTitle}>АНАЛИЗ СКАНЕРА</Text>
+            <Text style={styles.insightTitle}>{t('scannerAnalysis')}</Text>
             <Text style={styles.insightText}>
-              Глубинный анализ показывает {chartData[0].value > chartData[4].value ? 'снижение' : 'повышение'} уровня ({getPropertyLabel(property)}) на нижних слоях. 
-              {property === 'nitrogen' && chartData[2].value < chartData[0].value && " Обнаружено вымывание азота в корневой зоне."}
+              {t('depthScannerAnalysisText', {
+                trend: chartData[0].value > chartData[4].value ? t('scannerDecreasing') : t('scannerIncreasing'),
+                property: getPropertyLabel(property),
+                extra: property === 'nitrogen' && chartData[2].value < chartData[0].value ? t('leachingDetected') : ''
+              })}
             </Text>
           </View>
 
           <Pressable style={styles.doneBtn} onPress={onClose}>
-            <Text style={styles.doneBtnText}>ЗАКРЫТЬ СКАНЕР</Text>
+            <Text style={styles.doneBtnText}>{t('closeScanner')}</Text>
           </Pressable>
         </View>
       </View>
@@ -115,12 +111,12 @@ const styles = StyleSheet.create({
     padding: 20
   },
   content: {
-    backgroundColor: '#0A0C10',
+    backgroundColor: '#000000',
     width: '100%',
     maxWidth: 500,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#059669',
+    borderColor: '#064E3B',
     padding: 32,
     gap: 32
   },

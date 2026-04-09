@@ -115,12 +115,12 @@ const styles = StyleSheet.create({
     padding: 20
   },
   content: {
-    backgroundColor: '#0A0C10',
+    backgroundColor: '#000000',
     width: '100%',
     maxWidth: 600,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: '#064E3B',
     padding: 32,
     gap: 24,
     maxHeight: '90%'

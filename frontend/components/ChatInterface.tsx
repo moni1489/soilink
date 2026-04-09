@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 
+import { useTranslation } from 'react-i18next';
 import { SoilDepth, SoilGridsProperty } from '../types';
 
 interface Message {
@@ -20,9 +21,10 @@ interface Props {
 }
 
 export default function ChatInterface({ visible, onClose, context }: Props) {
+  const { t, i18n } = useTranslation();
   if (!visible) return null;
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Привет! Я твой агроном-помощник. Чем могу помочь сегодня?' }
+    { role: 'assistant', content: t('aiGreeting') }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,14 +44,15 @@ export default function ChatInterface({ visible, onClose, context }: Props) {
         body: JSON.stringify({ 
           field_id: context?.field?.id || 'unknown', 
           message: userMsg,
-          context: context 
+          context: context,
+          language: i18n.language
         }),
       });
 
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Ошибка связи с ИИ. Проверь запущен ли бэкенд.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: t('aiError') }]);
     } finally {
       setLoading(false);
     }
@@ -87,7 +90,7 @@ export default function ChatInterface({ visible, onClose, context }: Props) {
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="Спроси меня о почве..."
+            placeholder={t('askAboutSoil')}
             placeholderTextColor="rgba(255,255,255,0.4)"
             value={input}
             onChangeText={setInput}
