@@ -15,3 +15,5 @@ class Field(Base):
     potassium = Column(Float, default=40.0)
     humidity = Column(Float, default=60.0)
     rainfall = Column(Float, default=100.0)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
