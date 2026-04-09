@@ -97,8 +97,10 @@ def predict_fertilizer_ml(
     moisture: float,
     soil_type: str,
     crop_type: str,
+    nitrogen: float = 40.0,
+    phosphorus: float = 40.0,
+    potassium: float = 40.0,
 ) -> Optional[str]:
-    """Use the uploaded ML model. Note: this model has ~25% accuracy."""
     load_models()
     if _fert_model is None or _fert_encoders is None:
         return None
@@ -118,11 +120,21 @@ def predict_fertilizer_ml(
     soil_encoded = soil_enc.transform([soil_type])[0]
     crop_encoded = crop_enc.transform([crop_type])[0]
 
-    # Column order must match training: ['Temparature', 'Humidity ', 'Moisture', 'Soil Type', 'Crop Type']
-    df = pd.DataFrame(
-        [[temperature, humidity, moisture, soil_encoded, crop_encoded]],
-        columns=["Temparature", "Humidity ", "Moisture", "Soil Type", "Crop Type"],
-    )
+    # Use stored feature list if available (new model includes N, P, K)
+    features = _fert_encoders.get("features",
+        ["Temparature", "Humidity ", "Moisture", "Soil Type", "Crop Type"])
+
+    row_data = {
+        "Temparature": temperature,
+        "Humidity ": humidity,
+        "Moisture": moisture,
+        "Soil Type": soil_encoded,
+        "Crop Type": crop_encoded,
+        "N": nitrogen,
+        "P": phosphorus,
+        "K": potassium,
+    }
+    df = pd.DataFrame([[row_data[f] for f in features]], columns=features)
     pred = _fert_model.predict(df)[0]
     return fert_enc.inverse_transform([pred])[0]
 
