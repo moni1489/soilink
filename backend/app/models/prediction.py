@@ -14,4 +14,6 @@ class Prediction(Base):
     crop_confidence = Column(Float, nullable=True)
     fertilizer_recommendation = Column(String, nullable=True)
     fertilizer_source = Column(String, default="rule_based")
+    soil_state = Column(String, nullable=True)
+    soil_state_confidence = Column(Float, nullable=True)
     feature_snapshot = Column(JSON, nullable=True)
