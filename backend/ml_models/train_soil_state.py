@@ -1,7 +1,6 @@
 """
 Soil State Classifier — LightGBM
-=================================
-Trains a 4-class soil health classifier from synthetic agronomic data.
+
 
 Classes:
     0 = critical   (immediate intervention needed)
