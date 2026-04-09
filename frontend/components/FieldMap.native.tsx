@@ -95,9 +95,18 @@ export default function FieldMap({
   const showZones = mapMode === 'zones';
   const showHeatmap = mapMode === 'heatmap';
 
+  const temporalSensors = useMemo(() => {
+    if (historicalOffset === 0) return sensors;
+    return sensors.map(s => ({
+      ...s,
+      soilMoisture: Math.max(0, Math.min(100, s.soilMoisture + Math.sin(historicalOffset * 1.5 + (s.id === 'sensor-3' ? 5 : 0)) * 25)),
+      pH: Math.max(0, Math.min(14, s.pH + Math.cos(historicalOffset * 0.8) * 0.8))
+    }));
+  }, [sensors, historicalOffset]);
+
   const zoneHeatIndex = useMemo(
-    () => buildZoneHeatIndex(zones, sensors, visibleLayers),
-    [zones, sensors, visibleLayers]
+    () => buildZoneHeatIndex(zones, temporalSensors, visibleLayers),
+    [zones, temporalSensors, visibleLayers]
   );
 
   return (
@@ -112,8 +121,8 @@ export default function FieldMap({
         altitude: 2000,
         zoom: 15.5
       }}
-      mapType={theme === 'dark' ? 'hybrid' : 'standard'}
-      customMapStyle={Platform.OS === 'android' && theme === 'dark' ? darkMapStyle : undefined}
+      mapType={mapMode === 'satellite' ? 'hybrid' : 'standard'}
+      customMapStyle={theme === 'dark' ? darkMapStyle : undefined}
       showsUserLocation={false}
       pitchEnabled={true}
     >

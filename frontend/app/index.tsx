@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Platform, Animated } from 'react-native';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Platform, Animated, useWindowDimensions, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../i18n/i18n';
 import { useTranslation } from 'react-i18next';
 import TopCards from '../components/TopCards';
@@ -47,13 +48,17 @@ export default function Dashboard() {
   const [selectedSoilProperty, setSelectedSoilProperty] = useState<SoilGridsProperty>('clay');
   const [selectedDepth, setSelectedDepth] = useState<SoilDepth>('0-5cm');
   const [selectedDaysAgo, setSelectedDaysAgo] = useState(0);
-  const [activeTab, setActiveTab] = useState<'map' | 'ai'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'ai' | 'recommendations'>('map');
   const [chatVisible, setChatVisible] = useState(false);
   const [registrationVisible, setRegistrationVisible] = useState(false);
   const [comparisonVisible, setComparisonVisible] = useState(false);
   const [globalSoilData, setGlobalSoilData] = useState<any>(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [scannerData, setScannerData] = useState<any>(null);
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+  const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const activeField = useMemo(
@@ -213,23 +218,89 @@ export default function Dashboard() {
   return (
     <View style={styles.root}>
       <View style={styles.contentContainer}>
-        <View style={styles.localeRow}>
-          <Text style={styles.localeLabel}>{t('chooseLanguage')}:</Text>
-          {languageButtons.map((item) => (
-            <TouchableOpacity
-              key={item.code}
-              style={[styles.langButton, locale === item.code ? styles.langActive : undefined]}
-              onPress={() => setLanguage(item.code)}
-            >
-              <Text style={styles.langText}>{item.label}</Text>
+        {isMobile && (
+          <View style={[styles.mobileHeader, { paddingTop: Math.max(insets.top, 15) }]}>
+            <TouchableOpacity onPress={() => setMobileMenuVisible(true)} style={styles.headerDotBtn}>
+              <View style={styles.headerDot} />
+              <View style={[styles.headerDot, { opacity: 0.6 }]} />
+              <View style={[styles.headerDot, { opacity: 0.3 }]} />
             </TouchableOpacity>
-          ))}
-        </View>
+            <Text style={styles.headerTitle}>Soilink</Text>
+            <View style={styles.langMiniRow}>
+              {languageButtons.map((item) => (
+                <TouchableOpacity
+                  key={item.code}
+                  onPress={() => setLanguage(item.code)}
+                  style={[styles.langMiniBtn, locale === item.code ? styles.langMiniActive : undefined]}
+                >
+                  <Text style={styles.langMiniText}>{item.code.toUpperCase()}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {!isMobile && (
+          <View style={styles.localeRow}>
+            <Text style={styles.localeLabel}>{t('chooseLanguage')}:</Text>
+            {languageButtons.map((item) => (
+              <TouchableOpacity
+                key={item.code}
+                style={[styles.langButton, locale === item.code ? styles.langActive : undefined]}
+                onPress={() => setLanguage(item.code)}
+              >
+                <Text style={styles.langText}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.sectionTitle}>{t('topSummary')}</Text>
         <TopCards stats={dynamicStats} />
 
-        {Platform.OS === 'web' ? (
+        <Modal
+          visible={mobileMenuVisible && isMobile}
+          animationType="slide"
+          transparent={false}
+          onRequestClose={() => setMobileMenuVisible(false)}
+        >
+          <View style={styles.mobileMenuContainer}>
+            <TouchableOpacity style={styles.closeMenuBtn} onPress={() => setMobileMenuVisible(false)}>
+              <Text style={styles.closeMenuText}>✕ {t('close') || 'Close'}</Text>
+            </TouchableOpacity>
+            <Sidebar
+              fields={fields}
+              selectedFieldId={activeFieldId}
+              onSelectField={(id) => {
+                setActiveFieldId(id);
+                setMobileMenuVisible(false);
+              }}
+              visibleLayers={visibleLayers}
+              onToggleLayer={onToggleLayer}
+              selectedSoilProperty={selectedSoilProperty}
+              onSelectSoilProperty={setSelectedSoilProperty}
+              selectedDepth={selectedDepth}
+              onSelectDepth={setSelectedDepth}
+              activeTab={activeTab}
+              onSelectTab={setActiveTab}
+              onOpenAI={() => {
+                setChatVisible(true);
+                setMobileMenuVisible(false);
+              }}
+              onRegisterOpen={() => {
+                setRegistrationVisible(true);
+                setMobileMenuVisible(false);
+              }}
+              onOpenScanner={() => {
+                setScannerVisible(true);
+                setMobileMenuVisible(false);
+              }}
+              recommendations={activeRecommendations}
+            />
+          </View>
+        </Modal>
+
+        {!isMobile ? (
           <Animated.View style={[styles.webLayout, { opacity: fadeAnim }]}>
             <Sidebar
               fields={fields}
@@ -246,6 +317,7 @@ export default function Dashboard() {
               onOpenAI={() => setChatVisible(true)}
               onRegisterOpen={() => setRegistrationVisible(true)}
               onOpenScanner={() => setScannerVisible(true)}
+              recommendations={activeRecommendations}
             />
             <View style={styles.mapContainerOuter}>
               <View style={styles.mapHeaderRow}>
@@ -340,68 +412,82 @@ export default function Dashboard() {
               
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={styles.mapModeGroup}>
-                  <Text style={styles.mapModeLabel}>Theme:</Text>
+                  <Text style={styles.mapModeLabel}>{t('theme')}:</Text>
                   <TouchableOpacity
                     style={[styles.mapModeButton, mapTheme === 'light' ? styles.mapModeButtonActive : undefined]}
                     onPress={() => setMapTheme('light')}
                   >
-                    <Text style={styles.mapModeButtonText}>Light</Text>
+                    <Text style={styles.mapModeButtonText}>{t('light')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.mapModeButton, mapTheme === 'dark' ? styles.mapModeButtonActive : undefined]}
                     onPress={() => setMapTheme('dark')}
                   >
-                    <Text style={styles.mapModeButtonText}>Dark</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.mapModeGroup}>
-                  <Text style={styles.mapModeLabel}>{t('mapMode')}:</Text>
-                  <TouchableOpacity
-                    style={[styles.mapModeButton, mapMode === 'zones' ? styles.mapModeButtonActive : undefined]}
-                    onPress={() => setMapMode('zones')}
-                  >
-                    <Text style={styles.mapModeButtonText}>{t('zonesView')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.mapModeButton, mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined]}
-                    onPress={() => setMapMode('heatmap')}
-                  >
-                    <Text style={styles.mapModeButtonText}>{t('heatmapView')}</Text>
+                    <Text style={styles.mapModeButtonText}>{t('dark')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </View>
-            <FieldMap
-              fieldCenter={activeField.center}
-              fieldBoundary={activeField.boundary}
-              zones={activeZones}
-              sensors={activeSensors}
-              onSelectSensor={handleSelectSensor}
-              onSelectZone={onSelectZone}
-              activeZoneId={selectedZone?.id}
-              visibleLayers={visibleLayers}
-              selectedSoilProperty={selectedSoilProperty}
-              selectedDepth={selectedDepth}
-              mapMode={mapMode}
-            />
-            <Sidebar
-              fields={fields}
-              selectedFieldId={activeFieldId}
-              onSelectField={setActiveFieldId}
-              visibleLayers={visibleLayers}
-              onToggleLayer={onToggleLayer}
-              selectedSoilProperty={selectedSoilProperty}
-              onSelectSoilProperty={setSelectedSoilProperty}
-              selectedDepth={selectedDepth}
-              onSelectDepth={setSelectedDepth}
-              activeTab={activeTab}
-              onSelectTab={setActiveTab}
-              onOpenAI={() => setChatVisible(true)}
-              onRegisterOpen={() => setRegistrationVisible(true)}
-              onOpenScanner={() => setScannerVisible(true)}
-            />
-            <Recommendations recommendations={activeRecommendations} />
+
+            <View style={[styles.mapRegion, { height: 420, marginTop: 10 }]}>
+              <FieldMap
+                fieldCenter={activeField.center}
+                fieldBoundary={activeField.boundary}
+                zones={activeZones}
+                sensors={activeSensors}
+                onSelectSensor={handleSelectSensor}
+                onSelectZone={onSelectZone}
+                activeZoneId={selectedZone?.id}
+                visibleLayers={visibleLayers}
+                selectedSoilProperty={selectedSoilProperty}
+                selectedDepth={selectedDepth}
+                mapMode={mapMode}
+                theme={mapTheme}
+                historicalOffset={selectedDaysAgo}
+              />
+              <TimelineSlider 
+                selectedDaysAgo={selectedDaysAgo} 
+                onTimeChange={setSelectedDaysAgo} 
+              />
+              <View style={styles.mobileMapControlsFloating}>
+                 <TouchableOpacity 
+                  style={[styles.floatingModeBtn, mapMode === 'zones' && styles.floatingModeBtnActive]}
+                  onPress={() => setMapMode('zones')}
+                 >
+                   <Text style={styles.floatingModeBtnText}>{t('zonesView')}</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity 
+                  style={[styles.floatingModeBtn, mapMode === 'heatmap' && styles.floatingModeBtnActive]}
+                  onPress={() => setMapMode('heatmap')}
+                 >
+                   <Text style={styles.floatingModeBtnText}>{t('heatmapView')}</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity 
+                  style={[styles.floatingModeBtn, mapMode === 'satellite' && styles.floatingModeBtnActive]}
+                  onPress={() => setMapMode('satellite')}
+                 >
+                   <Text style={styles.floatingModeBtnText}>{t('satellite') || 'Sat'}</Text>
+                 </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={[styles.mobileActionContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+               <View style={styles.mobileActionRowGlass}>
+                  <TouchableOpacity style={styles.mobileActionBtnPremium} onPress={() => setScannerVisible(true)}>
+                    <Text style={styles.mobileActionBtnTextPremium}>📊 {t('verticalScanner')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.mobileActionBtnPremium} onPress={() => setChatVisible(true)}>
+                    <Text style={styles.mobileActionBtnTextPremium}>💬 {t('aiAgent')}</Text>
+                  </TouchableOpacity>
+               </View>
+            </View>
+
+            <View style={styles.mobileActionContainer}>
+               <Text style={styles.sectionTitle}>{t('aiPrediction')}</Text>
+               <View style={styles.premiumCardContainer}>
+                 {activePrediction && <PredictionCard prediction={activePrediction} />}
+               </View>
+            </View>
           </ScrollView>
         )}
 
@@ -490,16 +576,150 @@ const styles = StyleSheet.create({
   langText: { color: 'rgba(255, 255, 255, 0.5)', fontWeight: '600', fontSize: 12 },
   langActive: { backgroundColor: 'rgba(0, 245, 155, 0.1)', borderColor: '#059669', borderWidth: 1 },
   webLayout: { flex: 1, flexDirection: 'row', gap: 16 },
-  mobileLayout: { flex: 1 },
+  mobileLayout: {
+    flex: 1,
+    backgroundColor: '#052A1D',
+  },
+  mobileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    backgroundColor: 'rgba(5, 42, 29, 0.85)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(5, 150, 105, 0.2)',
+  },
+  headerDotBtn: {
+    flexDirection: 'row',
+    gap: 4,
+    padding: 10,
+    marginLeft: -10,
+  },
+  headerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#05F59B',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 4,
+    textTransform: 'uppercase',
+    marginLeft: 20,
+  },
+  langMiniRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  langMiniBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  langMiniActive: {
+    backgroundColor: 'rgba(5, 245, 155, 0.2)',
+    borderColor: '#05F59B',
+  },
+  langMiniText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  mobileMenuContainer: {
+    flex: 1,
+    backgroundColor: '#052A1D',
+  },
+  closeMenuBtn: {
+    padding: 20,
+    backgroundColor: '#059669',
+    margin: 20,
+    borderRadius: 14,
+    alignItems: 'center',
+    shadowColor: '#05F59B',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+  },
+  closeMenuText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  mobileMapControlsFloating: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    gap: 8,
+  },
+  floatingModeBtn: {
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(5, 245, 155, 0.15)',
+    alignItems: 'center',
+    minWidth: 70,
+  },
+  floatingModeBtnActive: {
+    backgroundColor: '#059669',
+    borderColor: '#05F59B',
+  },
+  floatingModeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  mobileActionContainer: {
+    paddingHorizontal: 15,
+    marginTop: -30,
+    marginBottom: 20,
+    zIndex: 100,
+  },
+  mobileActionRowGlass: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 6,
+    borderRadius: 20,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  mobileActionBtnPremium: {
+    flex: 1,
+    backgroundColor: 'rgba(5, 245, 155, 0.05)',
+    paddingVertical: 14,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  mobileActionBtnTextPremium: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  premiumCardContainer: {
+    shadowColor: '#05F59B',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+  },
   mapContainerOuter: { flex: 1, flexDirection: 'column' },
   mapRegion: { 
     flex: 1, 
-    borderRadius: 24, 
+    borderRadius: 32, 
     overflow: 'hidden', 
     borderWidth: 1, 
-    borderColor: '#064E3B',
+    borderColor: 'rgba(5, 150, 105, 0.3)',
     minHeight: Platform.OS === 'web' ? 400 : undefined,
-    backgroundColor: '#000'
+    backgroundColor: '#000',
+    margin: 10,
   },
   recommendationsRegion: { width: 340 },
   mapHeaderRow: {

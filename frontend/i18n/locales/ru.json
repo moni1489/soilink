@@ -127,5 +127,6 @@
   "soilStable": "Стабильная, слабокислая",
   "today": "Сегодня",
   "daysAgo": "дней назад",
-  "historicalTimeline": "История состояния почвы"
+  "historicalTimeline": "История состояния почвы",
+  "askAgronomist": "Задать вопрос агроному"
 }

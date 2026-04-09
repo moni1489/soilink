@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Field, LayerKey, SoilGridsProperty, SoilDepth } from '../types';
 import { useTranslation } from 'react-i18next';
 
@@ -43,11 +44,12 @@ interface Props {
   onSelectSoilProperty: (prop: SoilGridsProperty) => void;
   selectedDepth: SoilDepth;
   onSelectDepth: (depth: SoilDepth) => void;
-  activeTab: 'map' | 'ai';
-  onSelectTab: (tab: 'map' | 'ai') => void;
+  activeTab: 'map' | 'ai' | 'recommendations';
+  onSelectTab: (tab: 'map' | 'ai' | 'recommendations') => void;
   onOpenAI: () => void;
   onRegisterOpen: () => void;
   onOpenScanner: () => void;
+  recommendations?: any[];
 }
 
 export default function Sidebar({
@@ -64,12 +66,14 @@ export default function Sidebar({
   onSelectTab,
   onOpenAI,
   onRegisterOpen,
-  onOpenScanner
+  onOpenScanner,
+  recommendations = []
 }: Props) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 24) }]}>
       <View style={styles.logoContainer}>
         <Text style={styles.logoText}>SoiLink</Text>
         <View style={styles.logoDot} />
@@ -87,6 +91,14 @@ export default function Sidebar({
         >
           <Text style={[styles.tabText, activeTab === 'map' && styles.tabTextActive]}>{t('interactiveMap')}</Text>
         </Pressable>
+        {Platform.OS !== 'web' && (
+          <Pressable 
+            onPress={() => onSelectTab('recommendations')}
+            style={[styles.tab, activeTab === 'recommendations' && styles.tabActive]}
+          >
+            <Text style={[styles.tabText, activeTab === 'recommendations' && styles.tabTextActive]}>{t('recommendations')}</Text>
+          </Pressable>
+        )}
         <Pressable 
           onPress={() => onSelectTab('ai')}
           style={[styles.tab, activeTab === 'ai' && styles.tabActive]}
@@ -161,17 +173,17 @@ export default function Sidebar({
                           <View style={styles.depthSelector}>
                             <Text style={styles.depthTitle}>{t('depthSelector')}</Text>
                             <View style={styles.depthChips}>
-                              {depthLevels.map((d) => (
-                                <Pressable 
-                                  key={d} 
-                                  onPress={() => onSelectDepth(d)}
-                                  style={[styles.depthChip, selectedDepth === d && styles.depthChipActive]}
-                                >
-                                  <Text style={[styles.depthChipText, selectedDepth === d && styles.depthChipTextActive]}>
-                                    {d}
-                                  </Text>
-                                </Pressable>
-                              ))}
+                               {depthLevels.map((d) => (
+                                 <Pressable 
+                                   key={d} 
+                                   onPress={() => onSelectDepth(d)}
+                                   style={[styles.depthChip, selectedDepth === d && styles.depthChipActive]}
+                                 >
+                                   <Text style={[styles.depthChipText, selectedDepth === d && styles.depthChipTextActive]}>
+                                     {d}
+                                   </Text>
+                                 </Pressable>
+                               ))}
                             </View>
                             <TouchableOpacity style={styles.scannerBtn} onPress={onOpenScanner}>
                               <Text style={styles.scannerBtnText}>{t('verticalScannerBtn')}</Text>
@@ -184,6 +196,22 @@ export default function Sidebar({
             })}
           </View>
         </>
+      ) : activeTab === 'recommendations' ? (
+        <View style={styles.aiTab}>
+           <Text style={styles.aiTabTitle}>{t('recommendations')}</Text>
+            {recommendations.map((rec: any) => (
+              <View key={rec.id} style={styles.recMiniCard}>
+                <Text style={styles.recIcon}>{rec.icon || '📌'}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.recTitle}>{t(rec.titleKey || rec.title)}</Text>
+                  <Text style={styles.recBody} numberOfLines={2}>{t(rec.messageKey || rec.description)}</Text>
+                </View>
+              </View>
+            ))}
+           <TouchableOpacity style={styles.aiActionButton} onPress={() => onSelectTab('ai')}>
+             <Text style={styles.aiActionButtonText}>{t('askAgronomist') || 'Ask AI'}</Text>
+           </TouchableOpacity>
+        </View>
       ) : (
           <View style={styles.aiTab}>
           <Text style={styles.aiTabTitle}>{t('aiConsultantTitle')}</Text>
@@ -578,5 +606,29 @@ const styles: any = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     textTransform: 'uppercase'
+  },
+  recMiniCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(5, 150, 105, 0.2)'
+  },
+  recIcon: {
+    fontSize: 18
+  },
+  recTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 2
+  },
+  recBody: {
+    color: 'rgba(255, 255, 255, 0.4)',
+    fontSize: 11
   }
 });
