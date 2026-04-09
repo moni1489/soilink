@@ -61,6 +61,7 @@ export interface StatisticCard {
 export interface RecommendationTimelineStep {
   id: string;
   labelKey: string;
+  labelOpen?: string; // For dynamic/English labels from backend
   dueAt: string;
   completed: boolean;
 }
@@ -73,4 +74,18 @@ export interface Recommendation {
   messageKey: string;
   sensorId?: string;
   timeline: RecommendationTimelineStep[];
+}
+
+export interface Prediction {
+  id: string;
+  fieldId: string;
+  sensorId?: string;
+  cropRecommendation: string;
+  cropConfidence: number;
+  fertilizerRecommendation: string;
+  fertilizerSource: 'ml' | 'rule_based';
+  soilState: string;
+  soilStateConfidence: number;
+  featureSnapshot?: any;
+  lastUpdated: string;
 }

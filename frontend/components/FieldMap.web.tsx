@@ -17,6 +17,7 @@ interface Props {
   selectedDepth?: SoilDepth;
   mapMode: MapMode;
   theme?: 'light' | 'dark';
+  historicalOffset?: number;
 }
 
 const SOILGRIDS_CONFIG: Record<SoilGridsProperty, { slug: string }> = {
@@ -66,20 +67,28 @@ const getZonesGeoJson = (zones: SoilZone[]) => ({
 const getHeatGeoJson = (
   boundary: Coordinate[],
   sensors: Sensor[],
-  visibleLayers: LayerKey[]
+  visibleLayers: LayerKey[],
+  offset: number = 0
 ) => ({
   type: 'FeatureCollection' as const,
-  features: generateHeatGridPoints(boundary, sensors, visibleLayers, 36).map((point, index) => ({
-    type: 'Feature' as const,
-    geometry: {
-      type: 'Point' as const,
-      coordinates: [point.longitude, point.latitude]
-    },
-    properties: {
-      id: `heat-${index}`,
-      intensity: point.intensity
-    }
-  }))
+  features: generateHeatGridPoints(boundary, sensors, visibleLayers, 36).map((point, index) => {
+    // Simulate historical change: intensity fluctuates slightly based on offset
+    const seed = (index * 1337) % 100;
+    const variation = (Math.sin(seed + offset) * 0.15);
+    const simulatedIntensity = Math.min(1.2, Math.max(0, point.intensity + variation));
+
+    return {
+      type: 'Feature' as const,
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [point.longitude, point.latitude]
+      },
+      properties: {
+        id: `heat-${index}`,
+        intensity: simulatedIntensity
+      }
+    };
+  })
 });
 export default function FieldMap({
   fieldCenter,
@@ -93,7 +102,8 @@ export default function FieldMap({
   selectedSoilProperty = 'clay',
   selectedDepth = '0-5cm',
   mapMode,
-  theme = 'dark'
+  theme = 'dark',
+  historicalOffset = 0
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
@@ -115,8 +125,8 @@ export default function FieldMap({
 
   const zonesGeoJson = useMemo(() => getZonesGeoJson(zones), [zones]);
   const heatGeoJson = useMemo(
-    () => getHeatGeoJson(fieldBoundary, sensors, visibleLayers),
-    [fieldBoundary, sensors, visibleLayers]
+    () => getHeatGeoJson(fieldBoundary, sensors, visibleLayers, historicalOffset),
+    [fieldBoundary, sensors, visibleLayers, historicalOffset]
   );
 
   useEffect(() => {

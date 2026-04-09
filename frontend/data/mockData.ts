@@ -1,4 +1,4 @@
-import { Field, Sensor, SoilZone, StatisticCard, Recommendation } from '../types';
+import { Field, Sensor, SoilZone, StatisticCard, Recommendation, Prediction } from '../types';
 
 export const fields: Field[] = [
   {
@@ -196,6 +196,36 @@ export const sensors: Sensor[] = [
     gasComposition: 'N2 77%, O2 20%, CO2 0.06%'
   },
   {
+    id: 'sensor-f2-extra-2',
+    fieldId: 'field-2',
+    name: 'Sector North Probe',
+    coordinates: { latitude: 49.9692, longitude: 82.3950 },
+    status: 'critical',
+    lastUpdated: '2026-03-22T06:30:00Z',
+    pH: 4.5,
+    soilTemperature: 28.0,
+    soilMoisture: 12,
+    electricalConductivity: 2.8,
+    nitrogen: 20,
+    soc: 0.5,
+    gasComposition: 'N2 74%, O2 18%, CO2 0.15%'
+  },
+  {
+    id: 'sensor-f2-extra-3',
+    fieldId: 'field-2',
+    name: 'Sector West Probe',
+    coordinates: { latitude: 49.9670, longitude: 82.3915 },
+    status: 'healthy',
+    lastUpdated: '2026-03-22T06:35:00Z',
+    pH: 7.2,
+    soilTemperature: 15.5,
+    soilMoisture: 65,
+    electricalConductivity: 0.9,
+    nitrogen: 160,
+    soc: 2.5,
+    gasComposition: 'N2 78%, O2 21%, CO2 0.02%'
+  },
+  {
     id: 'sensor-10',
     fieldId: 'field-3',
     name: 'Soil Probe 21',
@@ -285,6 +315,36 @@ export const sensors: Sensor[] = [
     nitrogen: 142,
     soc: 2.2,
     gasComposition: 'N2 78%, O2 21%, CO2 0.03%'
+  },
+  {
+    id: 'sensor-f3-extra-3',
+    fieldId: 'field-3',
+    name: 'North Corner Probe',
+    coordinates: { latitude: 49.9590, longitude: 82.3780 },
+    status: 'warning',
+    lastUpdated: '2026-03-22T06:40:00Z',
+    pH: 5.5,
+    soilTemperature: 22.0,
+    soilMoisture: 28,
+    electricalConductivity: 1.7,
+    nitrogen: 70,
+    soc: 1.0,
+    gasComposition: 'N2 77%, O2 20%, CO2 0.08%'
+  },
+  {
+    id: 'sensor-f3-extra-4',
+    fieldId: 'field-3',
+    name: 'Center Probe',
+    coordinates: { latitude: 49.9570, longitude: 82.3770 },
+    status: 'critical',
+    lastUpdated: '2026-03-22T06:45:00Z',
+    pH: 4.8,
+    soilTemperature: 27.5,
+    soilMoisture: 15,
+    electricalConductivity: 2.5,
+    nitrogen: 30,
+    soc: 0.6,
+    gasComposition: 'N2 75%, O2 18%, CO2 0.12%'
   },
 ];
 
@@ -503,4 +563,40 @@ export const recommendations: Recommendation[] = [
       { id: 'rec-3-step-2', labelKey: 'rec3Step2', dueAt: '2026-03-23 13:30', completed: false }
     ]
   },
+];
+
+export const predictions: Prediction[] = [
+  {
+    id: 'pred-1',
+    fieldId: 'field-1',
+    cropRecommendation: 'cropWheat',
+    cropConfidence: 0.94,
+    fertilizerRecommendation: 'fertAmmonium',
+    fertilizerSource: 'ml',
+    soilState: 'soilOptimal',
+    soilStateConfidence: 0.88,
+    lastUpdated: '2026-03-24T08:00:00Z'
+  },
+  {
+    id: 'pred-2',
+    fieldId: 'field-2',
+    cropRecommendation: 'cropSunflower',
+    cropConfidence: 0.89,
+    fertilizerRecommendation: 'fertPotassium',
+    fertilizerSource: 'ml',
+    soilState: 'soilSaline',
+    soilStateConfidence: 0.91,
+    lastUpdated: '2026-03-24T08:15:00Z'
+  },
+  {
+    id: 'pred-3',
+    fieldId: 'field-3',
+    cropRecommendation: 'cropBarley',
+    cropConfidence: 0.82,
+    fertilizerRecommendation: 'fertNpk',
+    fertilizerSource: 'rule_based',
+    soilState: 'soilStable',
+    soilStateConfidence: 0.75,
+    lastUpdated: '2026-03-24T08:30:00Z'
+  }
 ];

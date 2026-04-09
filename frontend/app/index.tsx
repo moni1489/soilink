@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Platform, Animated } from 'react-native';
 import '../i18n/i18n';
 import { useTranslation } from 'react-i18next';
-import { fields, zones, sensors, statistics, recommendations } from '../data/mockData';
 import TopCards from '../components/TopCards';
 import Sidebar from '../components/Sidebar';
 import FieldMap from '../components/FieldMap';
@@ -13,7 +12,10 @@ import ChatInterface from '../components/ChatInterface';
 import FieldRegistration from '../components/FieldRegistration';
 import ComparisonModal from '../components/ComparisonModal';
 import DepthProfileModal from '../components/DepthProfileModal';
-import { LayerKey, Sensor, SoilZone, MapMode, SoilGridsProperty, SoilDepth } from '../types';
+import PredictionCard from '../components/PredictionCard';
+import TimelineSlider from '../components/TimelineSlider';
+import { LayerKey, Sensor, SoilZone, MapMode, SoilGridsProperty, SoilDepth, Prediction } from '../types';
+import { fields, zones, sensors, statistics, recommendations, predictions } from '../data/mockData';
 import { useLocale } from '../hooks/useLocale';
 
 const defaultVisible: LayerKey[] = [
@@ -44,6 +46,7 @@ export default function Dashboard() {
   const [mapTheme, setMapTheme] = useState<'light' | 'dark'>('dark');
   const [selectedSoilProperty, setSelectedSoilProperty] = useState<SoilGridsProperty>('clay');
   const [selectedDepth, setSelectedDepth] = useState<SoilDepth>('0-5cm');
+  const [selectedDaysAgo, setSelectedDaysAgo] = useState(0);
   const [activeTab, setActiveTab] = useState<'map' | 'ai'>('map');
   const [chatVisible, setChatVisible] = useState(false);
   const [registrationVisible, setRegistrationVisible] = useState(false);
@@ -70,6 +73,11 @@ export default function Dashboard() {
 
   const activeRecommendations = useMemo(
     () => recommendations.filter((item) => !item.fieldId || item.fieldId === activeFieldId),
+    [activeFieldId]
+  );
+
+  const activePrediction = useMemo(
+    () => predictions.find((p) => p.fieldId === activeFieldId),
     [activeFieldId]
   );
 
@@ -303,10 +311,16 @@ export default function Dashboard() {
                   selectedDepth={selectedDepth}
                   mapMode={mapMode}
                   theme={mapTheme}
+                  historicalOffset={selectedDaysAgo}
+                />
+                <TimelineSlider 
+                  selectedDaysAgo={selectedDaysAgo} 
+                  onTimeChange={setSelectedDaysAgo} 
                 />
               </View>
             </View>
             <View style={styles.recommendationsRegion}>
+               {activePrediction && <PredictionCard prediction={activePrediction} />}
                <Recommendations recommendations={activeRecommendations} />
             </View>
           </Animated.View>
