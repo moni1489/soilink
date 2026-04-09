@@ -32,7 +32,7 @@ def run_inference(db: Session, field_id: str, sensor_id: str | None = None) -> P
     # Use soil-type defaults — SoilGrids API is only called during model training
     soilgrid = get_soilgrid_defaults(field.soil_type)
 
-    crop_features = build_crop_features(reading, field)
+    crop_features = build_crop_features(reading, field, soilgrid)
     fert_features = build_fertilizer_features(reading, field)
     soil_state_features = build_soil_state_features(reading, field, soilgrid)
 

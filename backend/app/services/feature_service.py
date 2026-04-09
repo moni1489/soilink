@@ -11,8 +11,8 @@ def _soil_type_enc(soil_type: str) -> float:
         return 1.0  # default to Loamy index
 
 
-def build_crop_features(reading: SensorReading, field: Field) -> dict:
-    return {
+def build_crop_features(reading: SensorReading, field: Field, soilgrid: dict | None = None) -> dict:
+    features = {
         "nitrogen": field.nitrogen,
         "phosphorus": field.phosphorus,
         "potassium": field.potassium,
@@ -20,7 +20,18 @@ def build_crop_features(reading: SensorReading, field: Field) -> dict:
         "humidity": field.humidity,
         "ph": reading.ph,
         "rainfall": field.rainfall,
+        "soil_type_enc": _soil_type_enc(field.soil_type),
     }
+    if soilgrid:
+        features.update({
+            "clay_content": soilgrid.get("clay_content", 220),
+            "sand_content": soilgrid.get("sand_content", 420),
+            "silt_content": soilgrid.get("silt_content", 360),
+            "soc":  soilgrid.get("soc",  25),
+            "cec":  soilgrid.get("cec",  180),
+            "bdod": soilgrid.get("bdod", 135),
+        })
+    return features
 
 
 def build_fertilizer_features(reading: SensorReading, field: Field) -> dict:
