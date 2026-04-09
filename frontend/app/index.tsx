@@ -9,6 +9,8 @@ import FieldMap from '../components/FieldMap';
 import Recommendations from '../components/Recommendations';
 import SensorModal from '../components/SensorModal';
 import ZoneModal from '../components/ZoneModal';
+import ChatInterface from '../components/ChatInterface';
+import FieldRegistration from '../components/FieldRegistration';
 import { LayerKey, Sensor, SoilZone, MapMode } from '../types';
 import { useLocale } from '../hooks/useLocale';
 
@@ -17,8 +19,7 @@ const defaultVisible: LayerKey[] = [
   'temperature',
   'pH',
   'electricalConductivity',
-  'gasComposition',
-  'vibroacousticAnalysis'
+  'gasComposition'
 ];
 
 const getStatusHealthScore = (status: Sensor['status']) => {
@@ -37,6 +38,9 @@ export default function Dashboard() {
   const [selectedZone, setSelectedZone] = useState<SoilZone | null>(null);
   const [zoneModalVisible, setZoneModalVisible] = useState(false);
   const [mapMode, setMapMode] = useState<MapMode>('zones');
+  const [chatVisible, setChatVisible] = useState(false);
+  const [registrationVisible, setRegistrationVisible] = useState(false);
+  const [mapTheme, setMapTheme] = useState<'light' | 'dark'>('light');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const activeField = useMemo(
@@ -147,32 +151,59 @@ export default function Dashboard() {
             onSelectField={setActiveFieldId}
             visibleLayers={visibleLayers}
             onToggleLayer={onToggleLayer}
+            onOpenAI={() => setChatVisible(true)}
+            onRegisterOpen={() => setRegistrationVisible(true)}
           />
           <View style={styles.mapRegion}>
-            <View style={styles.mapHeaderRow}>
-              <Text style={styles.mapLabel}>{t('map')}</Text>
-              <View style={styles.mapModeGroup}>
-                <Text style={styles.mapModeLabel}>{t('mapMode')}:</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.mapModeButton,
-                    mapMode === 'zones' ? styles.mapModeButtonActive : undefined
-                  ]}
-                  onPress={() => setMapMode('zones')}
-                >
-                  <Text style={styles.mapModeButtonText}>{t('zonesView')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.mapModeButton,
-                    mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined
-                  ]}
-                  onPress={() => setMapMode('heatmap')}
-                >
-                  <Text style={styles.mapModeButtonText}>{t('heatmapView')}</Text>
-                </TouchableOpacity>
+              <View style={styles.mapHeaderRow}>
+                <Text style={styles.mapLabel}>{t('map')}</Text>
+                
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={styles.mapModeGroup}>
+                    <Text style={styles.mapModeLabel}>Theme:</Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.mapModeButton,
+                        mapTheme === 'light' ? styles.mapModeButtonActive : undefined
+                      ]}
+                      onPress={() => setMapTheme('light')}
+                    >
+                      <Text style={styles.mapModeButtonText}>Light</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.mapModeButton,
+                        mapTheme === 'dark' ? styles.mapModeButtonActive : undefined
+                      ]}
+                      onPress={() => setMapTheme('dark')}
+                    >
+                      <Text style={styles.mapModeButtonText}>Dark</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.mapModeGroup}>
+                    <Text style={styles.mapModeLabel}>{t('mapMode')}:</Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.mapModeButton,
+                        mapMode === 'zones' ? styles.mapModeButtonActive : undefined
+                      ]}
+                      onPress={() => setMapMode('zones')}
+                    >
+                      <Text style={styles.mapModeButtonText}>{t('zonesView')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.mapModeButton,
+                        mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined
+                      ]}
+                      onPress={() => setMapMode('heatmap')}
+                    >
+                      <Text style={styles.mapModeButtonText}>{t('heatmapView')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
             <FieldMap
               fieldCenter={activeField.center}
               fieldBoundary={activeField.boundary}
@@ -183,6 +214,7 @@ export default function Dashboard() {
               activeZoneId={selectedZone?.id}
               visibleLayers={visibleLayers}
               mapMode={mapMode}
+              theme={mapTheme}
             />
           </View>
           <Recommendations recommendations={activeRecommendations} />
@@ -224,6 +256,8 @@ export default function Dashboard() {
             onSelectField={setActiveFieldId}
             visibleLayers={visibleLayers}
             onToggleLayer={onToggleLayer}
+            onOpenAI={() => setChatVisible(true)}
+            onRegisterOpen={() => setRegistrationVisible(true)}
           />
           <Recommendations recommendations={activeRecommendations} />
         </Animated.View>
@@ -241,88 +275,104 @@ export default function Dashboard() {
         sensors={activeSensors}
         onClose={() => setZoneModalVisible(false)}
       />
+
+      {chatVisible && (
+        <ChatInterface 
+          fieldId={activeFieldId} 
+          onClose={() => setChatVisible(false)} 
+        />
+      )}
+
+      <FieldRegistration 
+        visible={registrationVisible}
+        onClose={() => setRegistrationVisible(false)}
+        onSuccess={() => { /* Refresh fields if needed */ }}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F1115' },
-  contentContainer: { padding: 24, paddingBottom: 80 },
+  root: { flex: 1, backgroundColor: '#0A0F14' },
+  contentContainer: { padding: 32, paddingBottom: 100 },
   sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 12,
-    color: '#93A1B2',
-    letterSpacing: 0.8,
+    fontSize: 12,
+    fontWeight: '900',
+    marginBottom: 20,
+    color: 'rgba(255, 255, 255, 0.3)',
+    letterSpacing: 2,
     textTransform: 'uppercase'
   },
   localeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 32,
     flexWrap: 'wrap',
-    backgroundColor: '#16191E',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    padding: 12,
-    borderRadius: 14
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    padding: 16,
+    borderRadius: 20
   },
-  localeLabel: { fontWeight: '600', marginRight: 8, color: '#A1ADBC' },
+  localeLabel: { fontWeight: '700', marginRight: 12, color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 },
   langButton: {
     borderWidth: 1,
-    borderColor: '#2E3440',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginRight: 8,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginRight: 10,
     marginBottom: 6,
-    backgroundColor: '#0F1115'
+    backgroundColor: 'rgba(255, 255, 255, 0.03)'
   },
-  langText: { color: '#CBD6E2' },
-  langActive: { backgroundColor: 'rgba(56,189,248,0.16)', borderColor: '#38BDF8' },
-  webLayout: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
+  langText: { color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', fontSize: 13 },
+  langActive: { backgroundColor: 'rgba(0, 245, 155, 0.12)', borderColor: '#00F59B' },
+  webLayout: { flexDirection: 'row', gap: 24, alignItems: 'flex-start' },
   mobileLayout: {
-    gap: 16
+    gap: 24
   },
-  mapRegion: { flex: 1, minHeight: 620 },
+  mapRegion: { flex: 1, minHeight: 650 },
   mapHeaderRow: {
-    marginBottom: 12,
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap'
   },
   mapLabel: {
-    fontWeight: '700',
-    color: '#97A5B3',
+    fontWeight: '900',
+    color: '#FFFFFF',
     textTransform: 'uppercase',
-    fontSize: 11,
-    letterSpacing: 0.7
+    fontSize: 14,
+    letterSpacing: 1
   },
   mapModeGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap'
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    padding: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)'
   },
   mapModeLabel: {
-    fontSize: 11,
-    color: '#93A1B2',
-    marginRight: 6
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.4)',
+    marginHorizontal: 12,
+    fontWeight: '700'
   },
   mapModeButton: {
-    borderWidth: 1,
-    borderColor: '#323946',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginRight: 6,
-    backgroundColor: 'rgba(22,25,30,0.72)'
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'transparent'
   },
   mapModeButtonText: {
-    color: '#BEC9D8'
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '700',
+    fontSize: 13
   },
   mapModeButtonActive: {
-    borderColor: 'rgba(56,189,248,0.5)',
-    backgroundColor: 'rgba(56,189,248,0.16)'
+    backgroundColor: '#00F59B'
   }
 });

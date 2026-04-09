@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
-import MapView, { Marker, Polygon, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import MapView, { Marker, Polygon, PROVIDER_GOOGLE, Region, WMSTile } from 'react-native-maps';
 import type { Sensor, SoilZone, LayerKey, MapMode, Coordinate } from '../types';
 import { buildZoneHeatIndex, getSensorHeatIntensity, getZoneFillColor } from '../utils/map';
 
@@ -14,6 +14,7 @@ interface Props {
   activeZoneId?: string;
   visibleLayers: LayerKey[];
   mapMode: MapMode;
+  theme?: 'light' | 'dark';
 }
 
 const darkMapStyle = [
@@ -97,6 +98,13 @@ export default function FieldMap({
       showsUserLocation={false}
       pitchEnabled={true}
     >
+      {visibleLayers.includes('soilGrids') && (
+        <WMSTile
+          urlTemplate="https://maps.isric.org/mapserv?map=/srv/isric.org/www/maps/node/6/mapfiles/soilgrids.map&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/png&TRANSPARENT=TRUE&LAYERS=clay_0-5cm_mean&WIDTH=256&HEIGHT=256&CRS=EPSG:3857&BBOX={minX},{minY},{maxX},{maxY}"
+          tileSize={256}
+          opacity={0.6}
+        />
+      )}
       <Polygon
         coordinates={fieldBoundary}
         fillColor="rgba(11,18,32,0.05)"
@@ -136,27 +144,7 @@ export default function FieldMap({
             ))
         : null}
 
-      {sensors.map((sensor) => (
-        <Marker
-          key={sensor.id}
-          coordinate={sensor.coordinates}
-          onPress={() => onSelectSensor(sensor)}
-          tracksViewChanges={false}
-        >
-          <View
-            style={[
-              styles.marker,
-              {
-                backgroundColor: statusColor(sensor.status),
-                opacity: 0.95 + getSensorHeatIntensity(sensor, visibleLayers) * 0.05,
-                shadowColor: statusColor(sensor.status)
-              }
-            ]}
-          >
-            <View style={styles.markerCore} />
-          </View>
-        </Marker>
-      ))}
+      {/* Sensors removed as requested */}
     </MapView>
   );
 }

@@ -65,7 +65,14 @@ export default function Recommendations({ recommendations }: Props) {
           <View key={item.id} style={styles.item}>
             <View style={[styles.statusStrip, { backgroundColor: levelColorMap[item.level] }]} />
             <View style={styles.itemHeaderRow}>
-              <Text style={styles.level}>{t(levelLabelKeyMap[item.level])}</Text>
+              <View style={styles.badgeRow}>
+                <Text style={styles.level}>{t(levelLabelKeyMap[item.level])}</Text>
+                {item.level === 'premium' && (
+                  <View style={styles.aiBadge}>
+                    <Text style={styles.aiBadgeText}>AI INSIGHT</Text>
+                  </View>
+                )}
+              </View>
               <View style={[styles.statePill, { borderColor: statusColorMap[status] }]}>
                 <Text style={[styles.stateText, { color: statusColorMap[status] }]}>{t(status)}</Text>
               </View>
@@ -111,34 +118,32 @@ export default function Recommendations({ recommendations }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    width: 310,
+    width: 320,
     maxWidth: '100%',
-    backgroundColor: '#16191E',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    padding: 24
+    backgroundColor: '#0A0F14',
+    padding: 0
   },
   header: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 12,
-    color: '#97A3B2',
+    fontSize: 12,
+    fontWeight: '900',
+    marginBottom: 20,
+    color: 'rgba(255, 255, 255, 0.3)',
     textTransform: 'uppercase',
-    letterSpacing: 0.6
+    letterSpacing: 2
   },
   item: {
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 10,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#2A303A',
-    backgroundColor: '#11151B',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
     flexDirection: 'column',
     position: 'relative',
     overflow: 'hidden',
-    elevation: 1
+    shadowColor: '#00F59B',
+    shadowOpacity: 0.03,
+    shadowRadius: 20
   },
   statusStrip: {
     position: 'absolute',
@@ -150,85 +155,113 @@ const styles = StyleSheet.create({
   itemHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
   },
   level: {
-    fontWeight: '800',
+    fontWeight: '900',
     textTransform: 'uppercase',
-    fontSize: 11,
-    marginBottom: 4,
-    color: '#B7C5D4',
-    letterSpacing: 0.6
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.4)',
+    letterSpacing: 1.2
+  },
+  aiBadge: {
+    backgroundColor: 'rgba(0, 245, 155, 0.1)',
+    borderColor: 'rgba(0, 245, 155, 0.3)',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2
+  },
+  aiBadgeText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#00F59B',
+    letterSpacing: 1
   },
   title: {
-    fontWeight: '700',
-    marginBottom: 2,
-    color: '#EAF1F7'
+    fontWeight: '800',
+    fontSize: 18,
+    marginBottom: 8,
+    color: '#FFFFFF'
   },
   message: {
-    color: '#9BA7B5',
-    fontSize: 12,
-    marginBottom: 8
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 20
   },
   statePill: {
     borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    backgroundColor: 'rgba(15,17,21,0.7)'
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)'
   },
   stateText: {
     fontSize: 11,
-    fontWeight: '700'
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
   },
   timelineLabel: {
     fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 6,
-    color: '#CBD6E2'
+    fontWeight: '900',
+    marginBottom: 16,
+    color: 'rgba(255, 255, 255, 0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 1
   },
   timelineItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 6
+    marginBottom: 12
   },
   checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#607282',
-    marginRight: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent'
   },
   checkboxActive: {
-    backgroundColor: 'rgba(0,245,155,0.2)',
+    backgroundColor: '#00F59B',
     borderColor: '#00F59B'
   },
   checkboxText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 11,
-    lineHeight: 11
+    color: '#0A0F14',
+    fontWeight: '900',
+    fontSize: 14,
+    lineHeight: 16
   },
   timelineTextWrap: {
-    flex: 1
+    flex: 1,
+    paddingTop: 1
   },
   timelineText: {
-    fontSize: 12,
-    color: '#DBE5EF'
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '600'
   },
   timelineTextDone: {
     textDecorationLine: 'line-through',
-    color: '#93A1B2'
+    color: 'rgba(255, 255, 255, 0.2)'
   },
   timelineDue: {
-    fontSize: 11,
-    color: '#7E8C9D'
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.3)',
+    marginTop: 2
   },
   timelineDimmed: {
-    opacity: 0.4
+    opacity: 0.5
   }
 });

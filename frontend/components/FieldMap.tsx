@@ -12,6 +12,7 @@ interface Props {
   activeZoneId?: string;
   visibleLayers: LayerKey[];
   mapMode: MapMode;
+  theme?: 'light' | 'dark';
 }
 
 type FieldMapComponent = React.ComponentType<Props>;

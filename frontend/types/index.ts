@@ -7,7 +7,7 @@ export type LayerKey =
   | 'pH'
   | 'electricalConductivity'
   | 'gasComposition'
-  | 'vibroacousticAnalysis';
+  | 'soilGrids';
 export type MapMode = 'zones' | 'heatmap';
 
 export interface Coordinate {
@@ -28,7 +28,6 @@ export interface Sensor {
   electricalConductivity: number;
   gasComposition: string;
   premiumFeatures?: {
-    vibroacousticSoilStructureAnalysis?: string;
   };
 }
 
