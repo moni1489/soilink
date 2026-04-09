@@ -40,8 +40,11 @@ def run_inference(db: Session, field_id: str, sensor_id: str | None = None) -> P
     crop_name = crop_result[0] if crop_result else None
     crop_conf = crop_result[1] if crop_result else None
 
-    fertilizer_rule = rule_based_fertilizer(field.nitrogen, field.phosphorus, field.potassium)
     fertilizer_ml = predict_fertilizer_ml(**fert_features)
+    fertilizer_rule = rule_based_fertilizer(field.nitrogen, field.phosphorus, field.potassium)
+    # Prefer ML fertilizer recommendation (96% accuracy); fall back to rule-based
+    fertilizer_name = fertilizer_ml if fertilizer_ml else fertilizer_rule
+    fertilizer_source = "ml" if fertilizer_ml else "rule_based"
 
     soil_state_result = predict_soil_state(**soil_state_features)
     soil_state = soil_state_result[0] if soil_state_result else None
@@ -52,8 +55,8 @@ def run_inference(db: Session, field_id: str, sensor_id: str | None = None) -> P
         sensor_id=reading.sensor_id,
         crop_recommendation=crop_name,
         crop_confidence=crop_conf,
-        fertilizer_recommendation=fertilizer_rule,
-        fertilizer_source="rule_based",
+        fertilizer_recommendation=fertilizer_name,
+        fertilizer_source=fertilizer_source,
         soil_state=soil_state,
         soil_state_confidence=soil_state_conf,
         feature_snapshot={
@@ -62,6 +65,7 @@ def run_inference(db: Session, field_id: str, sensor_id: str | None = None) -> P
             "soil_state_features": soil_state_features,
             "soilgrid_data": soilgrid,
             "fertilizer_ml_output": fertilizer_ml,
+            "fertilizer_rule_output": fertilizer_rule,
         },
     )
     db.add(prediction)

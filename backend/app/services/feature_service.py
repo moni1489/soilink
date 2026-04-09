@@ -41,6 +41,9 @@ def build_fertilizer_features(reading: SensorReading, field: Field) -> dict:
         "moisture": reading.soil_moisture,
         "soil_type": field.soil_type,
         "crop_type": field.crop_type,
+        "nitrogen": field.nitrogen,
+        "phosphorus": field.phosphorus,
+        "potassium": field.potassium,
     }
 
 
