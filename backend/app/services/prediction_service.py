@@ -5,7 +5,7 @@ from app.models.field import Field
 from app.models.prediction import Prediction
 from app.ml.inference import predict_crop, predict_fertilizer_ml, predict_soil_state
 from app.services.feature_service import build_crop_features, build_fertilizer_features, build_soil_state_features
-from app.services.soilgrid_service import get_soilgrid_properties
+from app.services.soilgrid_service import get_soilgrid_defaults
 from app.utils.rules import rule_based_fertilizer
 
 
@@ -29,12 +29,8 @@ def run_inference(db: Session, field_id: str, sensor_id: str | None = None) -> P
         db.add(field)
         db.flush()
 
-    # Fetch SoilGrids physical composition for this field's location
-    soilgrid = get_soilgrid_properties(
-        lat=field.latitude,
-        lon=field.longitude,
-        soil_type=field.soil_type,
-    )
+    # Use soil-type defaults — SoilGrids API is only called during model training
+    soilgrid = get_soilgrid_defaults(field.soil_type)
 
     crop_features = build_crop_features(reading, field)
     fert_features = build_fertilizer_features(reading, field)

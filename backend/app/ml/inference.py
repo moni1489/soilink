@@ -8,6 +8,7 @@ from app.core.config import settings
 
 _crop_model = None
 _crop_encoder = None
+_crop_meta = None       # features list for new SoilGrid-enriched model
 _fert_model = None
 _fert_encoders = None
 _soil_state_model = None
@@ -16,23 +17,27 @@ _loaded = False
 
 
 def load_models():
-    global _crop_model, _crop_encoder, _fert_model, _fert_encoders
+    global _crop_model, _crop_encoder, _crop_meta
+    global _fert_model, _fert_encoders
     global _soil_state_model, _soil_state_meta, _loaded
     if _loaded:
         return
 
     models_dir: Path = settings.models_path
 
-    crop_model_path = models_dir / "crop_recommendation_model.pkl"
+    crop_model_path  = models_dir / "crop_recommendation_model.pkl"
     crop_encoder_path = models_dir / "crop_label_encoder.pkl"
-    fert_model_path = models_dir / "fertilizer_recommendation_model.pkl"
+    crop_meta_path   = models_dir / "crop_model_meta.pkl"
+    fert_model_path  = models_dir / "fertilizer_recommendation_model.pkl"
     fert_encoders_path = models_dir / "fertilizer_encoders.pkl"
-    soil_state_path = models_dir / "soil_state_model.pkl"
+    soil_state_path  = models_dir / "soil_state_model.pkl"
     soil_state_meta_path = models_dir / "soil_state_meta.pkl"
 
     if crop_model_path.exists() and crop_encoder_path.exists():
         _crop_model = joblib.load(crop_model_path)
         _crop_encoder = joblib.load(crop_encoder_path)
+        if crop_meta_path.exists():
+            _crop_meta = joblib.load(crop_meta_path)
 
     if fert_model_path.exists() and fert_encoders_path.exists():
         _fert_model = joblib.load(fert_model_path)
@@ -53,14 +58,34 @@ def predict_crop(
     humidity: float,
     ph: float,
     rainfall: float,
+    soil_type_enc: float = 1.0,
+    clay_content: float = 220.0,
+    sand_content: float = 420.0,
+    silt_content: float = 360.0,
+    soc: float = 25.0,
+    cec: float = 180.0,
+    bdod: float = 135.0,
 ) -> Optional[tuple[str, float]]:
     load_models()
     if _crop_model is None or _crop_encoder is None:
         return None
 
-    features = np.array([[nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall]])
-    pred = _crop_model.predict(features)[0]
-    proba = _crop_model.predict_proba(features)[0]
+    # If the model has a stored feature list (new SoilGrid-enriched model), use it
+    if _crop_meta and "features" in _crop_meta:
+        row = pd.DataFrame([{
+            "N": nitrogen, "P": phosphorus, "K": potassium,
+            "temperature": temperature, "humidity": humidity,
+            "ph": ph, "rainfall": rainfall,
+            "soil_type_enc": soil_type_enc,
+            "clay_content": clay_content, "sand_content": sand_content,
+            "silt_content": silt_content, "soc": soc, "cec": cec, "bdod": bdod,
+        }])[_crop_meta["features"]]
+    else:
+        # Legacy model: 7-feature vector without SoilGrids
+        row = np.array([[nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall]])
+
+    pred = _crop_model.predict(row)[0]
+    proba = _crop_model.predict_proba(row)[0]
     confidence = float(proba.max())
     crop_name = _crop_encoder.inverse_transform([pred])[0]
     return crop_name, confidence
