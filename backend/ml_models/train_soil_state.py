@@ -1,14 +1,13 @@
 """
 Soil State Classifier — LightGBM
 
-
 Classes:
     0 = critical   (immediate intervention needed)
     1 = poor       (several parameters out of range)
     2 = moderate   (some parameters borderline)
     3 = healthy    (all parameters within optimal range)
 
-Features (matching ERA5-land + sensor readings):
+Features (sensor readings + SoilGrids physical composition):
     N, P, K             – macro-nutrients (0-140 kg/ha)
     pH                  – soil pH (4.0-9.0)
     soil_moisture       – volumetric water content % (5-90)
@@ -17,6 +16,12 @@ Features (matching ERA5-land + sensor readings):
     humidity            – ambient relative humidity % (20-95)
     rainfall            – mm (20-300)
     soil_type_enc       – encoded soil type (0-4)
+    clay_content        – SoilGrids clay content g/kg (0-1000)
+    sand_content        – SoilGrids sand content g/kg (0-1000)
+    silt_content        – SoilGrids silt content g/kg (0-1000)
+    soc                 – SoilGrids soil organic carbon g/kg
+    cec                 – SoilGrids cation exchange capacity mmol(c)/kg
+    bdod                – SoilGrids bulk density cg/cm³
 
 Usage:
     cd backend
@@ -56,6 +61,17 @@ N_OPT = (25.0, 120.0)
 P_OPT = (20.0, 100.0)
 K_OPT = (20.0, 100.0)
 
+# ── SoilGrids realistic ranges per soil type ─────────────────────────────────
+# clay_content (g/kg), sand_content (g/kg), silt_content (g/kg),
+# soc (g/kg), cec (mmol(c)/kg), bdod (cg/cm³)
+_SOILGRID_BY_TYPE = {
+    0: {"clay": (60, 150),  "sand": (700, 900), "silt": (50, 200),  "soc": (3, 15),  "cec": (50, 150),  "bdod": (140, 165)},   # Sandy
+    1: {"clay": (150, 300), "sand": (300, 500), "silt": (250, 450), "soc": (10, 40), "cec": (140, 260), "bdod": (115, 145)},   # Loamy
+    2: {"clay": (400, 700), "sand": (80, 250),  "silt": (150, 400), "soc": (15, 60), "cec": (250, 450), "bdod": (95, 130)},    # Clayey
+    3: {"clay": (500, 720), "sand": (60, 200),  "silt": (100, 350), "soc": (20, 80), "cec": (350, 520), "bdod": (85, 120)},    # Black
+    4: {"clay": (200, 420), "sand": (300, 520), "silt": (150, 380), "soc": (5, 25),  "cec": (90, 210),  "bdod": (120, 155)},   # Red
+}
+
 
 def _label(row: pd.Series) -> int:
     """Rule-derived label with realistic interactions."""
@@ -92,6 +108,17 @@ def _label(row: pd.Series) -> int:
     elif row.N < N_OPT[0] or row.P < P_OPT[0] or row.K < K_OPT[0]:
         violations += 1
 
+    # SoilGrid-informed modifiers
+    # Very high bulk density → compaction risk → raises severity
+    if row.bdod > 155:
+        severity += 1
+    # Very low SOC → degraded organic matter → mild penalty
+    if row.soc < 5:
+        violations += 1
+    # Very low CEC → poor nutrient retention
+    if row.cec < 60:
+        severity += 1
+
     if severity >= 4 or violations >= 3:
         return 0   # critical
     if severity >= 2 or violations == 2:
@@ -99,6 +126,19 @@ def _label(row: pd.Series) -> int:
     if violations == 1 or severity == 1:
         return 2   # moderate
     return 3       # healthy
+
+
+def _soilgrid_features(rng: np.random.Generator, soil_type_idx: int, n_rows: int) -> dict:
+    """Generate realistic SoilGrids feature columns for a given soil type."""
+    sg = _SOILGRID_BY_TYPE[soil_type_idx]
+    return {
+        "clay_content": rng.uniform(*sg["clay"], n_rows),
+        "sand_content": rng.uniform(*sg["sand"], n_rows),
+        "silt_content": rng.uniform(*sg["silt"], n_rows),
+        "soc":          rng.uniform(*sg["soc"],  n_rows),
+        "cec":          rng.uniform(*sg["cec"],  n_rows),
+        "bdod":         rng.uniform(*sg["bdod"], n_rows),
+    }
 
 
 def generate_dataset(n: int, seed: int) -> pd.DataFrame:
@@ -113,7 +153,8 @@ def generate_dataset(n: int, seed: int) -> pd.DataFrame:
     n_good  = n - n_crit - n_poor - n_mod
 
     def block(n_rows, ph_range, moist_range, temp_range, ec_range, n_range):
-        return pd.DataFrame({
+        soil_idx = rng.integers(0, len(SOIL_TYPES), n_rows)
+        base = pd.DataFrame({
             "N":  rng.uniform(*n_range, n_rows),
             "P":  rng.uniform(*n_range, n_rows),
             "K":  rng.uniform(*n_range, n_rows),
@@ -123,8 +164,24 @@ def generate_dataset(n: int, seed: int) -> pd.DataFrame:
             "electrical_conductivity": rng.uniform(*ec_range, n_rows),
             "humidity": rng.uniform(20, 95, n_rows),
             "rainfall": rng.uniform(20, 300, n_rows),
-            "soil_type_enc": rng.integers(0, len(SOIL_TYPES), n_rows).astype(float),
+            "soil_type_enc": soil_idx.astype(float),
         })
+        # Add SoilGrids features — generate per-row based on soil type
+        sg_cols = {k: np.zeros(n_rows) for k in ["clay_content", "sand_content", "silt_content", "soc", "cec", "bdod"]}
+        for st_idx in range(len(SOIL_TYPES)):
+            mask = soil_idx == st_idx
+            if not mask.any():
+                continue
+            sg = _SOILGRID_BY_TYPE[st_idx]
+            sg_cols["clay_content"][mask] = rng.uniform(*sg["clay"], mask.sum())
+            sg_cols["sand_content"][mask] = rng.uniform(*sg["sand"], mask.sum())
+            sg_cols["silt_content"][mask] = rng.uniform(*sg["silt"], mask.sum())
+            sg_cols["soc"][mask]          = rng.uniform(*sg["soc"],  mask.sum())
+            sg_cols["cec"][mask]          = rng.uniform(*sg["cec"],  mask.sum())
+            sg_cols["bdod"][mask]         = rng.uniform(*sg["bdod"], mask.sum())
+        for k, v in sg_cols.items():
+            base[k] = v
+        return base
 
     critical = block(n_crit, (4.0, 5.0), (5, 20), (38, 45), (3.5, 5.0), (0, 15))
     poor     = block(n_poor, (4.5, 5.5), (15, 28), (33, 40), (2.5, 4.0), (5, 25))
@@ -134,9 +191,10 @@ def generate_dataset(n: int, seed: int) -> pd.DataFrame:
     # Add Gaussian noise to blur decision boundaries
     df = pd.concat([critical, poor, moderate, healthy], ignore_index=True)
     noise_cols = ["N", "P", "K", "pH", "soil_moisture", "soil_temperature",
-                  "electrical_conductivity", "humidity", "rainfall"]
+                  "electrical_conductivity", "humidity", "rainfall",
+                  "clay_content", "sand_content", "silt_content", "soc", "cec", "bdod"]
     for col in noise_cols:
-        df[col] += rng.normal(0, df[col].std() * 0.05, len(df))
+        df[col] += rng.normal(0, df[col].std() * 0.04, len(df))
 
     df["pH"] = df["pH"].clip(4.0, 9.0)
     df["soil_moisture"] = df["soil_moisture"].clip(5, 90)
@@ -147,21 +205,33 @@ def generate_dataset(n: int, seed: int) -> pd.DataFrame:
     df["K"] = df["K"].clip(0, 140)
     df["humidity"] = df["humidity"].clip(10, 100)
     df["rainfall"] = df["rainfall"].clip(10, 400)
+    df["clay_content"] = df["clay_content"].clip(0, 1000)
+    df["sand_content"] = df["sand_content"].clip(0, 1000)
+    df["silt_content"] = df["silt_content"].clip(0, 1000)
+    df["soc"]  = df["soc"].clip(0, 150)
+    df["cec"]  = df["cec"].clip(0, 600)
+    df["bdod"] = df["bdod"].clip(50, 200)
 
     df["soil_state"] = df.apply(_label, axis=1)
     return df.sample(frac=1, random_state=seed).reset_index(drop=True)
 
 
+FEATURES = [
+    "N", "P", "K", "pH", "soil_moisture", "soil_temperature",
+    "electrical_conductivity", "humidity", "rainfall", "soil_type_enc",
+    # SoilGrids physical composition
+    "clay_content", "sand_content", "silt_content", "soc", "cec", "bdod",
+]
+
+
 def train():
-    print("Generating synthetic agronomic dataset …")
+    print("Generating synthetic agronomic dataset with SoilGrids features …")
     df = generate_dataset(N_SAMPLES, RANDOM_SEED)
 
     print(f"  Samples: {len(df)}")
     print(f"  Class distribution:\n{df['soil_state'].value_counts().sort_index()}")
     print(f"    0=critical, 1=poor, 2=moderate, 3=healthy\n")
 
-    FEATURES = ["N", "P", "K", "pH", "soil_moisture", "soil_temperature",
-                "electrical_conductivity", "humidity", "rainfall", "soil_type_enc"]
     X = df[FEATURES]
     y = df["soil_state"]
 
@@ -198,7 +268,7 @@ def train():
           target_names=["critical", "poor", "moderate", "healthy"]))
 
     # Save model + metadata
-    out_path = MODELS_DIR / "soil_state_model.pkl"
+    out_path  = MODELS_DIR / "soil_state_model.pkl"
     meta_path = MODELS_DIR / "soil_state_meta.pkl"
     joblib.dump(model, out_path)
     joblib.dump({"features": FEATURES, "classes": ["critical", "poor", "moderate", "healthy"]},
