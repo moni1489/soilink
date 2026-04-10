@@ -1,5 +1,5 @@
-from google import genai
-from google.genai import types
+import httpx
+from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -11,6 +11,9 @@ from app.models.recommendation import Recommendation
 _SYSTEM_PROMPT = """You are an expert agricultural advisor for the SoiLink soil monitoring platform.
 You have access to real-time sensor readings, ML model predictions, and active field recommendations.
 Your role is to help farmers understand their soil health and give actionable, specific advice.
+
+IMPORTANT: Respond strictly in the language requested by the user or the language parameter provided.
+Languages supported: English, Russian, Kazakh.
 
 Guidelines:
 - Base all advice strictly on the provided sensor data and ML predictions
@@ -69,6 +72,7 @@ def build_chat_context(db: Session, field_id: str) -> dict:
             "soil_state": prediction.soil_state,
             "soil_state_confidence": prediction.soil_state_confidence,
             "timestamp": prediction.timestamp.isoformat() if prediction.timestamp else None,
+            "soilgrids": prediction.feature_snapshot.get("soilgrid_data", {}) if prediction.feature_snapshot else {},
         }
 
     rec_summary = []
@@ -89,14 +93,15 @@ def build_chat_context(db: Session, field_id: str) -> dict:
     }
 
 
-def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
+def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Optional[dict] = None, language: str = "ru") -> dict:
     """
     Send a question to Claude with full ML + sensor context for the given field.
+    Includes optional rich_context from the UI (depth, selected layers).
     Returns {reply, context_used}.
     """
-    if not settings.GEMINI_API_KEY:
+    if not settings.GROQ_API_KEY:
         return {
-            "reply": "Chatbot is not configured. Please set GEMINI_API_KEY in the backend .env file.",
+            "reply": "Chatbot is not configured. Please set GROQ_API_KEY in the backend .env file.",
             "context_used": False,
         }
 
@@ -113,6 +118,19 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
             f"\n  • Recommended crop: {p['crop_recommendation']} (confidence: {(p['crop_confidence'] or 0):.0%})"
             f"\n  • Fertilizer: {p['fertilizer_recommendation']} ({p['fertilizer_source']})"
         )
+        
+        # Add Geographic Soil Context (SoilGrids)
+        snapshot = p.get("original_prediction", {}).feature_snapshot if hasattr(p, "get") else None # Prediction model instance
+        # Since ctx["prediction"] is a summary dict, we might need to get real data
+        # Actually, let's update build_chat_context to include it.
+        if "soilgrids" in p:
+            s = p["soilgrids"]
+            context_lines.append(
+                f"\nGeological Context (SoilGrids 250m):"
+                f"\n  • Clay: {s.get('clay_content')} g/kg, Sand: {s.get('sand_content')} g/kg"
+                f"\n  • pH (H2O): {s.get('phh2o', 0)/10.0:.1f}, Nitrogen: {s.get('nitrogen')} cg/kg"
+                f"\n  • Organic Carbon (SOC): {s.get('soc')} dg/kg"
+            )
     else:
         context_lines.append("\nNo ML predictions available yet.")
 
@@ -134,6 +152,13 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
     else:
         context_lines.append("\nNo active recommendations.")
 
+    if rich_context:
+        context_lines.append("\nUser UI Context (What the farmer is looking at):")
+        context_lines.append(f"  • Current Map Depth: {rich_context.get('depth')}")
+        context_lines.append(f"  • Active Property Layer: {rich_context.get('property')}")
+        if "sensors" in rich_context:
+            context_lines.append(f"  • Active Sensors in view: {len(rich_context['sensors'])}")
+
     context_block = "\n".join(context_lines)
 
     messages = [
@@ -141,23 +166,40 @@ def ask_chatbot(db: Session, field_id: str, user_message: str) -> dict:
             "role": "user",
             "content": (
                 f"<field_data>\n{context_block}\n</field_data>\n\n"
+                f"Language required: {language}\n"
                 f"Farmer question: {user_message}"
             ),
         }
     ]
 
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    prompt = messages[0]["content"]
-    response = client.models.generate_content(
-        model="gemini-2.0-flash-lite",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=_SYSTEM_PROMPT,
-            max_output_tokens=1024,
-        ),
-    )
+    headers = {
+        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
 
-    reply = response.text if response.text else "No response generated."
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": messages[0]["content"]}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1024
+    }
+
+    try:
+        with httpx.Client() as client:
+            response = client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            reply = data["choices"][0]["message"]["content"]
+    except Exception as e:
+        reply = f"Error calling Groq API: {str(e)}"
     return {
         "reply": reply,
         "context_used": True,

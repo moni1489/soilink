@@ -46,64 +46,59 @@ export default function TopCards({ stats }: Props) {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginBottom: 18,
+    marginBottom: 32,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 16,
     justifyContent: 'space-between'
   },
   card: {
-    minWidth: '45%',
+    minWidth: '22%',
     flex: 1,
-    backgroundColor: '#16191E',
-    borderRadius: 18,
-    padding: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 24,
+    padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 2,
-    margin: 4
+    borderColor: 'rgba(5, 245, 155, 0.1)',
   },
   label: {
     fontSize: 11,
-    color: '#93A1B2',
+    color: 'rgba(255, 255, 255, 0.3)',
     marginBottom: 8,
-    fontWeight: '600',
-    letterSpacing: 0.6,
+    fontWeight: '800',
+    letterSpacing: 1.5,
     textTransform: 'uppercase'
   },
   value: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#F4F7FA'
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFFFFF'
   },
   sparklineRow: {
-    marginTop: 10,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 3,
-    height: 30
+    height: 24
   },
   sparklineBar: {
-    width: 5,
-    borderRadius: 3,
-    backgroundColor: '#38BDF8'
+    width: 4,
+    borderRadius: 2,
+    backgroundColor: '#059669'
   },
   signalRow: {
-    marginTop: 10,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 4
   },
   signalBar: {
-    width: 7,
+    width: 6,
     height: 10,
     borderRadius: 2,
-    backgroundColor: '#2A303A'
+    backgroundColor: 'rgba(255, 255, 255, 0.05)'
   },
   signalBarActive: {
-    backgroundColor: '#00F59B'
+    backgroundColor: '#059669'
   }
 });
