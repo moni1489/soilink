@@ -149,11 +149,11 @@ export default function Dashboard() {
 
           // FOR MOCK DEMO
           setScannerData({
-            '0-5cm': { phh2o: 65, nitrogen: 120, soc: 24, clay_content: 210 },
-            '5-15cm': { phh2o: 64, nitrogen: 110, soc: 22, clay_content: 230 },
-            '15-30cm': { phh2o: 62, nitrogen: 95, soc: 18, clay_content: 280 },
-            '30-60cm': { phh2o: 59, nitrogen: 70, soc: 14, clay_content: 350 },
-            '60-100cm': { phh2o: 55, nitrogen: 50, soc: 10, clay_content: 410 }
+            '0-5cm': { phh2o: 68, nitrogen: 140, soc: 28, clay_content: 210, sand_content: 440, silt_content: 350, bdod: 125 },
+            '5-15cm': { phh2o: 64, nitrogen: 110, soc: 22, clay_content: 240, sand_content: 410, silt_content: 360, bdod: 138 },
+            '15-30cm': { phh2o: 62, nitrogen: 105, soc: 19, clay_content: 290, sand_content: 360, silt_content: 340, bdod: 145 },
+            '30-60cm': { phh2o: 58, nitrogen: 85, soc: 14, clay_content: 360, sand_content: 290, silt_content: 310, bdod: 155 },
+            '60-100cm': { phh2o: 54, nitrogen: 45, soc: 9, clay_content: 420, sand_content: 230, silt_content: 280, bdod: 162 }
           });
         } catch (err) {
           console.error('Failed to fetch scanner data', err);

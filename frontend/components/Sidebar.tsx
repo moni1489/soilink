@@ -153,9 +153,6 @@ export default function Sidebar({
                     <Text style={styles.layerIcon}>{l.icon}</Text>
                     <Text style={[styles.layerLabel, { color: colors.text, opacity: visibleLayers.includes(l.key) ? 1 : 0.7 }]}>{t(l.key)}</Text>
                   </View>
-                  <View style={[styles.checkbox, visibleLayers.includes(l.key) && styles.checkboxActive, { borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#CBD5E1' }]}>
-                    {visibleLayers.includes(l.key) && <Text style={styles.checkMark}>✓</Text>}
-                  </View>
                 </Pressable>
               ))}
             </View>
@@ -172,9 +169,6 @@ export default function Sidebar({
                       <View style={styles.layerLeft}>
                         <Text style={styles.layerIcon}>{p.icon}</Text>
                         <Text style={[styles.layerLabel, { color: colors.text, opacity: selectedSoilProperty === p.key ? 1 : 0.7 }, selectedSoilProperty === p.key && styles.layerLabelActive]}>{t(p.key)}</Text>
-                      </View>
-                      <View style={[styles.checkbox, selectedSoilProperty === p.key && styles.checkboxActive, { borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#CBD5E1' }]}>
-                        {selectedSoilProperty === p.key && <Text style={styles.checkMark}>✓</Text>}
                       </View>
                     </Pressable>
                     {selectedSoilProperty === p.key && (
@@ -268,14 +262,12 @@ const styles = StyleSheet.create({
   fieldItem: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, marginBottom: 6, borderWidth: 1 },
   fieldText: { fontSize: 13, fontWeight: '700' },
   layerItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 18, marginBottom: 10, borderWidth: 1.5, borderColor: 'transparent' },
-  layerItemActive: { backgroundColor: 'rgba(5, 150, 105, 0.1)', borderColor: 'rgba(5, 150, 105, 0.3)' },
+  layerItemActive: { backgroundColor: 'rgba(5, 150, 105, 0.15)', borderColor: '#10B981' },
   layerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   layerIcon: { fontSize: 16 },
   layerLabel: { fontSize: 13, fontWeight: '700' },
   layerLabelActive: { color: '#059669' },
-  checkbox: { width: 18, height: 18, borderRadius: 5, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  checkboxActive: { backgroundColor: '#059669', borderColor: '#059669' },
-  checkMark: { color: '#FFFFFF', fontSize: 10, fontWeight: '900' },
+
   depthSelector: { marginTop: 16, marginLeft: 40, marginBottom: 20 },
   depthTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 },
   depthChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

@@ -10,7 +10,7 @@
   "pH": "pH",
   "electricalConductivity": "Electrical Conductivity",
   "gasComposition": "Gas Composition",
-  "soilGrids": "Global Soil Map (250m)",
+  "soilGrids": "Global Soil Map",
   "theme": "Theme",
   "light": "Light",
   "dark": "Dark",

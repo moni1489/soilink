@@ -120,10 +120,8 @@ def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Opt
         )
         
         # Add Geographic Soil Context (SoilGrids)
-        snapshot = p.get("original_prediction", {}).feature_snapshot if hasattr(p, "get") else None # Prediction model instance
-        # Since ctx["prediction"] is a summary dict, we might need to get real data
-        # Actually, let's update build_chat_context to include it.
-        if "soilgrids" in p:
+        # Since ctx["prediction"] is a summary dict, we already have it
+        if "soilgrids" in p and p["soilgrids"]:
             s = p["soilgrids"]
             context_lines.append(
                 f"\nGeological Context (SoilGrids 250m):"
