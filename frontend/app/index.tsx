@@ -56,6 +56,7 @@ export default function Dashboard() {
   const [globalSoilData, setGlobalSoilData] = useState<any>(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [scannerData, setScannerData] = useState<any>(null);
+  const [mapVisible, setMapVisible] = useState(true);
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
@@ -323,84 +324,94 @@ export default function Dashboard() {
               onRegisterOpen={() => setRegistrationVisible(true)}
               onOpenScanner={() => setScannerVisible(true)}
               recommendations={activeRecommendations}
+              style={!mapVisible ? { flex: 1, width: undefined } : undefined}
             />
-            <View style={[styles.mapContainerOuter, { backgroundColor: colors.bg, borderRadius: isDark ? 24 : 0, padding: 10, flex: 1 }]}>
-              <View style={styles.mapHeaderRow}>
-                <Text style={[styles.mapLabel, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('map')}</Text>
-
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <View style={[styles.mapModeGroup, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}>
-                    <Text style={styles.mapModeLabel}>{t('theme')}:</Text>
+            {mapVisible ? (
+              <View style={[styles.mapContainerOuter, { backgroundColor: colors.bg, borderRadius: isDark ? 24 : 0, padding: 10, flex: 1 }]}>
+                <View style={styles.mapHeaderRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Text style={[styles.mapLabel, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('map')}</Text>
                     <TouchableOpacity
-                      style={[
-                        styles.themeToggleButton,
-                        { backgroundColor: isDark ? '#222222' : 'transparent', borderColor: isDark ? '#333' : 'transparent' },
-                        isDark ? styles.themeToggleActive : undefined
-                      ]}
-                      onPress={toggleTheme}
+                      onPress={() => setMapVisible(false)}
+                      style={[styles.mapCloseBtn, { backgroundColor: isDark ? '#1a1a1a' : '#F1F5F9', borderColor: isDark ? '#333' : '#CBD5E1' }]}
                     >
-                      <Text style={[styles.themeToggleText, { color: isDark ? '#fff' : '#020617' }]}>
-                        {isDark ? t('dark') : t('light')}
-                      </Text>
+                      <Text style={[styles.mapCloseBtnText, { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(2,6,23,0.4)' }]}>✕</Text>
                     </TouchableOpacity>
                   </View>
 
-                  <View style={[styles.mapModeGroup, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}>
-                    <Text style={[styles.mapModeLabel, { color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('mapMode')}:</Text>
-                    <TouchableOpacity
-                      style={[
-                        styles.mapModeButton,
-                        mapMode === 'zones' ? styles.mapModeButtonActive : undefined
-                      ]}
-                      onPress={() => setMapMode('zones')}
-                    >
-                      <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('zonesView')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.mapModeButton,
-                        mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined
-                      ]}
-                      onPress={() => setMapMode('heatmap')}
-                    >
-                      <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('heatmapView')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.mapModeButton,
-                        mapMode === 'satellite' ? styles.mapModeButtonActive : undefined
-                      ]}
-                      onPress={() => setMapMode('satellite')}
-                    >
-                      <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('satelliteView') || 'Satellite'}</Text>
-                    </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={[styles.mapModeGroup, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}>
+                      <Text style={styles.mapModeLabel}>{t('theme')}:</Text>
+                      <TouchableOpacity
+                        style={[
+                          styles.themeToggleButton,
+                          { backgroundColor: isDark ? '#222222' : 'transparent', borderColor: isDark ? '#333' : 'transparent' },
+                          isDark ? styles.themeToggleActive : undefined
+                        ]}
+                        onPress={toggleTheme}
+                      >
+                        <Text style={[styles.themeToggleText, { color: isDark ? '#fff' : '#020617' }]}>
+                          {isDark ? t('dark') : t('light')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={[styles.mapModeGroup, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}>
+                      <Text style={[styles.mapModeLabel, { color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('mapMode')}:</Text>
+                      <TouchableOpacity
+                        style={[styles.mapModeButton, mapMode === 'zones' ? styles.mapModeButtonActive : undefined]}
+                        onPress={() => setMapMode('zones')}
+                      >
+                        <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('zonesView')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.mapModeButton, mapMode === 'heatmap' ? styles.mapModeButtonActive : undefined]}
+                        onPress={() => setMapMode('heatmap')}
+                      >
+                        <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('heatmapView')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.mapModeButton, mapMode === 'satellite' ? styles.mapModeButtonActive : undefined]}
+                        onPress={() => setMapMode('satellite')}
+                      >
+                        <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('satelliteView') || 'Satellite'}</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              <View style={[styles.mapRegion, { borderRadius: isDark ? 24 : 0, margin: isDark ? 16 : 0, borderColor: isDark ? '#222222' : '#E2E8F0', backgroundColor: isDark ? '#000' : '#fff' }]}>
-                <FieldMap
-                  fieldCenter={activeField.center}
-                  fieldBoundary={activeField.boundary}
-                  zones={activeZones}
-                  sensors={activeSensors}
-                  onSelectSensor={handleSelectSensor}
-                  onSelectZone={onSelectZone}
-                  activeZoneId={selectedZone?.id}
-                  visibleLayers={visibleLayers}
-                  selectedSoilProperty={selectedSoilProperty}
-                  selectedDepth={selectedDepth}
-                  mapMode={mapMode}
-                  theme={theme}
-                  historicalOffset={selectedDaysAgo}
-                />
-                <TimelineSlider
-                  selectedDaysAgo={selectedDaysAgo}
-                  onTimeChange={setSelectedDaysAgo}
-                />
+                <View style={[styles.mapRegion, { borderRadius: isDark ? 24 : 0, margin: isDark ? 16 : 0, borderColor: isDark ? '#222222' : '#E2E8F0', backgroundColor: isDark ? '#000' : '#fff' }]}>
+                  <FieldMap
+                    fieldCenter={activeField.center}
+                    fieldBoundary={activeField.boundary}
+                    zones={activeZones}
+                    sensors={activeSensors}
+                    onSelectSensor={handleSelectSensor}
+                    onSelectZone={onSelectZone}
+                    activeZoneId={selectedZone?.id}
+                    visibleLayers={visibleLayers}
+                    selectedSoilProperty={selectedSoilProperty}
+                    selectedDepth={selectedDepth}
+                    mapMode={mapMode}
+                    theme={theme}
+                    historicalOffset={selectedDaysAgo}
+                  />
+                  <TimelineSlider
+                    selectedDaysAgo={selectedDaysAgo}
+                    onTimeChange={setSelectedDaysAgo}
+                  />
+                </View>
               </View>
-            </View>
-            <View style={styles.recommendationsRegion}>
+            ) : (
+              <TouchableOpacity
+                onPress={() => setMapVisible(true)}
+                style={[styles.mapCollapsedBtn, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}
+              >
+                <Text style={[styles.mapCollapsedBtnText, { color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(2,6,23,0.35)' }]}>⤢</Text>
+                <Text style={[styles.mapCollapsedLabel, { color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(2,6,23,0.3)' }]}>{t('map')}</Text>
+              </TouchableOpacity>
+            )}
+            <View style={[styles.recommendationsRegion, !mapVisible && { flex: 1, width: undefined }]}>
               {activePrediction && <PredictionCard prediction={activePrediction} />}
               <Recommendations recommendations={activeRecommendations} />
             </View>
@@ -728,6 +739,38 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     fontSize: 12,
     letterSpacing: 2,
+  },
+  mapCloseBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapCloseBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  mapCollapsedBtn: {
+    width: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  mapCollapsedBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  mapCollapsedLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    writingDirection: 'ltr',
   },
   mapModeGroup: {
     flexDirection: 'row',
