@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   onTimeChange: (daysAgo: number) => void;
@@ -11,17 +12,37 @@ const DAYS = [7, 6, 5, 4, 3, 2, 1, 0]; // 0 is Today
 
 export default function TimelineSlider({ onTimeChange, selectedDaysAgo }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const getDayLabel = (daysAgo: number) => {
     if (daysAgo === 0) return t('today') || 'Today';
     return `${daysAgo} ${t('daysAgo') || 'days ago'}`;
   };
 
+  const colors = isDark 
+    ? { 
+        bg: 'rgba(15, 23, 42, 0.9)', 
+        text: '#F8FAFC', 
+        subText: 'rgba(255, 255, 255, 0.3)', 
+        border: 'rgba(5, 150, 105, 0.4)', 
+        accent: '#05F59B',
+        line: 'rgba(255, 255, 255, 0.1)'
+      }
+    : { 
+        bg: '#FFFFFF', 
+        text: '#1E293B', 
+        subText: 'rgba(0, 0, 0, 0.4)', 
+        border: '#E2E8F0', 
+        accent: '#059669',
+        line: '#F1F5F9'
+      };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg, borderColor: colors.border, shadowColor: isDark ? '#000' : '#E2E8F0' }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('historicalTimeline') || 'Soil Condition History'}</Text>
-        <Text style={styles.currentVal}>{getDayLabel(selectedDaysAgo)}</Text>
+        <Text style={[styles.title, { color: colors.subText }]}>{t('historicalTimeline') || 'Soil Condition History'}</Text>
+        <Text style={[styles.currentVal, { color: colors.accent }]}>{getDayLabel(selectedDaysAgo)}</Text>
       </View>
       <View style={styles.track}>
         {DAYS.map((day) => {
@@ -32,14 +53,14 @@ export default function TimelineSlider({ onTimeChange, selectedDaysAgo }: Props)
               onPress={() => onTimeChange(day)}
               style={styles.stepWrapper}
             >
-              <View style={[styles.dot, isActive && styles.dotActive]} />
-              <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>
+              <View style={[styles.dot, isActive && { backgroundColor: colors.accent }, !isActive && { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : '#E2E8F0' }, isActive && styles.dotActive]} />
+              <Text style={[styles.stepLabel, { color: colors.subText }, isActive && { color: colors.text, fontWeight: '700' }]}>
                 {day === 0 ? 'NOW' : `-${day}d`}
               </Text>
             </TouchableOpacity>
           );
         })}
-        <View style={styles.line} />
+        <View style={[styles.line, { backgroundColor: colors.line }]} />
       </View>
     </View>
   );
@@ -51,17 +72,14 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     width: 220,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(5, 150, 105, 0.3)',
-    shadowColor: '#000',
-    shadowOpacity: 0.5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 8,
-    backdropFilter: 'blur(8px)',
-  } as any,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

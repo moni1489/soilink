@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Recommendation, RecommendationTimelineStatus } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   recommendations: Recommendation[];
@@ -29,6 +30,26 @@ const statusColorMap: Record<RecommendationTimelineStatus, string> = {
 
 export default function Recommendations({ recommendations }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const colors = isDark 
+    ? { 
+        bg: 'transparent', 
+        cardBg: '#050505', 
+        text: '#FFFFFF', 
+        subText: '#94A3B8', 
+        border: '#222222',
+        header: 'rgba(255, 255, 255, 0.4)'
+      }
+    : { 
+        bg: 'transparent', 
+        cardBg: '#FFFFFF', 
+        text: '#020617', 
+        subText: '#475569', 
+        border: '#94A3B8',
+        header: 'rgba(0, 0, 0, 0.4)'
+      };
 
   const [checkedByStepId, setCheckedByStepId] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -56,53 +77,53 @@ export default function Recommendations({ recommendations }: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>{t('recommendations')}</Text>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <Text style={[styles.header, { color: colors.header }]}>{t('recommendations')}</Text>
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         {recommendations.map((item) => {
           const status = getTimelineStatus(item);
 
           return (
-            <View key={item.id} style={styles.item}>
+            <View key={item.id} style={[styles.item, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               <View style={[styles.statusStrip, { backgroundColor: levelColorMap[item.level] }]} />
               <View style={styles.itemHeaderRow}>
                 <View style={styles.badgeRow}>
-                  <Text style={styles.level}>{t(levelLabelKeyMap[item.level])}</Text>
+                  <Text style={[styles.level, { color: colors.subText }]}>{t(levelLabelKeyMap[item.level])}</Text>
                   {item.level === 'premium' && (
                     <View style={styles.aiBadge}>
                       <Text style={styles.aiBadgeText}>AI INSIGHT</Text>
                     </View>
                   )}
                 </View>
-                <View style={[styles.statePill, { borderColor: statusColorMap[status] }]}>
+                <View style={[styles.statePill, { borderColor: statusColorMap[status], backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC' }]}>
                   <Text style={[styles.stateText, { color: statusColorMap[status] }]}>{t(status)}</Text>
                 </View>
               </View>
 
-              <Text style={styles.title}>{t(item.titleKey)}</Text>
-              <Text style={styles.message}>{t(item.messageKey)}</Text>
+              <Text style={[styles.title, { color: colors.text }]}>{t(item.titleKey)}</Text>
+              <Text style={[styles.message, { color: colors.subText }]}>{t(item.messageKey)}</Text>
 
-              <Text style={styles.timelineLabel}>{t('timeline')}</Text>
+              <Text style={[styles.timelineLabel, { color: colors.header }]}>{t('timeline')}</Text>
               <View>
                 {item.timeline.map((step) => {
                   const isChecked = !!checkedByStepId[step.id];
 
                   return (
                     <TouchableOpacity key={step.id} style={styles.timelineItem} onPress={() => toggleStep(step.id)}>
-                      <View style={[styles.checkbox, isChecked ? styles.checkboxActive : undefined]}>
+                      <View style={[styles.checkbox, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }, isChecked ? styles.checkboxActive : undefined]}>
                         <Text style={styles.checkboxText}>{isChecked ? '✓' : ''}</Text>
                       </View>
                       <View style={styles.timelineTextWrap}>
                         <Text
                           style={[
                             styles.timelineText,
-                            isChecked ? styles.timelineTextDone : undefined,
-                            isChecked ? styles.timelineDimmed : undefined
+                            { color: isChecked ? colors.header : colors.text },
+                            isChecked ? styles.timelineTextDone : undefined
                           ]}
                         >
                           {step.labelOpen || t(step.labelKey)}
                         </Text>
-                        <Text style={[styles.timelineDue, isChecked ? styles.timelineDimmed : undefined]}>
+                        <Text style={[styles.timelineDue, { color: colors.header }]}>
                           {t('due')}: {step.dueAt}
                         </Text>
                       </View>
@@ -134,15 +155,17 @@ const styles = StyleSheet.create({
     letterSpacing: 2
   },
   item: {
-    borderRadius: 20,
-    padding: 20,
+    padding: 24,
+    borderRadius: 24,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderWidth: 1.5,
     flexDirection: 'column',
     position: 'relative',
     overflow: 'hidden',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 4,
   },
   statusStrip: {
     position: 'absolute',

@@ -312,9 +312,9 @@ export default function FieldMap({
             type: 'line',
             source: 'zones',
             paint: {
-              'line-color': '#00F59B',
-              'line-width': 1.5,
-              'line-opacity': 0.5
+              'line-color': '#FFFFFF',
+              'line-width': 2.5,
+              'line-opacity': 1.0
             }
           });
 
@@ -328,7 +328,16 @@ export default function FieldMap({
               'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 11, 0.9, 17, 1.75],
               'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 11, 24, 17, 64],
               'heatmap-opacity': 0.8,
-              'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'], 0, 'rgba(30,58,138,0)', 0.38, 'rgba(0,245,155,0.72)', 1, 'rgba(210,105,79,0.94)']
+              'heatmap-color': [
+                'interpolate',
+                ['linear'],
+                ['heatmap-density'],
+                0, 'rgba(0, 0, 255, 0)',
+                0.2, 'rgba(56, 189, 248, 0.4)',
+                0.5, 'rgba(234, 179, 8, 0.7)',
+                0.8, 'rgba(249, 115, 22, 0.85)',
+                1, 'rgba(239, 68, 68, 0.95)'
+              ]
             }
           });
 
@@ -336,7 +345,7 @@ export default function FieldMap({
             id: 'field-boundary-line',
             type: 'line',
             source: 'field-boundary',
-            paint: { 'line-color': '#00F59B', 'line-width': 2.5 }
+            paint: { 'line-color': '#FFFFFF', 'line-width': 3.5, 'line-opacity': 0.8 }
           });
 
           safeAddLayer({
@@ -344,7 +353,7 @@ export default function FieldMap({
             type: 'line',
             source: 'zones',
             layout: { visibility: curActiveZoneId ? 'visible' : 'none' },
-            paint: { 'line-color': '#67e8f9', 'line-width': 3.5 },
+            paint: { 'line-color': '#00F59B', 'line-width': 4.5 },
             filter: ['==', ['get', 'id'], curActiveZoneId ?? '__none__']
           });
 

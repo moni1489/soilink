@@ -18,6 +18,7 @@ import TimelineSlider from '../components/TimelineSlider';
 import { LayerKey, Sensor, SoilZone, MapMode, SoilGridsProperty, SoilDepth, Prediction } from '../types';
 import { fields, zones, sensors, statistics, recommendations, predictions } from '../data/mockData';
 import { useLocale } from '../hooks/useLocale';
+import { useTheme } from '../context/ThemeContext';
 
 const defaultVisible: LayerKey[] = [
   'soilMoisture',
@@ -37,6 +38,7 @@ const getStatusHealthScore = (status: Sensor['status']) => {
 export default function Dashboard() {
   const { t } = useTranslation();
   const { locale, setLanguage } = useLocale();
+  const { theme, toggleTheme } = useTheme();
   const [activeFieldId, setActiveFieldId] = useState(fields[0].id);
   const [visibleLayers, setVisibleLayers] = useState<LayerKey[]>(defaultVisible);
   const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
@@ -44,7 +46,6 @@ export default function Dashboard() {
   const [selectedZone, setSelectedZone] = useState<SoilZone | null>(null);
   const [zoneModalVisible, setZoneModalVisible] = useState(false);
   const [mapMode, setMapMode] = useState<MapMode>('zones');
-  const [mapTheme, setMapTheme] = useState<'light' | 'dark'>('dark');
   const [selectedSoilProperty, setSelectedSoilProperty] = useState<SoilGridsProperty>('clay');
   const [selectedDepth, setSelectedDepth] = useState<SoilDepth>('0-5cm');
   const [selectedDaysAgo, setSelectedDaysAgo] = useState(0);
@@ -117,7 +118,7 @@ export default function Dashboard() {
           // const res = await fetch(`${API_URL}/api/fields/${activeFieldId}/soilgrids?depth=${selectedDepth}`);
           // const data = await res.json();
           // setGlobalSoilData(data);
-          
+
           // FOR MOCK DEMO (Matching the structure of soilgrid_service.py)
           setGlobalSoilData({
             phh2o: 65,
@@ -166,7 +167,7 @@ export default function Dashboard() {
 
     const healthScore = Math.round(
       activeSensors.reduce((sum, sensor) => sum + getStatusHealthScore(sensor.status), 0) /
-        activeSensors.length
+      activeSensors.length
     );
 
     const warningCount = activeSensors.filter((sensor) => sensor.status === 'warning').length;
@@ -175,7 +176,7 @@ export default function Dashboard() {
 
     const averageMoisture =
       activeSensors.reduce((sum, sensor) => sum + sensor.soilMoisture, 0) / activeSensors.length;
-    
+
     // Add Nitrogen and SOC averages for demo
     const avgNitrogen = activeSensors.reduce((sum, s) => sum + (s.nitrogen || 40), 0) / activeSensors.length;
     const avgSoc = activeSensors.reduce((sum, s) => sum + (s.soc || 12), 0) / activeSensors.length;
@@ -214,9 +215,13 @@ export default function Dashboard() {
     { code: 'ru', label: t('russian') },
     { code: 'kk', label: t('kazakh') }
   ];
+  const isDark = theme === 'dark';
+  const colors = isDark 
+    ? { bg: '#000000', cardBg: '#111111', text: '#FFFFFF', subText: '#94A3B8', border: '#222222' }
+    : { bg: '#F8FAFC', cardBg: '#FFFFFF', text: '#020617', subText: '#475569', border: '#CBD5E1' };
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
       <View style={styles.contentContainer}>
         {isMobile && (
           <View style={[styles.mobileHeader, { paddingTop: Math.max(insets.top, 15) }]}>
@@ -241,15 +246,15 @@ export default function Dashboard() {
         )}
 
         {!isMobile && (
-          <View style={styles.localeRow}>
-            <Text style={styles.localeLabel}>{t('chooseLanguage')}:</Text>
+          <View style={[styles.localeRow, { backgroundColor: isDark ? '#111111' : '#FFFFFF', borderColor: colors.border, borderWidth: 1, borderRadius: 36, marginHorizontal: 60, marginTop: 20, paddingLeft: 80, paddingRight: 40, paddingVertical: 12, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 20, elevation: 8 }]}>
+            <Text style={[styles.localeLabel, { color: isDark ? '#94A3B8' : '#475569' }]}>{t('chooseLanguage')}:</Text>
             {languageButtons.map((item) => (
               <TouchableOpacity
                 key={item.code}
-                style={[styles.langButton, locale === item.code ? styles.langActive : undefined]}
+                style={[styles.langButton, locale === item.code ? { borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.1)' } : { borderColor: colors.border }]}
                 onPress={() => setLanguage(item.code)}
               >
-                <Text style={styles.langText}>{item.label}</Text>
+                <Text style={[styles.langText, { color: isDark ? '#FFFFFF' : '#020617' }, locale === item.code && { color: '#059669', fontWeight: '900' }]}>{item.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -319,35 +324,29 @@ export default function Dashboard() {
               onOpenScanner={() => setScannerVisible(true)}
               recommendations={activeRecommendations}
             />
-            <View style={styles.mapContainerOuter}>
+            <View style={[styles.mapContainerOuter, { backgroundColor: colors.bg, borderRadius: isDark ? 24 : 0, padding: 10, flex: 1 }]}>
               <View style={styles.mapHeaderRow}>
-                <Text style={styles.mapLabel}>{t('map')}</Text>
-                
+                <Text style={[styles.mapLabel, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('map')}</Text>
+
                 <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <View style={styles.mapModeGroup}>
+                  <View style={[styles.mapModeGroup, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}>
                     <Text style={styles.mapModeLabel}>{t('theme')}:</Text>
                     <TouchableOpacity
                       style={[
-                        styles.mapModeButton,
-                        mapTheme === 'light' ? styles.mapModeButtonActive : undefined
+                        styles.themeToggleButton,
+                        { backgroundColor: isDark ? '#222222' : 'transparent', borderColor: isDark ? '#333' : 'transparent' },
+                        isDark ? styles.themeToggleActive : undefined
                       ]}
-                      onPress={() => setMapTheme('light')}
+                      onPress={toggleTheme}
                     >
-                      <Text style={styles.mapModeButtonText}>{t('light')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.mapModeButton,
-                        mapTheme === 'dark' ? styles.mapModeButtonActive : undefined
-                      ]}
-                      onPress={() => setMapTheme('dark')}
-                    >
-                      <Text style={styles.mapModeButtonText}>{t('dark')}</Text>
+                      <Text style={[styles.themeToggleText, { color: isDark ? '#fff' : '#020617' }]}>
+                        {isDark ? t('dark') : t('light')}
+                      </Text>
                     </TouchableOpacity>
                   </View>
 
-                  <View style={styles.mapModeGroup}>
-                    <Text style={styles.mapModeLabel}>{t('mapMode')}:</Text>
+                  <View style={[styles.mapModeGroup, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}>
+                    <Text style={[styles.mapModeLabel, { color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('mapMode')}:</Text>
                     <TouchableOpacity
                       style={[
                         styles.mapModeButton,
@@ -355,7 +354,7 @@ export default function Dashboard() {
                       ]}
                       onPress={() => setMapMode('zones')}
                     >
-                      <Text style={styles.mapModeButtonText}>{t('zonesView')}</Text>
+                      <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('zonesView')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[
@@ -364,7 +363,7 @@ export default function Dashboard() {
                       ]}
                       onPress={() => setMapMode('heatmap')}
                     >
-                      <Text style={styles.mapModeButtonText}>{t('heatmapView')}</Text>
+                      <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('heatmapView')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[
@@ -373,12 +372,13 @@ export default function Dashboard() {
                       ]}
                       onPress={() => setMapMode('satellite')}
                     >
-                      <Text style={styles.mapModeButtonText}>{t('satelliteView') || 'Satellite'}</Text>
+                      <Text style={[styles.mapModeButtonText, { color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(2, 6, 23, 0.5)' }]}>{t('satelliteView') || 'Satellite'}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               </View>
-              <View style={styles.mapRegion}>
+
+              <View style={[styles.mapRegion, { borderRadius: isDark ? 24 : 0, margin: isDark ? 16 : 0, borderColor: isDark ? '#222222' : '#E2E8F0', backgroundColor: isDark ? '#000' : '#fff' }]}>
                 <FieldMap
                   fieldCenter={activeField.center}
                   fieldBoundary={activeField.boundary}
@@ -391,45 +391,45 @@ export default function Dashboard() {
                   selectedSoilProperty={selectedSoilProperty}
                   selectedDepth={selectedDepth}
                   mapMode={mapMode}
-                  theme={mapTheme}
+                  theme={theme}
                   historicalOffset={selectedDaysAgo}
                 />
-                <TimelineSlider 
-                  selectedDaysAgo={selectedDaysAgo} 
-                  onTimeChange={setSelectedDaysAgo} 
+                <TimelineSlider
+                  selectedDaysAgo={selectedDaysAgo}
+                  onTimeChange={setSelectedDaysAgo}
                 />
               </View>
             </View>
             <View style={styles.recommendationsRegion}>
-               {activePrediction && <PredictionCard prediction={activePrediction} />}
-               <Recommendations recommendations={activeRecommendations} />
+              {activePrediction && <PredictionCard prediction={activePrediction} />}
+              <Recommendations recommendations={activeRecommendations} />
             </View>
           </Animated.View>
         ) : (
           <ScrollView style={styles.mobileLayout} contentContainerStyle={{ paddingBottom: 100 }}>
             <View style={styles.mapHeaderRow}>
-              <Text style={styles.mapLabel}>{t('map')}</Text>
-              
+              <Text style={[styles.mapLabel, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('map')}</Text>
+
               <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={styles.mapModeGroup}>
-                  <Text style={styles.mapModeLabel}>{t('theme')}:</Text>
+                <View style={[styles.mapModeGroup, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}>
+                  <Text style={[styles.mapModeLabel, { color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('theme')}:</Text>
                   <TouchableOpacity
-                    style={[styles.mapModeButton, mapTheme === 'light' ? styles.mapModeButtonActive : undefined]}
-                    onPress={() => setMapTheme('light')}
+                    style={[
+                      styles.themeToggleButton, 
+                      { backgroundColor: isDark ? '#222222' : 'transparent', borderColor: isDark ? '#333' : 'transparent' },
+                      isDark ? styles.themeToggleActive : undefined
+                    ]}
+                    onPress={toggleTheme}
                   >
-                    <Text style={styles.mapModeButtonText}>{t('light')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.mapModeButton, mapTheme === 'dark' ? styles.mapModeButtonActive : undefined]}
-                    onPress={() => setMapTheme('dark')}
-                  >
-                    <Text style={styles.mapModeButtonText}>{t('dark')}</Text>
+                    <Text style={[styles.themeToggleText, { color: isDark ? '#fff' : '#020617' }]}>
+                      {isDark ? t('dark') : t('light')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </View>
 
-            <View style={[styles.mapRegion, { height: 420, marginTop: 10 }]}>
+            <View style={[styles.mapRegion, { height: 420, marginTop: 10, borderRadius: isDark ? 24 : 0, margin: isDark ? 16 : 0, borderColor: isDark ? '#222222' : '#E2E8F0', backgroundColor: isDark ? '#000' : '#fff' }]}>
               <FieldMap
                 fieldCenter={activeField.center}
                 fieldBoundary={activeField.boundary}
@@ -442,51 +442,51 @@ export default function Dashboard() {
                 selectedSoilProperty={selectedSoilProperty}
                 selectedDepth={selectedDepth}
                 mapMode={mapMode}
-                theme={mapTheme}
+                theme={theme}
                 historicalOffset={selectedDaysAgo}
               />
-              <TimelineSlider 
-                selectedDaysAgo={selectedDaysAgo} 
-                onTimeChange={setSelectedDaysAgo} 
+              <TimelineSlider
+                selectedDaysAgo={selectedDaysAgo}
+                onTimeChange={setSelectedDaysAgo}
               />
               <View style={styles.mobileMapControlsFloating}>
-                 <TouchableOpacity 
-                  style={[styles.floatingModeBtn, mapMode === 'zones' && styles.floatingModeBtnActive]}
+                <TouchableOpacity
+                  style={[styles.floatingModeBtn, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.65)' : 'rgba(255, 255, 255, 0.95)', borderColor: isDark ? 'rgba(5, 245, 155, 0.15)' : '#E2E8F0' }, mapMode === 'zones' && styles.floatingModeBtnActive]}
                   onPress={() => setMapMode('zones')}
-                 >
-                   <Text style={styles.floatingModeBtnText}>{t('zonesView')}</Text>
-                 </TouchableOpacity>
-                 <TouchableOpacity 
-                  style={[styles.floatingModeBtn, mapMode === 'heatmap' && styles.floatingModeBtnActive]}
+                >
+                  <Text style={[styles.floatingModeBtnText, { color: isDark ? '#FFFFFF' : '#020617' }]}>{t('zonesView')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.floatingModeBtn, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.65)' : 'rgba(255, 255, 255, 0.95)', borderColor: isDark ? 'rgba(5, 245, 155, 0.15)' : '#E2E8F0' }, mapMode === 'heatmap' && styles.floatingModeBtnActive]}
                   onPress={() => setMapMode('heatmap')}
-                 >
-                   <Text style={styles.floatingModeBtnText}>{t('heatmapView')}</Text>
-                 </TouchableOpacity>
-                 <TouchableOpacity 
-                  style={[styles.floatingModeBtn, mapMode === 'satellite' && styles.floatingModeBtnActive]}
+                >
+                  <Text style={[styles.floatingModeBtnText, { color: isDark ? '#FFFFFF' : '#020617' }]}>{t('heatmapView')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.floatingModeBtn, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.65)' : 'rgba(255, 255, 255, 0.95)', borderColor: isDark ? 'rgba(5, 245, 155, 0.15)' : '#E2E8F0' }, mapMode === 'satellite' && styles.floatingModeBtnActive]}
                   onPress={() => setMapMode('satellite')}
-                 >
-                   <Text style={styles.floatingModeBtnText}>{t('satellite') || 'Sat'}</Text>
-                 </TouchableOpacity>
+                >
+                  <Text style={[styles.floatingModeBtnText, { color: isDark ? '#FFFFFF' : '#020617' }]}>{t('satelliteView')}</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
             <View style={[styles.mobileActionContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-               <View style={styles.mobileActionRowGlass}>
-                  <TouchableOpacity style={styles.mobileActionBtnPremium} onPress={() => setScannerVisible(true)}>
-                    <Text style={styles.mobileActionBtnTextPremium}>📊 {t('verticalScanner')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.mobileActionBtnPremium} onPress={() => setChatVisible(true)}>
-                    <Text style={styles.mobileActionBtnTextPremium}>💬 {t('aiAgent')}</Text>
-                  </TouchableOpacity>
-               </View>
+              <View style={[styles.mobileActionRowGlass, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.03)', borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0', borderWidth: 1.5, borderRadius: 24 }]}>
+                <TouchableOpacity style={styles.mobileActionBtnPremium} onPress={() => setScannerVisible(true)}>
+                  <Text style={[styles.mobileActionBtnTextPremium, { color: isDark ? '#FFFFFF' : '#020617' }]}>📊 {t('verticalScanner')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.mobileActionBtnPremium} onPress={() => setChatVisible(true)}>
+                  <Text style={[styles.mobileActionBtnTextPremium, { color: isDark ? '#FFFFFF' : '#020617' }]}>💬 {t('aiAgent')}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.mobileActionContainer}>
-               <Text style={styles.sectionTitle}>{t('aiPrediction')}</Text>
-               <View style={styles.premiumCardContainer}>
-                 {activePrediction && <PredictionCard prediction={activePrediction} />}
-               </View>
+              <Text style={styles.sectionTitle}>{t('aiPrediction')}</Text>
+              <View style={styles.premiumCardContainer}>
+                {activePrediction && <PredictionCard prediction={activePrediction} />}
+              </View>
             </View>
           </ScrollView>
         )}
@@ -496,7 +496,7 @@ export default function Dashboard() {
           sensor={selectedSensor}
           onClose={() => setSensorModalVisible(false)}
         />
-        
+
         <DepthProfileModal
           visible={scannerVisible}
           onClose={() => setScannerVisible(false)}
@@ -511,7 +511,7 @@ export default function Dashboard() {
           onClose={() => setZoneModalVisible(false)}
         />
 
-        <ComparisonModal 
+        <ComparisonModal
           visible={comparisonVisible}
           onClose={() => setComparisonVisible(false)}
           sensorData={selectedSensor}
@@ -532,7 +532,7 @@ export default function Dashboard() {
           />
         )}
 
-        <FieldRegistration 
+        <FieldRegistration
           visible={registrationVisible}
           onClose={() => setRegistrationVisible(false)}
           onSuccess={() => { /* Refresh fields if needed */ }}
@@ -543,9 +543,9 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000000', height: (Platform.OS === 'web' ? '100vh' : '100%') as any, overflow: 'hidden' },
-  contentContainer: { 
-    flex: 1, 
+  root: { flex: 1, height: (Platform.OS === 'web' ? '100vh' : '100%') as any, overflow: 'hidden' },
+  contentContainer: {
+    flex: 1,
     padding: 20,
     height: (Platform.OS === 'web' ? '100vh' : '100%') as any,
     display: 'flex',
@@ -563,22 +563,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
+    paddingVertical: 12
   },
-  localeLabel: { fontWeight: '700', marginRight: 12, color: 'rgba(255, 255, 255, 0.3)', fontSize: 13 },
+  localeLabel: { fontWeight: '900', marginRight: 12, fontSize: 13 },
   langButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
     marginRight: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)'
+    borderWidth: 1.5,
   },
-  langText: { color: 'rgba(255, 255, 255, 0.5)', fontWeight: '600', fontSize: 12 },
-  langActive: { backgroundColor: 'rgba(0, 245, 155, 0.1)', borderColor: '#059669', borderWidth: 1 },
+  langText: { fontWeight: '700', fontSize: 12 },
+  langActive: { borderColor: '#059669' },
   webLayout: { flex: 1, flexDirection: 'row', gap: 16 },
   mobileLayout: {
     flex: 1,
-    backgroundColor: '#052A1D',
   },
   mobileHeader: {
     flexDirection: 'row',
@@ -586,9 +586,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 15,
-    backgroundColor: 'rgba(5, 42, 29, 0.85)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(5, 150, 105, 0.2)',
   },
   headerDotBtn: {
     flexDirection: 'row',
@@ -632,7 +630,6 @@ const styles = StyleSheet.create({
   },
   mobileMenuContainer: {
     flex: 1,
-    backgroundColor: '#052A1D',
   },
   closeMenuBtn: {
     padding: 20,
@@ -657,12 +654,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   floatingModeBtn: {
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(5, 245, 155, 0.15)',
     alignItems: 'center',
     minWidth: 70,
   },
@@ -671,7 +666,6 @@ const styles = StyleSheet.create({
     borderColor: '#05F59B',
   },
   floatingModeBtnText: {
-    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '900',
     textTransform: 'uppercase',
@@ -710,39 +704,37 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
   },
-  mapContainerOuter: { flex: 1, flexDirection: 'column' },
-  mapRegion: { 
+  mapContainerOuter: { 
     flex: 1, 
-    borderRadius: 32, 
-    overflow: 'hidden', 
-    borderWidth: 1, 
-    borderColor: 'rgba(5, 150, 105, 0.3)',
-    minHeight: Platform.OS === 'web' ? 400 : undefined,
-    backgroundColor: '#000',
-    margin: 10,
+    flexDirection: 'column',
+    overflow: 'hidden',
+    padding: 10
+  },
+  mapRegion: {
+    flex: 1,
+    borderWidth: 1.5,
+    overflow: 'hidden'
   },
   recommendationsRegion: { width: 340 },
   mapHeaderRow: {
-    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    marginBottom: 12
   },
   mapLabel: {
     fontWeight: '900',
-    color: 'rgba(255, 255, 255, 0.5)',
     textTransform: 'uppercase',
     fontSize: 12,
-    letterSpacing: 1
+    letterSpacing: 2,
   },
   mapModeGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     padding: 2,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)'
+    borderRadius: 14,
+    borderWidth: 1.5,
   },
   mapModeLabel: {
     fontSize: 11,
@@ -757,11 +749,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   mapModeButtonText: {
-    color: 'rgba(255, 255, 255, 0.5)',
     fontWeight: '700',
     fontSize: 12
   },
   mapModeButtonActive: {
     backgroundColor: '#059669'
+  },
+  themeToggleButton: {
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1.5,
+  },
+  themeToggleActive: {
+    backgroundColor: '#334155',
+  },
+  themeToggleText: {
+    fontWeight: '700',
+    fontSize: 12
   }
 });

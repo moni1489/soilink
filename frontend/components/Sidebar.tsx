@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, Pressable, TouchableOpacity, ScrollView, Platfo
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Field, LayerKey, SoilGridsProperty, SoilDepth } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
+import { BlurView } from 'expo-blur';
 
 const availableLayers: { key: LayerKey; label: string }[] = [
   { key: 'soilMoisture', label: 'soilMoisture' },
@@ -71,186 +73,214 @@ export default function Sidebar({
 }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const colors = isDark 
+    ? { 
+        sidebar: '#000000', 
+        text: '#FFFFFF', 
+        subText: '#94A3B8', 
+        activeBg: '#111111',
+        activeText: '#10B981',
+        border: '#222222'
+      }
+    : { 
+        sidebar: '#FFFFFF', 
+        text: '#020617', 
+        subText: '#475569', 
+        activeBg: '#F1F5F9',
+        activeText: '#064E3B',
+        border: '#CBD5E1'
+      };
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 24) }]}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 24), backgroundColor: colors.sidebar, borderRightColor: colors.border, borderRightWidth: isDark ? 0 : 1 }]}>
       <View style={styles.logoContainer}>
-        <Text style={styles.logoText}>SoiLink</Text>
-        <View style={styles.logoDot} />
+        <Text style={[styles.logoText, { color: isDark ? '#FFFFFF' : '#020617' }]}>SoiLink</Text>
+        <View style={[styles.logoDot, { backgroundColor: '#10B981' }]} />
       </View>
 
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
 
-      <View style={styles.tabContainer}>
-        <Pressable 
+      <View style={[styles.tabContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC' }]}>
+        <Pressable
           onPress={() => onSelectTab('map')}
-          style={[styles.tab, activeTab === 'map' && styles.tabActive]}
+          style={[styles.tab, activeTab === 'map' && { backgroundColor: isDark ? 'rgba(5, 150, 105, 0.15)' : '#FFFFFF', elevation: activeTab === 'map' ? 2 : 0 }]}
         >
-          <Text style={[styles.tabText, activeTab === 'map' && styles.tabTextActive]}>{t('interactiveMap')}</Text>
+          <Text style={[styles.tabText, { color: colors.subText }, activeTab === 'map' && { color: colors.activeText, fontWeight: '700' }]}>{t('interactiveMap')}</Text>
         </Pressable>
         {Platform.OS !== 'web' && (
-          <Pressable 
+          <Pressable
             onPress={() => onSelectTab('recommendations')}
-            style={[styles.tab, activeTab === 'recommendations' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'recommendations' && { backgroundColor: isDark ? 'rgba(5, 150, 105, 0.15)' : '#FFFFFF' }]}
           >
-            <Text style={[styles.tabText, activeTab === 'recommendations' && styles.tabTextActive]}>{t('recommendations')}</Text>
+            <Text style={[styles.tabText, { color: colors.subText }, activeTab === 'recommendations' && { color: colors.activeText, fontWeight: '700' }]}>{t('recommendations')}</Text>
           </Pressable>
         )}
-        <Pressable 
+        <Pressable
           onPress={() => onSelectTab('ai')}
-          style={[styles.tab, activeTab === 'ai' && styles.tabActive]}
+          style={[styles.tab, activeTab === 'ai' && { backgroundColor: isDark ? 'rgba(5, 150, 105, 0.15)' : '#FFFFFF' }]}
         >
-          <Text style={[styles.tabText, activeTab === 'ai' && styles.tabTextActive]}>{t('aiAgronomist')}</Text>
+          <Text style={[styles.tabText, { color: colors.subText }, activeTab === 'ai' && { color: colors.activeText, fontWeight: '700' }]}>{t('aiAgronomist')}</Text>
         </Pressable>
       </View>
 
-      {activeTab === 'map' ? (
-        <>
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('field')}</Text>
-              <Pressable onPress={onRegisterOpen}>
-                <Text style={styles.addBtn}>+</Text>
-              </Pressable>
-            </View>
-            {fields.map((field) => {
-              const isActive = field.id === selectedFieldId;
-              return (
-                <Pressable
-                  key={field.id}
-                  onPress={() => onSelectField(field.id)}
-                  style={[styles.fieldItem, isActive && styles.layerItemActive]}
-                >
-                  <Text style={[styles.layerLabel, isActive && styles.layerLabelActive]}>
-                    {field.name}
-                  </Text>
+        {activeTab === 'map' ? (
+          <>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t('field')}</Text>
+                <Pressable onPress={onRegisterOpen}>
+                  <Text style={styles.addBtn}>+</Text>
                 </Pressable>
-              );
-            })}
-          </View>
+              </View>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              {fields.map((field) => {
+                const isActive = field.id === selectedFieldId;
+                return (
+                  <Pressable
+                    key={field.id}
+                    onPress={() => onSelectField(field.id)}
+                    style={[
+                      styles.fieldItem,
+                      isActive && { backgroundColor: colors.activeBg, borderColor: colors.activeText, borderWidth: 1 }
+                    ]}
+                  >
+                    <Text style={[styles.layerLabel, { color: colors.subText }, isActive && { color: colors.activeText, fontWeight: '700' }]}>
+                      {field.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('mapLayers')}</Text>
-            {availableLayers.map((layer) => {
-              const isActive = visibleLayers.includes(layer.key);
-              return (
-                <React.Fragment key={layer.key}>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('mapLayers')}</Text>
+              {availableLayers.map((layer) => {
+                const isActive = visibleLayers.includes(layer.key);
+                return (
+                  <React.Fragment key={layer.key}>
                     <Pressable
                       onPress={() => onToggleLayer(layer.key)}
-                      style={[styles.layerItem, isActive && styles.layerItemActive]}
+                      style={[
+                        styles.layerItem,
+                        isActive && { backgroundColor: colors.activeBg, borderColor: colors.activeText, borderWidth: 1 }
+                      ]}
                     >
                       <View style={styles.layerLeft}>
-                        <Text style={[styles.layerLabel, isActive && styles.layerLabelActive]}>
+                        <Text style={[styles.layerLabel, { color: colors.subText }, isActive && { color: colors.activeText, fontWeight: '700' }]}>
                           {t(layer.label)}
                         </Text>
                       </View>
                     </Pressable>
-                  
-                      {layer.key === 'soilGrids' && isActive && (
-                        <>
-                          <View style={styles.subPropertyContainer}>
-                            {soilGridsProperties.map((p) => (
+
+                    {layer.key === 'soilGrids' && isActive && (
+                      <>
+                        <View style={[styles.subPropertyContainer, { borderLeftWidth: 2, borderLeftColor: colors.border, paddingLeft: 16 }]}>
+                          {soilGridsProperties.map((p) => (
+                            <Pressable
+                              key={p.key}
+                              onPress={() => onSelectSoilProperty(p.key)}
+                              style={[
+                                styles.subPropertyItem,
+                                { borderColor: selectedSoilProperty === p.key ? '#10B981' : colors.border, backgroundColor: selectedSoilProperty === p.key ? 'rgba(16, 185, 129, 0.1)' : 'transparent' }
+                              ]}
+                            >
+                              <Text style={[
+                                styles.subPropertyLabel,
+                                { color: selectedSoilProperty === p.key ? '#10B981' : colors.subText }
+                              ]}>
+                                {t(p.label)}
+                              </Text>
+                            </Pressable>
+                          ))}
+                        </View>
+                        <View style={[styles.depthSelector, { borderLeftWidth: 2, borderLeftColor: colors.border, paddingLeft: 16 }]}>
+                          <Text style={[styles.depthTitle, { color: colors.subText }]}>{t('depthSelector')}</Text>
+                          <View style={styles.depthChips}>
+                            {depthLevels.map((d) => (
                               <Pressable
-                                key={p.key}
-                                onPress={() => onSelectSoilProperty(p.key)}
-                                style={[
-                                  styles.subPropertyItem,
-                                  selectedSoilProperty === p.key && styles.subPropertyItemActive
-                                ]}
+                                key={d}
+                                onPress={() => onSelectDepth(d)}
+                                style={[styles.depthChip, { borderColor: selectedDepth === d ? '#10B981' : colors.border, backgroundColor: selectedDepth === d ? 'rgba(16, 185, 129, 0.1)' : 'transparent' }]}
                               >
-                                <Text style={[
-                                  styles.subPropertyLabel,
-                                  selectedSoilProperty === p.key && styles.subPropertyLabelActive
-                                ]}>
-                                  {t(p.label)}
+                                <Text style={[styles.depthChipText, { color: selectedDepth === d ? '#10B981' : colors.subText }]}>
+                                  {d}
                                 </Text>
                               </Pressable>
                             ))}
                           </View>
-                          <View style={styles.depthSelector}>
-                            <Text style={styles.depthTitle}>{t('depthSelector')}</Text>
-                            <View style={styles.depthChips}>
-                               {depthLevels.map((d) => (
-                                 <Pressable 
-                                   key={d} 
-                                   onPress={() => onSelectDepth(d)}
-                                   style={[styles.depthChip, selectedDepth === d && styles.depthChipActive]}
-                                 >
-                                   <Text style={[styles.depthChipText, selectedDepth === d && styles.depthChipTextActive]}>
-                                     {d}
-                                   </Text>
-                                 </Pressable>
-                               ))}
-                            </View>
-                            <TouchableOpacity style={styles.scannerBtn} onPress={onOpenScanner}>
-                              <Text style={styles.scannerBtnText}>{t('verticalScannerBtn')}</Text>
-                            </TouchableOpacity>
-                          </View>
-                        </>
-                      )}
-                </React.Fragment>
-              );
-            })}
-          </View>
-        </>
-      ) : activeTab === 'recommendations' ? (
-        <View style={styles.aiTab}>
-           <Text style={styles.aiTabTitle}>{t('recommendations')}</Text>
+                          <TouchableOpacity style={styles.scannerBtn} onPress={onOpenScanner}>
+                            <Text style={styles.scannerBtnText}>{t('verticalScannerBtn')}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </View>
+          </>
+        ) : activeTab === 'recommendations' ? (
+          <View style={styles.aiTab}>
+            <Text style={styles.aiTabTitle}>{t('recommendations')}</Text>
             {recommendations.map((rec: any) => (
-              <View key={rec.id} style={styles.recMiniCard}>
+              <View key={rec.id} style={[styles.recMiniCard, { backgroundColor: colors.sidebar, borderColor: colors.border, borderWidth: 1 }]}>
                 <Text style={styles.recIcon}>{rec.icon || '📌'}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.recTitle}>{t(rec.titleKey || rec.title)}</Text>
-                  <Text style={styles.recBody} numberOfLines={2}>{t(rec.messageKey || rec.description)}</Text>
+                  <Text style={[styles.recTitle, { color: colors.text }]}>{t(rec.titleKey || rec.title)}</Text>
+                  <Text style={[styles.recBody, { color: colors.subText }]} numberOfLines={2}>{t(rec.messageKey || rec.description)}</Text>
                 </View>
               </View>
             ))}
-           <TouchableOpacity style={styles.aiActionButton} onPress={() => onSelectTab('ai')}>
-             <Text style={styles.aiActionButtonText}>{t('askAgronomist') || 'Ask AI'}</Text>
-           </TouchableOpacity>
-        </View>
-      ) : (
+            <TouchableOpacity style={[styles.aiActionButton, { backgroundColor: colors.activeText }]} onPress={() => onSelectTab('ai')}>
+              <Text style={styles.aiActionButtonText}>{t('askAgronomist') || 'Ask AI'}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
           <View style={styles.aiTab}>
-          <Text style={styles.aiTabTitle}>{t('aiConsultantTitle')}</Text>
-          <Text style={styles.aiTabDesc}>
-            {t('aiConsultantDesc')}
-          </Text>
-          
-          <View style={styles.aiContextCard}>
-            <View style={styles.contextHeader}>
-              <Text style={styles.contextHeaderTitle}>{t('currentContext')}</Text>
-              <View style={styles.liveBadge} />
-            </View>
-            <View style={styles.contextRow}>
-              <Text style={styles.contextKey}>{t('layer')}:</Text>
-              <Text style={styles.contextVal}>{t(selectedSoilProperty)}</Text>
-            </View>
-            <View style={styles.contextRow}>
-              <Text style={styles.contextKey}>{t('depth')}:</Text>
-              <Text style={styles.contextVal}>{selectedDepth}</Text>
-            </View>
-          </View>
+            <Text style={styles.aiTabTitle}>{t('aiConsultantTitle')}</Text>
+            <Text style={styles.aiTabDesc}>
+              {t('aiConsultantDesc')}
+            </Text>
 
-          <View style={styles.suggestionsContainer}>
-            <Text style={styles.suggestionsTitle}>{t('tryAsking')}</Text>
-            <Text style={styles.suggestionText}>• {t('suggestQ1')}</Text>
-            <Text style={styles.suggestionText}>• {t('suggestQ2')}</Text>
-            <Text style={styles.suggestionText}>• {t('suggestQ3')}</Text>
-          </View>
+            <View style={styles.aiContextCard}>
+              <View style={styles.contextHeader}>
+                <Text style={styles.contextHeaderTitle}>{t('currentContext')}</Text>
+                <View style={styles.liveBadge} />
+              </View>
+              <View style={styles.contextRow}>
+                <Text style={styles.contextKey}>{t('layer')}:</Text>
+                <Text style={styles.contextVal}>{t(selectedSoilProperty)}</Text>
+              </View>
+              <View style={styles.contextRow}>
+                <Text style={styles.contextKey}>{t('depth')}:</Text>
+                <Text style={styles.contextVal}>{selectedDepth}</Text>
+              </View>
+            </View>
 
-          <TouchableOpacity style={styles.aiActionButton} onPress={onOpenAI}>
-            <Text style={styles.aiActionButtonText}>{t('sendToChat')}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            <View style={styles.suggestionsContainer}>
+              <Text style={styles.suggestionsTitle}>{t('tryAsking')}</Text>
+              <Text style={styles.suggestionText}>• {t('suggestQ1')}</Text>
+              <Text style={styles.suggestionText}>• {t('suggestQ2')}</Text>
+              <Text style={styles.suggestionText}>• {t('suggestQ3')}</Text>
+            </View>
+
+            <TouchableOpacity style={styles.aiActionButton} onPress={onOpenAI}>
+              <Text style={styles.aiActionButtonText}>{t('sendToChat')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>SoiLink v1.1 Premium</Text>
+      <View style={[styles.footer, { borderTopColor: isDark ? '#111' : '#E2E8F0' }]}>
+        <Text style={[styles.footerText, { color: isDark ? '#444' : '#94A3B8' }]}>SoiLink v1.1 Premium</Text>
       </View>
     </View>
   );
@@ -259,14 +289,16 @@ export default function Sidebar({
 const styles: any = StyleSheet.create({
   container: {
     width: 280,
-    backgroundColor: '#000000',
     borderRightWidth: 1,
-    borderRightColor: '#064E3B',
     paddingVertical: 24,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
+    borderRadius: 24,
+    marginVertical: 10,
+    marginLeft: 10,
+    overflow: 'hidden'
   },
   scrollContent: {
     paddingBottom: 40
@@ -278,7 +310,6 @@ const styles: any = StyleSheet.create({
     gap: 8
   },
   logoText: {
-    color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '900',
     letterSpacing: -0.5
@@ -287,16 +318,14 @@ const styles: any = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#059669',
     marginTop: 10
   },
   section: {
     marginBottom: 40
   },
   sectionTitle: {
-    color: 'rgba(255, 255, 255, 0.2)',
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 2,
     paddingLeft: 16
@@ -308,7 +337,6 @@ const styles: any = StyleSheet.create({
     marginBottom: 20
   },
   addBtn: {
-    color: '#059669',
     fontSize: 20,
     fontWeight: '900',
     paddingHorizontal: 8
@@ -344,12 +372,12 @@ const styles: any = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 14,
-    marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderWidth: 1,
+    borderRadius: 18,
+    marginBottom: 10,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
     borderColor: 'transparent'
   },
   layerItemActive: {
@@ -365,9 +393,8 @@ const styles: any = StyleSheet.create({
     fontSize: 16
   },
   layerLabel: {
-    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 13,
-    fontWeight: '600'
+    fontWeight: '700'
   },
   layerLabelActive: {
     color: '#059669',
@@ -396,12 +423,11 @@ const styles: any = StyleSheet.create({
     marginTop: 'auto',
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)'
   },
   aiButton: {
     backgroundColor: '#059669',
-    paddingVertical: 14,
-    borderRadius: 14,
+    paddingVertical: 16,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -416,18 +442,17 @@ const styles: any = StyleSheet.create({
     gap: 6
   },
   subPropertyItem: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)'
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1.5,
   },
   subPropertyItemActive: {
     backgroundColor: 'rgba(5, 150, 105, 0.2)'
   },
   subPropertyLabel: {
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.4)',
-    fontWeight: '600'
+    fontSize: 12,
+    fontWeight: '700'
   },
   subPropertyLabelActive: {
     color: '#059669',
@@ -460,15 +485,15 @@ const styles: any = StyleSheet.create({
     color: '#059669'
   },
   depthSelector: {
-    marginTop: 8,
-    marginLeft: 48,
+    marginTop: 16,
+    marginLeft: 40,
     marginBottom: 20
   },
   depthTitle: {
-    color: 'rgba(255, 255, 255, 0.2)',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '900',
-    letterSpacing: 1,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
     marginBottom: 8
   },
   depthChips: {
@@ -477,21 +502,18 @@ const styles: any = StyleSheet.create({
     gap: 6
   },
   depthChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)'
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1.5,
   },
   depthChipActive: {
     backgroundColor: 'rgba(5, 150, 105, 0.1)',
     borderColor: '#059669'
   },
   depthChipText: {
-    color: 'rgba(255, 255, 255, 0.4)',
-    fontSize: 10,
-    fontWeight: '700'
+    fontSize: 11,
+    fontWeight: '800'
   },
   depthChipTextActive: {
     color: '#059669'
@@ -548,7 +570,6 @@ const styles: any = StyleSheet.create({
     fontWeight: '600'
   },
   contextVal: {
-    color: '#059669',
     fontSize: 12,
     fontWeight: '800'
   },

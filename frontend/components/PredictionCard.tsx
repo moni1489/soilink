@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Prediction } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   prediction: Prediction;
@@ -9,13 +10,35 @@ interface Props {
 
 export default function PredictionCard({ prediction }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const colors = isDark 
+    ? { 
+        bg: '#111111', 
+        text: '#FFFFFF', 
+        subText: '#94A3B8', 
+        border: '#222222',
+        accent: '#10B981',
+        divider: '#222222',
+        barBg: '#050505'
+      }
+    : { 
+        bg: '#FFFFFF', 
+        text: '#020617', 
+        subText: '#475569', 
+        border: '#94A3B8',
+        accent: '#059669',
+        divider: '#CBD5E1',
+        barBg: '#F1F5F9'
+      };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg, borderColor: colors.border, shadowColor: isDark ? '#000' : '#E2E8F0' }]}>
       <View style={styles.header}>
         <View style={styles.aiBadgeContainer}>
-          <View style={[styles.aiBadge, prediction.isHistorical && styles.historicalBadge]}>
-            <Text style={styles.aiBadgeText}>
+          <View style={[styles.aiBadge, prediction.isHistorical && styles.historicalBadge, { backgroundColor: prediction.isHistorical ? '#6B7280' : colors.accent }]}>
+            <Text style={[styles.aiBadgeText, { color: isDark || prediction.isHistorical ? '#052A1D' : '#FFFFFF' }]}>
               {prediction.isHistorical ? 'HISTORICAL DATA' : t('aiPrediction')}
             </Text>
           </View>
@@ -25,7 +48,7 @@ export default function PredictionCard({ prediction }: Props) {
             </View>
           )}
         </View>
-        <Text style={styles.updateTime}>
+        <Text style={[styles.updateTime, { color: colors.subText }]}>
           {prediction.isHistorical 
             ? `${prediction.historicalDate} ${t('daysAgo')}`
             : `${t('lastUpdated')}: ${new Date(prediction.lastUpdated).toLocaleDateString()}`}
@@ -34,37 +57,37 @@ export default function PredictionCard({ prediction }: Props) {
 
       <View style={styles.mainInfo}>
         <View style={styles.infoCol}>
-          <Text style={styles.label}>{t('cropRecommendation')}</Text>
-          <Text style={styles.value}>{t(prediction.cropRecommendation)}</Text>
-          <View style={styles.confidenceBar}>
+          <Text style={[styles.label, { color: colors.subText }]}>{t('cropRecommendation')}</Text>
+          <Text style={[styles.value, { color: colors.text }]}>{t(prediction.cropRecommendation)}</Text>
+          <View style={[styles.confidenceBar, { backgroundColor: colors.barBg }]}>
             <View 
               style={[
                 styles.confidenceProgress, 
-                { width: `${prediction.cropConfidence * 100}%` }
+                { width: `${prediction.cropConfidence * 100}%`, backgroundColor: colors.accent }
               ]} 
             />
-            <Text style={styles.confidenceText}>
+            <Text style={[styles.confidenceText, { color: colors.accent }]}>
               {(prediction.cropConfidence * 100).toFixed(0)}% {t('confidence')}
             </Text>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
         <View style={styles.infoCol}>
-          <Text style={styles.label}>{t('fertilizerRecommendation')}</Text>
-          <Text style={styles.value}>{t(prediction.fertilizerRecommendation)}</Text>
-          <View style={styles.sourceTag}>
-            <Text style={styles.sourceText}>
+          <Text style={[styles.label, { color: colors.subText }]}>{t('fertilizerRecommendation')}</Text>
+          <Text style={[styles.value, { color: colors.text }]}>{t(prediction.fertilizerRecommendation)}</Text>
+          <View style={[styles.sourceTag, { backgroundColor: colors.barBg, borderColor: colors.divider }]}>
+            <Text style={[styles.sourceText, { color: colors.subText }]}>
               {prediction.fertilizerSource === 'ml' ? t('mlEngine') : t('ruleBased')}
             </Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.soilStateLabel}>{t('soilState')}:</Text>
-        <Text style={styles.soilStateValue}>{t(prediction.soilState)}</Text>
+      <View style={[styles.footer, { borderTopColor: colors.divider }]}>
+        <Text style={[styles.soilStateLabel, { color: colors.subText }]}>{t('soilState')}:</Text>
+        <Text style={[styles.soilStateValue, { color: colors.text }]}>{t(prediction.soilState)}</Text>
       </View>
     </View>
   );
@@ -72,12 +95,14 @@ export default function PredictionCard({ prediction }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(5, 245, 155, 0.1)',
+    padding: 24,
+    borderWidth: 1.5,
     marginBottom: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
