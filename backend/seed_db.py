@@ -34,58 +34,58 @@ def seed():
 
     # 2. Add Sensor Readings
     now = datetime.utcnow()
-    for i in range(5):
+    for i in range(10):
         reading = SensorReading(
             field_id=field_id,
             sensor_id=f"sensor-{i+1}",
             timestamp=now - timedelta(hours=i),
-            ph=6.5 + (i * 0.1),
-            soil_moisture=45.0 + (i * 2),
-            soil_temperature=18.0 - (i * 0.5),
-            electrical_conductivity=1.2 + (i * 0.05),
-            gas_composition="Normal",
-            vibroacoustic="Steady"
+            ph=6.5 + (i * 0.05),
+            soil_moisture=48.0 + (i * 1.5),
+            soil_temperature=19.2 - (i * 0.4),
+            electrical_conductivity=1.1 + (i * 0.03),
+            gas_composition="Stable",
+            vibroacoustic="Nominal"
         )
         db.add(reading)
+    db.commit()
+    print(f"Added 10 sensor readings for {field_id}")
     
     # 3. Add Prediction
     prediction = Prediction(
         field_id=field_id,
         timestamp=now,
-        soil_state="Stable",
-        soil_state_confidence=0.92,
-        crop_recommendation="Wheat",
-        crop_confidence=0.88,
-        fertilizer_recommendation="NPK 15-15-15",
-        fertilizer_source="Based on low Nitrogen levels"
+        soil_state="Highly Productive",
+        soil_state_confidence=0.94,
+        crop_recommendation="Premium Wheat (Elite)",
+        crop_confidence=0.91,
+        fertilizer_recommendation="Liquid Nitro-Phosphorus",
+        fertilizer_source="AI Analysis",
+        feature_snapshot={"soilgrid_data": {"clay_content": 220, "sand_content": 450, "phh2o": 68}}
     )
     db.add(prediction)
+    db.commit()
+    print(f"Added prediction for {field_id}")
 
     # 4. Add Recommendations
     recs = [
         Recommendation(
             field_id=field_id,
             timestamp=now,
-            level="critical",
-            title_text="Irregular Moisture Detected",
-            message_text="Section B-4 shows 15% lower moisture than average. Check irrigation valves.",
-            timeline=[{"id": "step1", "labelKey": "Check valves", "dueAt": "Today", "completed": False}]
-        ),
-        Recommendation(
-            field_id=field_id,
-            timestamp=now - timedelta(days=1),
-            level="premium",
-            title_text="Optimal Planting Window",
-            message_text="Soil temperature and moisture are ideal for sowing wheat over the next 48 hours.",
+            level="warning",
+            title_key="recMicronutrientTitle",
+            message_key="recMicronutrientMessage",
+            title_text="Micronutrient Optimization",
+            message_text="Boron levels are slightly below target. Foliar application recommended.",
             timeline=[]
         )
     ]
     for r in recs:
         db.add(r)
-
     db.commit()
+    print(f"Added recommendations for {field_id}")
+
     db.close()
-    print("Database seeded successfully!")
+    print("Database seeded successfully and verified!")
 
 if __name__ == "__main__":
     seed()
