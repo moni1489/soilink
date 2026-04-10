@@ -21,6 +21,7 @@ interface Props {
   onRegisterOpen: () => void;
   onOpenScanner: () => void;
   recommendations?: any[];
+  style?: any;
 }
 
 const soilProperties = [
@@ -59,7 +60,8 @@ export default function Sidebar({
   onOpenAI,
   onRegisterOpen,
   onOpenScanner,
-  recommendations = []
+  recommendations = [],
+  style
 }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -93,7 +95,7 @@ export default function Sidebar({
       };
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 24), backgroundColor: colors.sidebar, borderRightColor: colors.border, borderRightWidth: isDark ? 0 : 1 }]}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 24), backgroundColor: colors.sidebar, borderRightColor: colors.border, borderRightWidth: isDark ? 0 : 1 }, style]}>
       <View style={styles.logoContainer}>
         <Text style={[styles.logoText, { color: colors.text }]}>SoiLink</Text>
         <View style={[styles.logoDot, { backgroundColor: '#10B981' }]} />
