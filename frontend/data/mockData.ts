@@ -1,4 +1,4 @@
-import { Field, Sensor, SoilZone, StatisticCard, Recommendation } from '../types';
+import { Field, Sensor, SoilZone, StatisticCard, Recommendation, Prediction } from '../types';
 
 export const fields: Field[] = [
   {
@@ -7,15 +7,15 @@ export const fields: Field[] = [
     // Based on a real farmland parcel near Gerasimovka, east of Oskemen.
     areaHectares: 87.4,
     center: {
-      latitude: 49.9372,
-      longitude: 82.4281
+      latitude: 49.9200,
+      longitude: 82.5000
     },
     boundary: [
-      { latitude: 49.9411, longitude: 82.4219 },
-      { latitude: 49.9397, longitude: 82.4343 },
-      { latitude: 49.9334, longitude: 82.4357 },
-      { latitude: 49.9312, longitude: 82.4236 },
-      { latitude: 49.9328, longitude: 82.4212 }
+      { latitude: 49.9240, longitude: 82.4920 },
+      { latitude: 49.9250, longitude: 82.5080 },
+      { latitude: 49.9160, longitude: 82.5120 },
+      { latitude: 49.9140, longitude: 82.4980 },
+      { latitude: 49.9180, longitude: 82.4880 }
     ]
   },
   {
@@ -57,27 +57,31 @@ export const sensors: Sensor[] = [
     id: 'sensor-1',
     fieldId: 'field-1',
     name: 'Sector 1 Probe',
-    coordinates: { latitude: 49.938650, longitude: 82.424725 },
+    coordinates: { latitude: 49.9220, longitude: 82.4980 },
     status: 'healthy',
     lastUpdated: '2026-03-22T06:10:00Z',
     pH: 6.8,
     soilTemperature: 17.1,
     soilMoisture: 54,
     electricalConductivity: 1.08,
+    nitrogen: 145,
+    soc: 2.1,
     gasComposition: 'N2 78%, O2 21%, CO2 0.04%',
-    premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Loose and stable profile, low compaction risk' }
+    premiumFeatures: {}
   },
   {
     id: 'sensor-2',
     fieldId: 'field-1',
     name: 'Sector 2 Probe',
-    coordinates: { latitude: 49.938200, longitude: 82.431187 },
+    coordinates: { latitude: 49.9200, longitude: 82.5050 },
     status: 'warning',
     lastUpdated: '2026-03-22T06:08:00Z',
     pH: 5.8,
     soilTemperature: 21.3,
     soilMoisture: 36,
     electricalConductivity: 1.62,
+    nitrogen: 88,
+    soc: 1.4,
     gasComposition: 'N2 77%, O2 20%, CO2 0.05%',
     premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Localized layer hardening at 20-30 cm depth' }
   },
@@ -85,13 +89,15 @@ export const sensors: Sensor[] = [
     id: 'sensor-3',
     fieldId: 'field-1',
     name: 'Sector 3 Probe',
-    coordinates: { latitude: 49.934600, longitude: 82.431925 },
+    coordinates: { latitude: 49.9160, longitude: 82.5030 },
     status: 'critical',
     lastUpdated: '2026-03-22T06:03:00Z',
     pH: 4.9,
     soilTemperature: 27.4,
     soilMoisture: 19,
     electricalConductivity: 2.31,
+    nitrogen: 42,
+    soc: 0.9,
     gasComposition: 'N2 75%, O2 19%, CO2 0.10%',
     premiumFeatures: {
       vibroacousticSoilStructureAnalysis: 'High compaction and microcrack density, intervention required'
@@ -101,28 +107,16 @@ export const sensors: Sensor[] = [
     id: 'sensor-4',
     fieldId: 'field-1',
     name: 'Sector 4 Probe',
-    coordinates: { latitude: 49.932913, longitude: 82.425750 },
+    coordinates: { latitude: 49.9170, longitude: 82.4940 },
     status: 'healthy',
     lastUpdated: '2026-03-22T06:00:00Z',
     pH: 6.9,
     soilTemperature: 16.2,
     soilMoisture: 49,
     electricalConductivity: 1.14,
+    nitrogen: 130,
+    soc: 1.9,
     gasComposition: 'N2 78%, O2 21%, CO2 0.03%'
-  },
-  {
-    id: 'sensor-5',
-    fieldId: 'field-1',
-    name: 'Sector 5 Probe',
-    coordinates: { latitude: 49.934475, longitude: 82.423125 },
-    status: 'healthy',
-    lastUpdated: '2026-03-22T05:57:00Z',
-    pH: 6.7,
-    soilTemperature: 16.8,
-    soilMoisture: 52,
-    electricalConductivity: 1.12,
-    gasComposition: 'N2 78%, O2 21%, CO2 0.04%',
-    premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Balanced granular profile with moderate porosity' }
   },
   {
     id: 'sensor-6',
@@ -135,6 +129,8 @@ export const sensors: Sensor[] = [
     soilTemperature: 17.2,
     soilMoisture: 54,
     electricalConductivity: 1.03,
+    nitrogen: 152,
+    soc: 2.2,
     gasComposition: 'N2 78%, O2 21%, CO2 0.03%'
   },
   {
@@ -148,6 +144,8 @@ export const sensors: Sensor[] = [
     soilTemperature: 21.6,
     soilMoisture: 35,
     electricalConductivity: 1.84,
+    nitrogen: 75,
+    soc: 1.2,
     gasComposition: 'N2 77%, O2 20%, CO2 0.07%',
     premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Patchy compaction near eastern strip' }
   },
@@ -162,6 +160,8 @@ export const sensors: Sensor[] = [
     soilTemperature: 18.9,
     soilMoisture: 45,
     electricalConductivity: 1.2,
+    nitrogen: 110,
+    soc: 1.7,
     gasComposition: 'N2 78%, O2 21%, CO2 0.04%'
   },
   {
@@ -175,8 +175,55 @@ export const sensors: Sensor[] = [
     soilTemperature: 25.4,
     soilMoisture: 22,
     electricalConductivity: 2.21,
+    nitrogen: 35,
+    soc: 0.8,
     gasComposition: 'N2 76%, O2 19%, CO2 0.09%',
     premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Dense hardpan under 25 cm, tillage required' }
+  },
+  {
+    id: 'sensor-f2-extra-1',
+    fieldId: 'field-2',
+    name: 'Sensor 15',
+    coordinates: { latitude: 49.9680, longitude: 82.3950 },
+    status: 'warning',
+    lastUpdated: '2026-03-22T06:00:00Z',
+    pH: 5.9,
+    soilTemperature: 20.0,
+    soilMoisture: 30,
+    electricalConductivity: 1.5,
+    nitrogen: 80,
+    soc: 1.1,
+    gasComposition: 'N2 77%, O2 20%, CO2 0.06%'
+  },
+  {
+    id: 'sensor-f2-extra-2',
+    fieldId: 'field-2',
+    name: 'Sector North Probe',
+    coordinates: { latitude: 49.9692, longitude: 82.3950 },
+    status: 'critical',
+    lastUpdated: '2026-03-22T06:30:00Z',
+    pH: 4.5,
+    soilTemperature: 28.0,
+    soilMoisture: 12,
+    electricalConductivity: 2.8,
+    nitrogen: 20,
+    soc: 0.5,
+    gasComposition: 'N2 74%, O2 18%, CO2 0.15%'
+  },
+  {
+    id: 'sensor-f2-extra-3',
+    fieldId: 'field-2',
+    name: 'Sector West Probe',
+    coordinates: { latitude: 49.9670, longitude: 82.3915 },
+    status: 'healthy',
+    lastUpdated: '2026-03-22T06:35:00Z',
+    pH: 7.2,
+    soilTemperature: 15.5,
+    soilMoisture: 65,
+    electricalConductivity: 0.9,
+    nitrogen: 160,
+    soc: 2.5,
+    gasComposition: 'N2 78%, O2 21%, CO2 0.02%'
   },
   {
     id: 'sensor-10',
@@ -189,6 +236,8 @@ export const sensors: Sensor[] = [
     soilTemperature: 16.9,
     soilMoisture: 52,
     electricalConductivity: 1.09,
+    nitrogen: 140,
+    soc: 2.0,
     gasComposition: 'N2 78%, O2 21%, CO2 0.04%'
   },
   {
@@ -202,6 +251,8 @@ export const sensors: Sensor[] = [
     soilTemperature: 22.1,
     soilMoisture: 31,
     electricalConductivity: 1.63,
+    nitrogen: 82,
+    soc: 1.3,
     gasComposition: 'N2 77%, O2 20%, CO2 0.06%'
   },
   {
@@ -215,6 +266,8 @@ export const sensors: Sensor[] = [
     soilTemperature: 18.3,
     soilMoisture: 43,
     electricalConductivity: 1.25,
+    nitrogen: 115,
+    soc: 1.6,
     gasComposition: 'N2 78%, O2 21%, CO2 0.04%'
   },
   {
@@ -228,9 +281,71 @@ export const sensors: Sensor[] = [
     soilTemperature: 26.8,
     soilMoisture: 19,
     electricalConductivity: 2.41,
+    nitrogen: 38,
+    soc: 0.7,
     gasComposition: 'N2 75%, O2 19%, CO2 0.11%',
     premiumFeatures: { vibroacousticSoilStructureAnalysis: 'Critical compaction pocket detected in southern wedge' }
-  }
+  },
+  {
+    id: 'sensor-f3-extra-1',
+    fieldId: 'field-3',
+    name: 'Sensor 25',
+    coordinates: { latitude: 49.9585, longitude: 82.3785 },
+    status: 'critical',
+    lastUpdated: '2026-03-22T06:15:00Z',
+    pH: 5.0,
+    soilTemperature: 26.0,
+    soilMoisture: 18,
+    electricalConductivity: 2.2,
+    nitrogen: 40,
+    soc: 0.8,
+    gasComposition: 'N2 76%, O2 19%, CO2 0.09%'
+  },
+  {
+    id: 'sensor-f3-extra-2',
+    fieldId: 'field-3',
+    name: 'Sensor 26',
+    coordinates: { latitude: 49.9560, longitude: 82.3750 },
+    status: 'healthy',
+    lastUpdated: '2026-03-22T06:20:00Z',
+    pH: 6.8,
+    soilTemperature: 16.5,
+    soilMoisture: 55,
+    electricalConductivity: 1.1,
+    nitrogen: 142,
+    soc: 2.2,
+    gasComposition: 'N2 78%, O2 21%, CO2 0.03%'
+  },
+  {
+    id: 'sensor-f3-extra-3',
+    fieldId: 'field-3',
+    name: 'North Corner Probe',
+    coordinates: { latitude: 49.9590, longitude: 82.3780 },
+    status: 'warning',
+    lastUpdated: '2026-03-22T06:40:00Z',
+    pH: 5.5,
+    soilTemperature: 22.0,
+    soilMoisture: 28,
+    electricalConductivity: 1.7,
+    nitrogen: 70,
+    soc: 1.0,
+    gasComposition: 'N2 77%, O2 20%, CO2 0.08%'
+  },
+  {
+    id: 'sensor-f3-extra-4',
+    fieldId: 'field-3',
+    name: 'Center Probe',
+    coordinates: { latitude: 49.9570, longitude: 82.3770 },
+    status: 'critical',
+    lastUpdated: '2026-03-22T06:45:00Z',
+    pH: 4.8,
+    soilTemperature: 27.5,
+    soilMoisture: 15,
+    electricalConductivity: 2.5,
+    nitrogen: 30,
+    soc: 0.6,
+    gasComposition: 'N2 75%, O2 18%, CO2 0.12%'
+  },
 ];
 
 export const zones: SoilZone[] = [
@@ -240,10 +355,9 @@ export const zones: SoilZone[] = [
     name: 'Sector 1',
     color: 'green',
     polygon: [
-      { latitude: 49.9411, longitude: 82.4219 },
-      { latitude: 49.9404, longitude: 82.4281 },
-      { latitude: 49.93615, longitude: 82.42735 },
-      { latitude: 49.93695, longitude: 82.42155 }
+      { latitude: 49.9240, longitude: 82.4920 },
+      { latitude: 49.9250, longitude: 82.5080 },
+      { latitude: 49.9200, longitude: 82.5000 }
     ]
   },
   {
@@ -252,10 +366,9 @@ export const zones: SoilZone[] = [
     name: 'Sector 2',
     color: 'yellow',
     polygon: [
-      { latitude: 49.9397, longitude: 82.4343 },
-      { latitude: 49.93655, longitude: 82.4350 },
-      { latitude: 49.93615, longitude: 82.42735 },
-      { latitude: 49.9404, longitude: 82.4281 }
+      { latitude: 49.9250, longitude: 82.5080 },
+      { latitude: 49.9160, longitude: 82.5120 },
+      { latitude: 49.9200, longitude: 82.5000 }
     ]
   },
   {
@@ -264,10 +377,9 @@ export const zones: SoilZone[] = [
     name: 'Sector 3',
     color: 'red',
     polygon: [
-      { latitude: 49.9334, longitude: 82.4357 },
-      { latitude: 49.9323, longitude: 82.42965 },
-      { latitude: 49.93615, longitude: 82.42735 },
-      { latitude: 49.93655, longitude: 82.4350 }
+      { latitude: 49.9160, longitude: 82.5120 },
+      { latitude: 49.9140, longitude: 82.4980 },
+      { latitude: 49.9200, longitude: 82.5000 }
     ]
   },
   {
@@ -276,28 +388,16 @@ export const zones: SoilZone[] = [
     name: 'Sector 4',
     color: 'green',
     polygon: [
-      { latitude: 49.9312, longitude: 82.4236 },
-      { latitude: 49.9320, longitude: 82.4224 },
-      { latitude: 49.93615, longitude: 82.42735 },
-      { latitude: 49.9323, longitude: 82.42965 }
-    ]
-  },
-  {
-    id: 'zone-f1-sector-5',
-    fieldId: 'field-1',
-    name: 'Sector 5',
-    color: 'green',
-    polygon: [
-      { latitude: 49.9328, longitude: 82.4212 },
-      { latitude: 49.93695, longitude: 82.42155 },
-      { latitude: 49.93615, longitude: 82.42735 },
-      { latitude: 49.9320, longitude: 82.4224 }
+      { latitude: 49.9140, longitude: 82.4980 },
+      { latitude: 49.9180, longitude: 82.4880 },
+      { latitude: 49.9240, longitude: 82.4920 },
+      { latitude: 49.9200, longitude: 82.5000 }
     ]
   },
   {
     id: 'zone-f2-north-west',
     fieldId: 'field-2',
-    name: 'Northwest block',
+    name: 'Sector 1',
     color: 'green',
     polygon: [
       { latitude: 49.9698, longitude: 82.392 },
@@ -311,7 +411,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-east-strip',
     fieldId: 'field-2',
-    name: 'East strip',
+    name: 'Sector 2',
     color: 'yellow',
     polygon: [
       { latitude: 49.9677, longitude: 82.3967 },
@@ -323,7 +423,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-south-core',
     fieldId: 'field-2',
-    name: 'South core',
+    name: 'Sector 3',
     color: 'red',
     polygon: [
       { latitude: 49.9663, longitude: 82.3964 },
@@ -335,7 +435,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-west-band',
     fieldId: 'field-2',
-    name: 'West band',
+    name: 'Sector 4',
     color: 'green',
     polygon: [
       { latitude: 49.9679, longitude: 82.3908 },
@@ -347,7 +447,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f2-center-lane',
     fieldId: 'field-2',
-    name: 'Center lane',
+    name: 'Sector 5',
     color: 'yellow',
     polygon: [
       { latitude: 49.9671, longitude: 82.3923 },
@@ -360,7 +460,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-north-strip',
     fieldId: 'field-3',
-    name: 'North strip',
+    name: 'Sector 1',
     color: 'green',
     polygon: [
       { latitude: 49.9592, longitude: 82.3745 },
@@ -372,7 +472,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-center',
     fieldId: 'field-3',
-    name: 'Center bed',
+    name: 'Sector 2',
     color: 'yellow',
     polygon: [
       { latitude: 49.958, longitude: 82.3766 },
@@ -384,7 +484,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-south-hotspot',
     fieldId: 'field-3',
-    name: 'South hotspot',
+    name: 'Sector 3',
     color: 'red',
     polygon: [
       { latitude: 49.956, longitude: 82.3788 },
@@ -396,7 +496,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-west',
     fieldId: 'field-3',
-    name: 'West reserve',
+    name: 'Sector 4',
     color: 'green',
     polygon: [
       { latitude: 49.9592, longitude: 82.3745 },
@@ -408,7 +508,7 @@ export const zones: SoilZone[] = [
   {
     id: 'zone-f3-south-west',
     fieldId: 'field-3',
-    name: 'Southwest shoulder',
+    name: 'Sector 5',
     color: 'yellow',
     polygon: [
       { latitude: 49.9557, longitude: 82.3736 },
@@ -463,16 +563,40 @@ export const recommendations: Recommendation[] = [
       { id: 'rec-3-step-2', labelKey: 'rec3Step2', dueAt: '2026-03-23 13:30', completed: false }
     ]
   },
+];
+
+export const predictions: Prediction[] = [
   {
-    id: 'rec-4',
+    id: 'pred-1',
+    fieldId: 'field-1',
+    cropRecommendation: 'cropWheat',
+    cropConfidence: 0.94,
+    fertilizerRecommendation: 'fertAmmonium',
+    fertilizerSource: 'ml',
+    soilState: 'soilOptimal',
+    soilStateConfidence: 0.88,
+    lastUpdated: '2026-03-24T08:00:00Z'
+  },
+  {
+    id: 'pred-2',
+    fieldId: 'field-2',
+    cropRecommendation: 'cropSunflower',
+    cropConfidence: 0.89,
+    fertilizerRecommendation: 'fertPotassium',
+    fertilizerSource: 'ml',
+    soilState: 'soilSaline',
+    soilStateConfidence: 0.91,
+    lastUpdated: '2026-03-24T08:15:00Z'
+  },
+  {
+    id: 'pred-3',
     fieldId: 'field-3',
-    level: 'premium',
-    titleKey: 'recVibroAlertTitle',
-    messageKey: 'recVibroAlertMessage',
-    sensorId: 'sensor-13',
-    timeline: [
-      { id: 'rec-4-step-1', labelKey: 'rec4Step1', dueAt: '2026-03-22 18:45', completed: true },
-      { id: 'rec-4-step-2', labelKey: 'rec4Step2', dueAt: '2026-03-23 07:15', completed: false }
-    ]
+    cropRecommendation: 'cropBarley',
+    cropConfidence: 0.82,
+    fertilizerRecommendation: 'fertNpk',
+    fertilizerSource: 'rule_based',
+    soilState: 'soilStable',
+    soilStateConfidence: 0.75,
+    lastUpdated: '2026-03-24T08:30:00Z'
   }
 ];

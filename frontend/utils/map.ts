@@ -9,12 +9,9 @@ const zoneRgbMap: Record<SoilZone['color'], string> = {
 };
 
 const riskLayerOrder: LayerKey[] = [
-  'soilMoisture',
-  'temperature',
   'pH',
   'electricalConductivity',
-  'gasComposition',
-  'vibroacousticAnalysis'
+  'gasComposition'
 ];
 
 const extractCo2Percent = (gasComposition: string) => {
@@ -23,17 +20,6 @@ const extractCo2Percent = (gasComposition: string) => {
   return Number.parseFloat(match[1]);
 };
 
-const getVibroRisk = (sensor: Sensor) => {
-  const text = sensor.premiumFeatures?.vibroacousticSoilStructureAnalysis?.toLowerCase() ?? '';
-
-  if (!text) return 0.45;
-  if (text.includes('critical') || text.includes('dense hardpan') || text.includes('high compaction')) {
-    return 0.95;
-  }
-  if (text.includes('compaction') || text.includes('hardening')) return 0.68;
-  if (text.includes('stable') || text.includes('low compaction')) return 0.2;
-  return 0.5;
-};
 
 export const zoneColorHex: Record<SoilZone['color'], string> = {
   green: '#22c55e',
@@ -62,23 +48,21 @@ export const getSensorHeatIntensity = (sensor: Sensor, activeLayers: LayerKey[] 
   const temperatureRisk = clamp((sensor.soilTemperature - 18) / 12, 0, 1);
   const phRisk = clamp(Math.abs(sensor.pH - 6.7) / 2.2, 0, 1);
   const conductivityRisk = clamp((sensor.electricalConductivity - 1.2) / 1.4, 0, 1);
-  const gasRisk = clamp((extractCo2Percent(sensor.gasComposition) - 0.04) / 0.08, 0, 1);
-  const vibroRisk = getVibroRisk(sensor);
+  const gasRisk = clamp((extractCo2Percent(sensor.gasComposition) - 0.04) / 0.10, 0, 1);
 
-  const riskByLayer: Record<LayerKey, number> = {
+  const riskByLayer: Record<string, number> = {
     soilMoisture: moistureRisk,
     temperature: temperatureRisk,
     pH: phRisk,
     electricalConductivity: conductivityRisk,
-    gasComposition: gasRisk,
-    vibroacousticAnalysis: vibroRisk
+    gasComposition: gasRisk
   };
 
   const pickedLayers = riskLayerOrder.filter((layer) => activeLayers.includes(layer));
-  const layersToUse: LayerKey[] = pickedLayers.length > 0 ? pickedLayers : ['soilMoisture'];
+  const layersToUse: LayerKey[] = pickedLayers.length > 0 ? (pickedLayers as any[]) : ['soilMoisture'];
 
   const averageRisk =
-    layersToUse.reduce((sum, layer) => sum + riskByLayer[layer], 0) / layersToUse.length;
+    layersToUse.reduce((sum, layer) => sum + (riskByLayer[layer] ?? 0), 0) / layersToUse.length;
 
   return clamp(averageRisk, 0.03, 1);
 };
@@ -210,6 +194,7 @@ export const generateHeatGridPoints = (
 
   const areaHectares = calculatePolygonAreaHectares(boundary);
   const dynamicGrid = clamp(Math.round(Math.sqrt(Math.max(areaHectares, 8)) * 2.5), 12, 28);
+  const dynamicSigma = clamp(0.24 * Math.sqrt(areaHectares / 87), 0.09, 0.32);
   const effectiveGrid = Math.max(gridSize, dynamicGrid);
 
   const latitudes = boundary.map((point) => point.latitude);
@@ -237,11 +222,11 @@ export const generateHeatGridPoints = (
       sensors.forEach((sensor) => {
         const distance = distanceKm(point, sensor.coordinates);
         const risk = getSensorHeatIntensity(sensor, activeLayers);
-        const kernel = gaussianWeight(distance, 0.24);
+        const kernel = gaussianWeight(distance, dynamicSigma);
 
         weightedSum += risk * kernel;
         totalWeight += kernel;
-        localPeak = Math.max(localPeak, risk * Math.exp(-distance / 0.45));
+        localPeak = Math.max(localPeak, risk * Math.exp(-distance / (dynamicSigma * 1.8)));
       });
 
       const blended = totalWeight > 0 ? weightedSum / totalWeight : localPeak;

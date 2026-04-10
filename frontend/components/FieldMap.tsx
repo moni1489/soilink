@@ -1,6 +1,6 @@
 import React from 'react';
 import { Platform } from 'react-native';
-import type { Sensor, SoilZone, LayerKey, MapMode, Coordinate } from '../types';
+import type { Sensor, SoilZone, LayerKey, MapMode, Coordinate, SoilGridsProperty, SoilDepth } from '../types';
 
 interface Props {
   fieldCenter: { latitude: number; longitude: number };
@@ -11,7 +11,11 @@ interface Props {
   onSelectZone: (zone: SoilZone) => void;
   activeZoneId?: string;
   visibleLayers: LayerKey[];
+  selectedSoilProperty?: SoilGridsProperty;
+  selectedDepth?: SoilDepth;
   mapMode: MapMode;
+  theme?: 'light' | 'dark';
+  historicalOffset?: number;
 }
 
 type FieldMapComponent = React.ComponentType<Props>;
