@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Sensor, SoilGridsProperty, SoilDepth } from '../types';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -28,6 +29,29 @@ const getComparisonLevel = (sensor: number, global: number) => {
 };
 
 export default function ComparisonModal({ visible, onClose, sensorData, globalData, depth }: Props) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const colors = isDark 
+    ? { 
+        bg: '#000000', 
+        text: '#FFFFFF', 
+        subText: 'rgba(255, 255, 255, 0.4)',
+        border: '#064E3B', 
+        cardBg: 'rgba(255, 255, 255, 0.03)',
+        overlay: 'rgba(0, 0, 0, 0.9)',
+        aiInsight: 'rgba(5, 150, 105, 0.03)'
+      }
+    : { 
+        bg: '#FFFFFF', 
+        text: '#020617', 
+        subText: 'rgba(2, 6, 23, 0.4)',
+        border: '#E2E8F0', 
+        cardBg: '#F8FAFC',
+        overlay: 'rgba(0, 0, 0, 0.6)',
+        aiInsight: '#F1F5F9'
+      };
+
   if (!sensorData || !globalData) return null;
 
   const comparisonRows = [
@@ -39,21 +63,21 @@ export default function ComparisonModal({ visible, onClose, sensorData, globalDa
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.content}>
+      <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
+        <View style={[styles.content, { backgroundColor: colors.bg, borderColor: colors.border }]}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>Sensor vs. Global Data</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Sensor vs. Global Data</Text>
               <Text style={styles.subtitle}>Analyzing Depth: {depth}</Text>
             </View>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeText}>✕</Text>
+            <Pressable onPress={onClose} style={[styles.closeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+              <Text style={[styles.closeText, { color: isDark ? '#94A3B8' : '#64748B' }]}>✕</Text>
             </Pressable>
           </View>
 
           <ScrollView style={styles.scroll}>
             <View style={styles.comparisonGrid}>
-              <View style={styles.columnHeader}>
+              <View style={[styles.columnHeader, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E2E8F0' }]}>
                 <Text style={styles.propLabel}>PROPERTY</Text>
                 <Text style={styles.dataLabel}>FIELD SENSOR</Text>
                 <Text style={styles.dataLabel}>SOILGRIDS 250M</Text>
@@ -64,7 +88,7 @@ export default function ComparisonModal({ visible, onClose, sensorData, globalDa
                 return (
                   <View key={idx} style={styles.row}>
                     <View style={styles.propInfo}>
-                      <Text style={styles.rowLabel}>{row.label}</Text>
+                      <Text style={[styles.rowLabel, { color: colors.text }]}>{row.label}</Text>
                       <View style={[styles.statusBadge, { backgroundColor: cmp.color + '20' }]}>
                         <Text style={[styles.statusText, { color: cmp.color }]}>{cmp.label}</Text>
                       </View>
@@ -72,15 +96,15 @@ export default function ComparisonModal({ visible, onClose, sensorData, globalDa
                     
                     <View style={styles.dataCol}>
                       <Text style={styles.sensorVal}>{row.sensor}{row.unit}</Text>
-                      <View style={styles.miniBarContainer}>
+                      <View style={[styles.miniBarContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0' }]}>
                         <View style={[styles.miniBar, { width: `${Math.min(row.sensor * 2, 100)}%`, backgroundColor: '#059669' }]} />
                       </View>
                     </View>
 
                     <View style={styles.dataCol}>
-                      <Text style={styles.globalVal}>{row.global.toFixed(1)}{row.unit}</Text>
-                      <View style={styles.miniBarContainer}>
-                        <View style={[styles.miniBar, { width: `${Math.min(row.global * 2, 100)}%`, backgroundColor: 'rgba(255,255,255,0.1)' }]} />
+                      <Text style={[styles.globalVal, { color: colors.subText }]}>{row.global.toFixed(1)}{row.unit}</Text>
+                      <View style={[styles.miniBarContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0' }]}>
+                        <View style={[styles.miniBar, { width: `${Math.min(row.global * 2, 100)}%`, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#94A3B8' }]} />
                       </View>
                     </View>
                   </View>
@@ -88,9 +112,9 @@ export default function ComparisonModal({ visible, onClose, sensorData, globalDa
               })}
             </View>
 
-            <View style={styles.aiInsight}>
+            <View style={[styles.aiInsight, { backgroundColor: colors.aiInsight, borderLeftColor: '#059669' }]}>
               <Text style={styles.aiTitle}>AGRONOMIST INSIGHT</Text>
-              <Text style={styles.aiText}>
+              <Text style={[styles.aiText, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#334155' }]}>
                 The Nitrogen level in your field is significantly lower than the regional baseline of {normalize('nitrogen', globalData.nitrogen)}.
                 Consider a top-dressing of urea or organic compost to bridge this {((globalData.nitrogen/10) - sensorData.nitrogen).toFixed(1)} g/kg gap.
               </Text>
@@ -109,18 +133,15 @@ export default function ComparisonModal({ visible, onClose, sensorData, globalDa
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20
   },
   content: {
-    backgroundColor: '#000000',
     width: '100%',
     maxWidth: 600,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#064E3B',
     padding: 32,
     gap: 24,
     maxHeight: '90%'
@@ -131,7 +152,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start'
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '900',
     letterSpacing: -0.5
@@ -147,14 +167,10 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  closeText: {
-    color: '#94A3B8',
-    fontSize: 12
-  },
+  closeText: { fontSize: 12 },
   scroll: {
     flexGrow: 0
   },
@@ -164,8 +180,7 @@ const styles = StyleSheet.create({
   columnHeader: {
     flexDirection: 'row',
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)'
+    borderBottomWidth: 1
   },
   propLabel: {
     flex: 1.5,
@@ -190,7 +205,6 @@ const styles = StyleSheet.create({
     gap: 4
   },
   rowLabel: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700'
   },
@@ -216,14 +230,12 @@ const styles = StyleSheet.create({
     fontWeight: '900'
   },
   globalVal: {
-    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
     fontWeight: '900'
   },
   miniBarContainer: {
     width: '60%',
     height: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 1.5,
     overflow: 'hidden'
   },
@@ -234,10 +246,8 @@ const styles = StyleSheet.create({
   aiInsight: {
     marginTop: 32,
     padding: 20,
-    backgroundColor: 'rgba(5, 150, 105, 0.03)',
     borderRadius: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#059669',
     gap: 8
   },
   aiTitle: {
@@ -247,7 +257,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1
   },
   aiText: {
-    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 13,
     lineHeight: 20
   },

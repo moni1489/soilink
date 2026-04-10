@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 import { Sensor, SoilZone } from '../types';
 import { calculatePolygonAreaHectares, pointInPolygon } from '../utils/map';
 
@@ -30,6 +31,26 @@ const average = (values: number[]) => {
 
 export default function ZoneModal({ visible, zone, sensors, onClose }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const colors = isDark 
+    ? { 
+        bg: '#000000', 
+        text: '#FFFFFF', 
+        subText: 'rgba(255, 255, 255, 0.4)',
+        border: '#064E3B', 
+        cardBg: 'rgba(255, 255, 255, 0.03)',
+        overlay: 'rgba(0, 0, 0, 0.85)'
+      }
+    : { 
+        bg: '#FFFFFF', 
+        text: '#020617', 
+        subText: 'rgba(2, 6, 23, 0.4)',
+        border: '#E2E8F0', 
+        cardBg: '#F8FAFC',
+        overlay: 'rgba(0, 0, 0, 0.6)'
+      };
 
   const sensorsInZone = useMemo(() => {
     if (!zone) return [];
@@ -60,10 +81,17 @@ export default function ZoneModal({ visible, zone, sensors, onClose }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.card}>
-          <Text style={styles.title}>{t('zoneDetails')}</Text>
-          <Text style={styles.zoneName}>{zone.name}</Text>
+      <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
+        <View style={[styles.card, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+          <View style={styles.header}>
+            <View>
+              <Text style={[styles.title, { color: '#059669' }]}>{t('zoneDetails')}</Text>
+              <Text style={[styles.zoneName, { color: colors.text }]}>{zone.name}</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+              <Text style={[styles.closeText, { color: colors.text }]}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(zone.color) }]}>
             <Text style={styles.statusBadgeText}>
@@ -71,25 +99,23 @@ export default function ZoneModal({ visible, zone, sensors, onClose }: Props) {
             </Text>
           </View>
 
-          <Text style={styles.infoLine}>
-            {t('zoneAreaHectares')}: {summary.areaHectares.toFixed(1)} ha
-          </Text>
-          <Text style={styles.infoLine}>
-            {t('sensorsInZone')}: {sensorsInZone.length}
-          </Text>
+          <View style={styles.infoGrid}>
+            <Text style={[styles.infoLine, { color: colors.subText }]}>{t('zoneAreaHectares')}: <Text style={{ color: colors.text }}>{summary.areaHectares.toFixed(1)} ha</Text></Text>
+            <Text style={[styles.infoLine, { color: colors.subText }]}>{t('sensorsInZone')}: <Text style={{ color: colors.text }}>{sensorsInZone.length}</Text></Text>
+          </View>
 
           {sensorsInZone.length > 0 ? (
-            <View style={styles.metricsBlock}>
-              <Text style={styles.metricLine}>
+            <View style={[styles.metricsBlock, { backgroundColor: colors.cardBg, borderColor: isDark ? 'rgba(5, 150, 105, 0.1)' : '#E2E8F0' }]}>
+              <Text style={[styles.metricLine, { color: colors.text }]}>
                 {t('avgSoilMoisture')}: {summary.avgMoisture.toFixed(1)}%
               </Text>
-              <Text style={styles.metricLine}>
+              <Text style={[styles.metricLine, { color: colors.text }]}>
                 {t('avgSoilTemperature')}: {summary.avgTemp.toFixed(1)}C
               </Text>
-              <Text style={styles.metricLine}>
+              <Text style={[styles.metricLine, { color: colors.text }]}>
                 {t('avgPh')}: {summary.avgPh.toFixed(2)}
               </Text>
-              <Text style={styles.metricLine}>
+              <Text style={[styles.metricLine, { color: colors.text }]}>
                 {t('avgElectricalConductivity')}: {summary.avgEc.toFixed(2)} mS/cm
               </Text>
               <Text style={styles.sensorList}>
@@ -97,11 +123,11 @@ export default function ZoneModal({ visible, zone, sensors, onClose }: Props) {
               </Text>
             </View>
           ) : (
-            <Text style={styles.emptyText}>{t('noSensorsInZone')}</Text>
+            <Text style={[styles.emptyText, { color: colors.subText }]}>{t('noSensorsInZone')}</Text>
           )}
 
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeText}>{t('close')}</Text>
+            <Text style={styles.closeButtonText}>{t('close')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -112,44 +138,49 @@ export default function ZoneModal({ visible, zone, sensors, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20
+    padding: 16
   },
   card: {
     width: '100%',
     maxWidth: 480,
-    backgroundColor: '#000000',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#064E3B',
-    padding: 32,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5
+    padding: 32
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8
   },
   title: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#059669',
     textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 8
+    letterSpacing: 2
   },
   zoneName: {
     fontSize: 32,
     fontWeight: '900',
-    color: '#FFFFFF',
-    marginBottom: 16
+    letterSpacing: -1,
+    marginTop: 4
   },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  closeText: { fontSize: 12 },
   statusBadge: {
     alignSelf: 'flex-start',
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 12,
+    marginTop: 16,
     marginBottom: 24
   },
   statusBadgeText: {
@@ -158,37 +189,36 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textTransform: 'uppercase'
   },
+  infoGrid: {
+    gap: 6,
+    marginBottom: 8
+  },
   infoLine: {
-    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4
+    fontWeight: '600'
   },
   metricsBlock: {
     marginTop: 24,
     padding: 20,
-    backgroundColor: 'rgba(5, 150, 105, 0.05)',
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(5, 150, 105, 0.1)'
+    borderWidth: 1
   },
   metricLine: {
-    color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 8
   },
   sensorList: {
     color: '#059669',
     marginTop: 12,
     fontSize: 13,
-    fontWeight: '700'
+    fontWeight: '800'
   },
   emptyText: {
     marginTop: 20,
-    color: 'rgba(255, 255, 255, 0.4)',
     fontSize: 14,
-    textAlign: 'center'
+    textAlign: 'center',
+    fontWeight: '600'
   },
   closeButton: {
     marginTop: 32,
@@ -197,7 +227,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#059669',
     alignItems: 'center'
   },
-  closeText: { 
+  closeButtonText: { 
     color: '#FFFFFF', 
     fontSize: 16, 
     fontWeight: '900',
