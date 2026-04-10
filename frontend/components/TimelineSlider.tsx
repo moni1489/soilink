@@ -22,7 +22,7 @@ export default function TimelineSlider({ onTimeChange, selectedDaysAgo }: Props)
 
   const colors = isDark 
     ? { 
-        bg: 'rgba(15, 23, 42, 0.9)', 
+        bg: '#000000', 
         text: '#F8FAFC', 
         subText: 'rgba(255, 255, 255, 0.3)', 
         border: 'rgba(5, 150, 105, 0.4)', 

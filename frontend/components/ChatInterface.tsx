@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 import { SoilDepth, SoilGridsProperty } from '../types';
 
 interface Message {
@@ -23,11 +24,15 @@ interface Props {
 export default function ChatInterface({ visible, onClose, context }: Props) {
   const { t, i18n } = useTranslation();
   if (!visible) return null;
+
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: t('aiGreeting') }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
@@ -58,40 +63,65 @@ export default function ChatInterface({ visible, onClose, context }: Props) {
     }
   };
 
+  const colors = isDark 
+    ? { 
+        bg: '#000000', 
+        card: '#050505', 
+        text: '#FFFFFF', 
+        subText: 'rgba(255, 255, 255, 0.4)',
+        border: '#064E3B', 
+        inputBg: 'rgba(255, 255, 255, 0.02)',
+        bubbleBg: 'rgba(255, 255, 255, 0.03)',
+        overlay: 'rgba(0, 0, 0, 0.85)'
+      }
+    : { 
+        bg: '#FFFFFF', 
+        card: '#FFFFFF', 
+        text: '#020617', 
+        subText: 'rgba(2, 6, 23, 0.4)',
+        border: '#E2E8F0', 
+        inputBg: '#F8FAFC',
+        bubbleBg: '#F1F5F9',
+        overlay: 'rgba(0, 0, 0, 0.6)'
+      };
+
   return (
-    <View style={styles.overlay}>
+    <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.bg, borderColor: colors.border }]}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0', backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC' }]}>
           <View>
-            <Text style={styles.title}>AI Agronomist</Text>
+            <Text style={[styles.title, { color: colors.text }]}>AI Agronomist</Text>
             <Text style={styles.subtitle}>Powered by Groq Llama 3.3</Text>
           </View>
-          <Pressable onPress={onClose} style={styles.closeBtn}>
-            <Text style={styles.closeBtnText}>✕</Text>
+          <Pressable onPress={onClose} style={[styles.closeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+            <Text style={[styles.closeBtnText, { color: colors.text }]}>✕</Text>
           </Pressable>
         </View>
 
         <ScrollView style={styles.msgList} contentContainerStyle={styles.msgContent}>
           {messages.map((m, i) => (
-            <View key={i} style={[styles.msgBubble, m.role === 'user' ? styles.userBubble : styles.aiBubble]}>
-              <Text style={styles.msgText}>{m.content}</Text>
+            <View key={i} style={[
+              styles.msgBubble, 
+              m.role === 'user' ? styles.userBubble : [styles.aiBubble, { backgroundColor: colors.bubbleBg, borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0' }]
+            ]}>
+              <Text style={[styles.msgText, { color: m.role === 'user' ? '#FFFFFF' : colors.text }]}>{m.content}</Text>
             </View>
           ))}
           {loading && (
-            <View style={[styles.msgBubble, styles.aiBubble]}>
-              <ActivityIndicator color="#00F59B" />
+            <View style={[styles.msgBubble, styles.aiBubble, { backgroundColor: colors.bubbleBg, borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0' }]}>
+              <ActivityIndicator color="#059669" />
             </View>
           )}
         </ScrollView>
 
-        <View style={styles.inputRow}>
+        <View style={[styles.inputRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0' }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: isDark ? 'transparent' : '#E2E8F0', borderWidth: isDark ? 0 : 1 }]}
             placeholder={t('askAboutSoil')}
-            placeholderTextColor="rgba(255,255,255,0.4)"
+            placeholderTextColor={colors.subText}
             value={input}
             onChangeText={setInput}
             onSubmitEditing={sendMessage}
@@ -137,7 +167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.02)'
   },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
+  title: { fontSize: 18, fontWeight: '900' },
   subtitle: { color: '#059669', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   closeBtn: {
     width: 32,
@@ -147,7 +177,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  closeBtnText: { color: '#FFFFFF', fontSize: 12 },
+  closeBtnText: { fontSize: 12 },
   msgList: { flex: 1, padding: 20 },
   msgContent: { paddingBottom: 20 },
   msgBubble: {
@@ -168,7 +198,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)'
   },
-  msgText: { color: '#FFFFFF', fontSize: 14, lineHeight: 20 },
+  msgText: { fontSize: 14, lineHeight: 20 },
   inputRow: {
     padding: 16,
     flexDirection: 'row',

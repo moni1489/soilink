@@ -408,11 +408,11 @@ export default function Dashboard() {
         ) : (
           <ScrollView style={styles.mobileLayout} contentContainerStyle={{ paddingBottom: 100 }}>
             <View style={styles.mapHeaderRow}>
-              <Text style={[styles.mapLabel, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('map')}</Text>
+              <Text style={[styles.mapLabel, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(2, 6, 23, 0.7)' }]}>{t('map')}</Text>
 
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={[styles.mapModeGroup, { backgroundColor: isDark ? '#111111' : '#F1F5F9', borderColor: isDark ? '#222222' : '#CBD5E1' }]}>
-                  <Text style={[styles.mapModeLabel, { color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(2, 6, 23, 0.4)' }]}>{t('theme')}:</Text>
+                  <Text style={[styles.mapModeLabel, { color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(2, 6, 23, 0.8)' }]}>{t('theme')}:</Text>
                   <TouchableOpacity
                     style={[
                       styles.themeToggleButton, 
@@ -738,7 +738,6 @@ const styles = StyleSheet.create({
   },
   mapModeLabel: {
     fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.3)',
     marginHorizontal: 10,
     fontWeight: '700'
   },

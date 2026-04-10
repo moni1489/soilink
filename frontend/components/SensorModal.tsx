@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import { Sensor } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -38,7 +39,7 @@ const generateTrendValues = (seed: number, currentValue: number, min: number, ma
   });
 };
 
-const statusColor = (status: Sensor['status']) => {
+const getStatusColor = (status: Sensor['status']) => {
   if (status === 'healthy') return '#166534';
   if (status === 'warning') return '#a16207';
   return '#b91c1c';
@@ -46,6 +47,26 @@ const statusColor = (status: Sensor['status']) => {
 
 export default function SensorModal({ visible, sensor, onClose }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const colors = isDark 
+    ? { 
+        bg: '#000000', 
+        text: '#FFFFFF', 
+        subText: 'rgba(255, 255, 255, 0.4)',
+        border: '#064E3B', 
+        cardBg: 'rgba(255, 255, 255, 0.03)',
+        overlay: 'rgba(0, 0, 0, 0.85)'
+      }
+    : { 
+        bg: '#FFFFFF', 
+        text: '#020617', 
+        subText: 'rgba(2, 6, 23, 0.4)',
+        border: '#E2E8F0', 
+        cardBg: '#F8FAFC',
+        overlay: 'rgba(0, 0, 0, 0.6)'
+      };
 
   const metrics: TrendMetric[] = useMemo(() => {
     if (!sensor) return [];
@@ -97,44 +118,41 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.card}>
-          <Text style={styles.title}>{t('sensorDetails')}</Text>
-          <Text style={styles.name}>{sensor.name}</Text>
+      <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
+        <View style={[styles.card, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+          <View style={styles.header}>
+            <View>
+              <Text style={[styles.title, { color: '#059669' }]}>{t('sensorDetails')}</Text>
+              <Text style={[styles.name, { color: colors.text }]}>{sensor.name}</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+              <Text style={[styles.closeText, { color: colors.text }]}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
-          <View style={[styles.statusBadge, { backgroundColor: statusColor(sensor.status) }]}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(sensor.status) }]}>
             <Text style={styles.statusBadgeText}>
               {t('status')}: {sensor.status.toUpperCase()}
             </Text>
           </View>
 
-          <Text style={styles.infoLine}>
-            {t('lastUpdated')}: {sensor.lastUpdated}
-          </Text>
-          <Text style={styles.infoLine}>
-            {t('soilTemperature')}: {sensor.soilTemperature}C
-          </Text>
-          <Text style={styles.infoLine}>
-            {t('soilMoistureValue')}: {sensor.soilMoisture}%
-          </Text>
-          <Text style={styles.infoLine}>
-            {t('electricalConductivityValue')}: {sensor.electricalConductivity} mS/cm
-          </Text>
-          <Text style={styles.infoLine}>
-            {t('gasCompositionValue')}: {sensor.gasComposition}
-          </Text>
+          <View style={styles.infoGrid}>
+            <Text style={[styles.infoLine, { color: colors.subText }]}>{t('lastUpdated')}: <Text style={{ color: colors.text }}>{sensor.lastUpdated}</Text></Text>
+            <Text style={[styles.infoLine, { color: colors.subText }]}>{t('soilTemperature')}: <Text style={{ color: colors.text }}>{sensor.soilTemperature}C</Text></Text>
+            <Text style={[styles.infoLine, { color: colors.subText }]}>{t('soilMoistureValue')}: <Text style={{ color: colors.text }}>{sensor.soilMoisture}%</Text></Text>
+            <Text style={[styles.infoLine, { color: colors.subText }]}>{t('electricalConductivityValue')}: <Text style={{ color: colors.text }}>{sensor.electricalConductivity} mS/cm</Text></Text>
+          </View>
 
-
-          <Text style={styles.trendTitle}>{t('sensorTrends')}</Text>
+          <Text style={[styles.trendTitle, { color: colors.text }]}>{t('sensorTrends')}</Text>
           <View>
             {metrics.map((metric) => {
               const values = trendSeries[metric.key] ?? [];
 
               return (
-                <View key={metric.key} style={styles.trendCard}>
+                <View key={metric.key} style={[styles.trendCard, { backgroundColor: colors.cardBg, borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0' }]}>
                   <View style={styles.trendRowTop}>
-                    <Text style={styles.trendLabel}>{t(metric.labelKey)}</Text>
-                    <Text style={styles.trendValue}>
+                    <Text style={[styles.trendLabel, { color: colors.subText }]}>{t(metric.labelKey)}</Text>
+                    <Text style={[styles.trendValue, { color: colors.text }]}>
                       {metric.value.toFixed(metric.key === 'pH' ? 1 : 0)}
                       {metric.unit}
                     </Text>
@@ -152,7 +170,7 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
                             {
                               height: 10 + normalized * 30,
                               backgroundColor:
-                                index === values.length - 1 ? '#166534' : 'rgba(34,197,94,0.44)'
+                                index === values.length - 1 ? '#059669' : isDark ? 'rgba(5,150,105,0.2)' : 'rgba(5,150,105,0.1)'
                             }
                           ]}
                         />
@@ -165,7 +183,7 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
           </View>
 
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeText}>{t('close')}</Text>
+            <Text style={styles.closeButtonText}>{t('close')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -176,97 +194,106 @@ export default function SensorModal({ visible, sensor, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(4, 22, 8, 0.38)',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    padding: 16
   },
   card: {
-    width: '90%',
+    width: '100%',
     maxWidth: 460,
-    backgroundColor: '#f7fcf4',
-    borderRadius: 14,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#bdd8b6',
-    padding: 20
+    padding: 24
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16
   },
   title: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
-    color: '#1f4d2a'
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1
   },
   name: {
-    fontWeight: '700',
-    marginBottom: 6,
-    color: '#1f2937'
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginTop: 4
   },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  closeText: { fontSize: 12 },
   statusBadge: {
     alignSelf: 'flex-start',
-    borderRadius: 999,
+    borderRadius: 8,
     paddingVertical: 4,
     paddingHorizontal: 10,
-    marginBottom: 8
+    marginBottom: 20
   },
   statusBadgeText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '700'
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase'
+  },
+  infoGrid: {
+    gap: 8,
+    marginBottom: 24
   },
   infoLine: {
-    color: '#2f3f34',
-    marginBottom: 2
-  },
-  premiumLine: {
-    color: '#14532d',
-    marginTop: 6,
-    marginBottom: 2,
+    fontSize: 14,
     fontWeight: '600'
   },
   trendTitle: {
-    marginTop: 14,
-    marginBottom: 8,
-    fontWeight: '700',
-    color: '#1f4d2a'
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 12
   },
   trendCard: {
     borderWidth: 1,
-    borderColor: '#d4e7cf',
-    borderRadius: 10,
-    padding: 8,
-    marginBottom: 8,
-    backgroundColor: '#f0f9ec'
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12
   },
   trendRowTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6
+    marginBottom: 12
   },
   trendLabel: {
-    fontSize: 12,
-    color: '#375744',
-    fontWeight: '600'
+    fontSize: 11,
+    fontWeight: '700'
   },
   trendValue: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#14532d'
+    fontWeight: '900'
   },
   sparklineRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 42
+    height: 40
   },
   sparklineBar: {
-    width: 12,
-    borderRadius: 6
+    width: '10%',
+    borderRadius: 4
   },
   closeButton: {
     marginTop: 12,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: '#166534',
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: '#059669',
     alignItems: 'center'
   },
-  closeText: { color: '#fff', fontWeight: '700' }
+  closeButtonText: { color: '#fff', fontWeight: '900', textTransform: 'uppercase' }
 });

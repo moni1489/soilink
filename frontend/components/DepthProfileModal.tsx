@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Modal, Pressable, ScrollView, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 import { SoilDepth, SoilGridsProperty } from '../types';
 
 interface Props {
@@ -18,6 +19,8 @@ const normalizeVal = (prop: string, val: number) => {
 
 export default function DepthProfileModal({ visible, onClose, property, data }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const DEPTH_LABELS: Record<SoilDepth, string> = {
     '0-5cm': t('surface'),
@@ -49,17 +52,37 @@ export default function DepthProfileModal({ visible, onClose, property, data }: 
 
   const maxValue = Math.max(...chartData.map(d => d.value), 1);
 
+  const colors = isDark 
+    ? { 
+        bg: '#000000', 
+        text: '#FFFFFF', 
+        subText: 'rgba(255, 255, 255, 0.4)',
+        border: '#064E3B', 
+        cardBg: 'rgba(255, 255, 255, 0.03)',
+        overlay: 'rgba(0, 0, 0, 0.85)',
+        insightBg: 'rgba(5, 150, 105, 0.05)'
+      }
+    : { 
+        bg: '#FFFFFF', 
+        text: '#020617', 
+        subText: 'rgba(2, 6, 23, 0.4)',
+        border: '#E2E8F0', 
+        cardBg: '#F8FAFC',
+        overlay: 'rgba(0, 0, 0, 0.6)',
+        insightBg: '#F1F5F9'
+      };
+
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.content}>
+      <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
+        <View style={[styles.content, { backgroundColor: colors.bg, borderColor: colors.border }]}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>{t('verticalProfile')}</Text>
+              <Text style={[styles.title, { color: colors.text }]}>{t('verticalProfile')}</Text>
               <Text style={styles.subtitle}>{t('analysis')}: {getPropertyLabel(property)} (0-100см)</Text>
             </View>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeText}>✕</Text>
+            <Pressable onPress={onClose} style={[styles.closeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+              <Text style={[styles.closeText, { color: isDark ? '#94A3B8' : '#64748B' }]}>✕</Text>
             </Pressable>
           </View>
 
@@ -67,11 +90,11 @@ export default function DepthProfileModal({ visible, onClose, property, data }: 
             {chartData.map((item, index) => (
               <View key={item.depth} style={styles.layerRow}>
                 <View style={styles.layerInfo}>
-                  <Text style={styles.layerDepth}>{item.depth}</Text>
-                  <Text style={styles.layerLabel}>{item.label}</Text>
+                  <Text style={[styles.layerDepth, { color: colors.subText }]}>{item.depth}</Text>
+                  <Text style={[styles.layerLabel, { color: colors.text }]}>{item.label}</Text>
                 </View>
                 
-                <View style={styles.barWrapper}>
+                <View style={[styles.barWrapper, { backgroundColor: colors.cardBg, borderColor: isDark ? 'transparent' : '#E2E8F0', borderWidth: isDark ? 0 : 1 }]}>
                   <View style={[styles.bar, { width: `${(item.value / maxValue) * 100}%` }]}>
                     <Text style={styles.barValue}>{item.value.toFixed(1)}</Text>
                   </View>
@@ -82,9 +105,9 @@ export default function DepthProfileModal({ visible, onClose, property, data }: 
             ))}
           </View>
 
-          <View style={styles.footerInsight}>
-            <Text style={styles.insightTitle}>{t('scannerAnalysis')}</Text>
-            <Text style={styles.insightText}>
+          <View style={[styles.footerInsight, { backgroundColor: colors.insightBg, borderLeftColor: '#059669' }]}>
+            <Text style={[styles.insightTitle, { color: colors.subText }]}>{t('scannerAnalysis')}</Text>
+            <Text style={[styles.insightText, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#334155' }]}>
               {t('depthScannerAnalysisText', {
                 trend: chartData[0].value > chartData[4].value ? t('scannerDecreasing') : t('scannerIncreasing'),
                 property: getPropertyLabel(property),
@@ -105,18 +128,15 @@ export default function DepthProfileModal({ visible, onClose, property, data }: 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20
   },
   content: {
-    backgroundColor: '#000000',
     width: '100%',
     maxWidth: 500,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#064E3B',
     padding: 32,
     gap: 32
   },
@@ -126,7 +146,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start'
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '900',
     letterSpacing: -0.5
@@ -142,11 +161,10 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  closeText: { color: '#94A3B8', fontSize: 12 },
+  closeText: { fontSize: 12 },
   chartContainer: {
     gap: 24,
     paddingVertical: 10
@@ -162,19 +180,16 @@ const styles = StyleSheet.create({
     gap: 2
   },
   layerDepth: {
-    color: 'rgba(255, 255, 255, 0.3)',
     fontSize: 10,
     fontWeight: '900'
   },
   layerLabel: {
-    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700'
   },
   barWrapper: {
     flex: 1,
     height: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 8,
     overflow: 'hidden',
     justifyContent: 'center'
@@ -202,21 +217,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(5, 150, 105, 0.2)'
   },
   footerInsight: {
-    backgroundColor: 'rgba(5, 150, 105, 0.05)',
     padding: 20,
     borderRadius: 16,
     borderLeftWidth: 3,
-    borderLeftColor: '#059669',
     gap: 8
   },
   insightTitle: {
-    color: 'rgba(255, 255, 255, 0.4)',
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1
   },
   insightText: {
-    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 13,
     lineHeight: 20
   },
