@@ -15,8 +15,8 @@ interface Props {
   onSelectSoilProperty: (prop: SoilGridsProperty) => void;
   selectedDepth: SoilDepth;
   onSelectDepth: (depth: SoilDepth) => void;
-  activeTab: 'map' | 'ai' | 'recommendations';
-  onSelectTab: (tab: 'map' | 'ai' | 'recommendations') => void;
+  activeTab: 'map' | 'ai' | 'recommendations' | 'calendar';
+  onSelectTab: (tab: 'map' | 'ai' | 'recommendations' | 'calendar') => void;
   onOpenAI: () => void;
   onRegisterOpen: () => void;
   onOpenScanner: () => void;
@@ -114,6 +114,12 @@ export default function Sidebar({
         >
           <Text style={[styles.tabText, { color: isDark ? colors.subText : 'rgba(2, 6, 23, 0.5)' }, activeTab === 'ai' && { color: colors.activeText, fontWeight: '700' }]}>{t('aiAgronomist')}</Text>
         </Pressable>
+        <Pressable
+          onPress={() => onSelectTab('calendar')}
+          style={[styles.tab, activeTab === 'calendar' && { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#FFFFFF', elevation: activeTab === 'calendar' ? 2 : 0 }]}
+        >
+          <Text style={[styles.tabText, { color: isDark ? colors.subText : 'rgba(2, 6, 23, 0.5)' }, activeTab === 'calendar' && { color: '#3B82F6', fontWeight: '700' }]}>{t('calendarTab')}</Text>
+        </Pressable>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -195,6 +201,11 @@ export default function Sidebar({
               </View>
             )}
           </>
+        ) : activeTab === 'calendar' ? (
+          <View style={styles.aiTab}>
+            <Text style={[styles.aiTabTitle, { color: colors.text }]}>{t('calendarTab') || 'Calendar'}</Text>
+            <Text style={[styles.aiTabDesc, { color: colors.subText }]}>{t('calUpcoming') || 'Upcoming events'}</Text>
+          </View>
         ) : activeTab === 'ai' ? (
           <View style={styles.aiTab}>
             <Text style={[styles.aiTabTitle, { color: colors.text }]}>{t('aiConsultantTitle')}</Text>
@@ -253,7 +264,7 @@ const styles = StyleSheet.create({
   logoDot: { width: 8, height: 8, borderRadius: 4, marginTop: 12 },
   tabContainer: { flexDirection: 'row', marginBottom: 32, borderRadius: 12, padding: 4, borderWidth: 1 },
   tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
-  tabText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
+  tabText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' },
   scrollContent: { paddingBottom: 40 },
   section: { marginBottom: 32 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

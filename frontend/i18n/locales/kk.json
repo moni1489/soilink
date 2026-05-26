@@ -128,5 +128,16 @@
   "today": "Бүгін",
   "daysAgo": "күн бұрын",
   "historicalTimeline": "Топырақ күйінің тарихы",
-  "askAgronomist": "Агрономға сұрақ қою"
+  "askAgronomist": "Агрономға сұрақ қою",
+  "calendarTitle": "ЕГІСТІК КҮНТІЗБЕСІ",
+  "calendarTab": "Күнтізбе",
+  "calToday": "БҮГІН",
+  "calUpcoming": "АЛДАҒЫ",
+  "calEvtIrrigation": "Суару циклі",
+  "calEvtSensorCheck": "Сенсор тексеру",
+  "calEvtFertilizer": "Тыңайтқыш енгізу",
+  "calEvtDroneSurvey": "Дрон түсіру",
+  "calEvtPhTreatment": "pH түзету",
+  "calEvtTillage": "Тығыздыққа қарсы жер өңдеу",
+  "calEvtWaterAnalysis": "Су тұтыну талдауы"
 }
