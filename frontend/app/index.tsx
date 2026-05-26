@@ -15,6 +15,7 @@ import ComparisonModal from '../components/ComparisonModal';
 import DepthProfileModal from '../components/DepthProfileModal';
 import PredictionCard from '../components/PredictionCard';
 import TimelineSlider from '../components/TimelineSlider';
+import CalendarView from '../components/CalendarView';
 import { LayerKey, Sensor, SoilZone, MapMode, SoilGridsProperty, SoilDepth, Prediction } from '../types';
 import { fields, zones, sensors, statistics, recommendations, predictions } from '../data/mockData';
 import { useLocale } from '../hooks/useLocale';
@@ -49,7 +50,7 @@ export default function Dashboard() {
   const [selectedSoilProperty, setSelectedSoilProperty] = useState<SoilGridsProperty>('clay');
   const [selectedDepth, setSelectedDepth] = useState<SoilDepth>('0-5cm');
   const [selectedDaysAgo, setSelectedDaysAgo] = useState(0);
-  const [activeTab, setActiveTab] = useState<'map' | 'ai' | 'recommendations'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'ai' | 'recommendations' | 'calendar'>('map');
   const [chatVisible, setChatVisible] = useState(false);
   const [registrationVisible, setRegistrationVisible] = useState(false);
   const [comparisonVisible, setComparisonVisible] = useState(false);
@@ -412,8 +413,14 @@ export default function Dashboard() {
               </TouchableOpacity>
             )}
             <View style={[styles.recommendationsRegion, !mapVisible && { flex: 1, width: undefined }]}>
-              {activePrediction && <PredictionCard prediction={activePrediction} />}
-              <Recommendations recommendations={activeRecommendations} />
+              {activeTab === 'calendar' ? (
+                <CalendarView />
+              ) : (
+                <>
+                  {activePrediction && <PredictionCard prediction={activePrediction} />}
+                  <Recommendations recommendations={activeRecommendations} />
+                </>
+              )}
             </View>
           </Animated.View>
         ) : (
@@ -485,10 +492,10 @@ export default function Dashboard() {
             <View style={[styles.mobileActionContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
               <View style={[styles.mobileActionRowGlass, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.03)', borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0', borderWidth: 1.5, borderRadius: 24 }]}>
                 <TouchableOpacity style={styles.mobileActionBtnPremium} onPress={() => setScannerVisible(true)}>
-                  <Text style={[styles.mobileActionBtnTextPremium, { color: isDark ? '#FFFFFF' : '#020617' }]}>📊 {t('verticalScanner')}</Text>
+                  <Text style={[styles.mobileActionBtnTextPremium, { color: isDark ? '#FFFFFF' : '#020617' }]}>{t('verticalScanner')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.mobileActionBtnPremium} onPress={() => setChatVisible(true)}>
-                  <Text style={[styles.mobileActionBtnTextPremium, { color: isDark ? '#FFFFFF' : '#020617' }]}>💬 {t('aiAgent')}</Text>
+                  <Text style={[styles.mobileActionBtnTextPremium, { color: isDark ? '#FFFFFF' : '#020617' }]}>{t('aiAgent')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

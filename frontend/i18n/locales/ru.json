@@ -128,5 +128,16 @@
   "today": "Сегодня",
   "daysAgo": "дней назад",
   "historicalTimeline": "История состояния почвы",
-  "askAgronomist": "Задать вопрос агроному"
+  "askAgronomist": "Задать вопрос агроному",
+  "calendarTitle": "КАЛЕНДАРЬ ПОЛЯ",
+  "calendarTab": "Календарь",
+  "calToday": "СЕГОДНЯ",
+  "calUpcoming": "ПРЕДСТОЯЩИЕ",
+  "calEvtIrrigation": "Цикл полива",
+  "calEvtSensorCheck": "Проверка датчиков",
+  "calEvtFertilizer": "Внесение удобрений",
+  "calEvtDroneSurvey": "Дрон-съёмка",
+  "calEvtPhTreatment": "Коррекция pH",
+  "calEvtTillage": "Рыхление против уплотнения",
+  "calEvtWaterAnalysis": "Анализ водопотребления"
 }

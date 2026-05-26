@@ -128,5 +128,16 @@
   "today": "Today",
   "daysAgo": "days ago",
   "historicalTimeline": "Soil Condition History",
-  "askAgronomist": "Ask Agronomist"
+  "askAgronomist": "Ask Agronomist",
+  "calendarTitle": "FIELD CALENDAR",
+  "calendarTab": "Calendar",
+  "calToday": "TODAY",
+  "calUpcoming": "UPCOMING",
+  "calEvtIrrigation": "Irrigation Cycle",
+  "calEvtSensorCheck": "Sensor Check",
+  "calEvtFertilizer": "Fertilization",
+  "calEvtDroneSurvey": "Drone Survey",
+  "calEvtPhTreatment": "pH Treatment",
+  "calEvtTillage": "Anti-Compaction Tillage",
+  "calEvtWaterAnalysis": "Water Usage Analysis"
 }
