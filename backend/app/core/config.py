@@ -1,6 +1,8 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
+_ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
+
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./soilink.db"
@@ -10,7 +12,7 @@ class Settings(BaseSettings):
     OPENMETEO_API_URL: str = "https://api.open-meteo.com/v1/forecast"
 
     class Config:
-        env_file = ".env"
+        env_file = str(_ENV_FILE)
         extra = "ignore"
 
     @property

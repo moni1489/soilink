@@ -1,0 +1,7 @@
+npm warn "localhost" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--host". This will stop working in the next major version of npm.
+
+> soilink@1.0.0 web
+> expo start --web localhost
+
+Invalid project root: /workspaces/soilink/frontend/localhost
