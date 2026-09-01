@@ -39,7 +39,7 @@ export function WeatherWidget({ data }: { data: WeatherData }) {
         <div className="hidden lg:flex items-center gap-3 pl-1">
           {data.forecast.slice(0, 3).map((f, i) => (
             <div key={i} className="flex flex-col items-center gap-0.5">
-              <span className="text-[8px] font-bold text-[#86868b] uppercase">{f.day === 'Mon' ? 'ПН' : f.day === 'Tue' ? 'ВТ' : f.day === 'Wed' ? 'СР' : 'ЧТ'}</span>
+              <span className="text-[8px] font-bold text-[#86868b] uppercase">{f.day}</span>
               <span className="text-[11px]">{f.icon}</span>
             </div>
           ))}

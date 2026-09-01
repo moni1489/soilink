@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Leaf, Map as MapIcon, Calendar, Cog, Bell, Search, Menu, Command } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -11,6 +11,7 @@ const NAV = [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f5f5f7] text-[#1d1d1f] font-sans">
@@ -51,8 +52,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 onError={e => { (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=Admin&background=0071e3&color=fff'; }}
               />
               <div className="flex flex-col min-w-0">
-                <p className="text-[12px] font-semibold truncate">Алексей Н.</p>
-                <p className="text-[10px] text-[#6e6e73]">Главный агроном</p>
+                <p className="text-[12px] font-semibold truncate">monya</p>
+                <p className="text-[10px] text-[#6e6e73]">Администратор</p>
               </div>
            </div>
         </div>
@@ -80,10 +81,38 @@ export function Layout({ children }: { children: React.ReactNode }) {
                  <Command className="w-2 h-2" /> K
               </div>
             </div>
-            <button className="p-2 hover:bg-black/5 rounded-lg text-[#6e6e73] transition-all relative">
-              <Bell className="w-4.5 h-4.5" />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border border-white" />
-            </button>
+            <div className="relative">
+              <button onClick={() => setShowNotifications(v => !v)} className="p-2 hover:bg-black/5 rounded-lg text-[#6e6e73] transition-all relative">
+                <Bell className="w-4.5 h-4.5" />
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border border-white" />
+              </button>
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-black/5 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                    <div className="p-4 border-b border-black/5 flex items-center justify-between bg-[#fbfbfd]">
+                      <h3 className="text-[13px] font-bold">Уведомления</h3>
+                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">1 НОВОЕ</span>
+                    </div>
+                    <div className="p-2 max-h-64 overflow-y-auto">
+                      <div className="p-3 hover:bg-[#f5f5f7] rounded-xl cursor-pointer transition-all flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Bell className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[12px] font-bold text-[#1d1d1f] leading-tight mb-1">Критический дефицит влаги</p>
+                          <p className="text-[11px] text-[#6e6e73] leading-relaxed">Датчик Юг-04 зафиксировал падение влажности ниже 15%. Требуется полив.</p>
+                          <p className="text-[9px] font-bold text-[#86868b] mt-2 uppercase">1 час назад</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3 border-t border-black/5 text-center">
+                      <button className="text-[11px] font-bold text-blue-600 hover:text-blue-700">ОТМЕТИТЬ ВСЕ КАК ПРОЧИТАННЫЕ</button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 

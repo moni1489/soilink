@@ -86,7 +86,7 @@ export function SchedulePage() {
                    className={`flex flex-col items-center p-3 rounded-xl border transition-all ${isSel ? 'bg-[#0071e3] text-white border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-white text-[#6e6e73] border-black/5 hover:border-black/20'}`}
                  >
                     <span className={`text-[9px] font-bold uppercase tracking-widest mb-1 ${isSel ? 'opacity-80' : 'opacity-60'}`}>
-                       {format(day, 'eee', { locale: ru })}
+                       {format(day, 'EEEEEE', { locale: ru })}
                     </span>
                     <span className="text-lg font-bold font-data">{format(day, 'd')}</span>
                     {isTod && !isSel && <div className="mt-1 w-1 h-1 rounded-full bg-blue-500" />}

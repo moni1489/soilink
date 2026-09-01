@@ -281,9 +281,23 @@ export function MapboxViewer({
                 </motion.div>
 
                 {/* Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <div className="bg-[#1d1d1f] text-white text-[10px] font-black px-2 py-1 rounded shadow-lg whitespace-nowrap uppercase tracking-widest">
-                    {sensor.name}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                  <div className="bg-[#1d1d1f] text-white p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] border border-white/10">
+                    <span className="text-[10px] font-black uppercase tracking-widest truncate">{sensor.name}</span>
+                    <div className="flex items-center justify-between gap-3 text-[10px] font-bold">
+                       <div className="flex items-center gap-1.5">
+                          <div className={`w-1.5 h-1.5 rounded-full ${sensor.battery < 20 ? 'bg-red-500' : 'bg-green-500'}`} />
+                          <span className="text-white/80">{sensor.battery}% Заряд</span>
+                       </div>
+                       <div className="flex items-center gap-1.5">
+                          <div className="flex gap-0.5 items-end h-2.5">
+                             <div className="w-0.5 h-1.5 bg-white/40" />
+                             <div className="w-0.5 h-2 bg-white/60" />
+                             <div className="w-0.5 h-2.5 bg-white/90" />
+                          </div>
+                          <span className="text-white/80">{sensor.signalStrength}%</span>
+                       </div>
+                    </div>
                   </div>
                 </div>
               </div>
