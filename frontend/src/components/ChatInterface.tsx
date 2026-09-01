@@ -40,21 +40,46 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
     }
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
+    
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    
+    // Create a temporary loading message for the assistant
+    const loadingId = (Date.now() + 1).toString();
+    const loadingMsg: Message = { id: loadingId, role: 'assistant', content: '...', timestamp: new Date() };
+    setMessages(prev => [...prev, loadingMsg]);
 
-    setTimeout(() => {
-      const assistantMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `Анализирую данные для поля ${context?.field?.name || ''}... Текущие показатели влажности в норме. Рекомендую плановый осмотр сектора Б через 48 часов.`,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, assistantMsg]);
-    }, 1000);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${apiUrl}/api/chat/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          field_id: context?.field?.id || 'field-1',
+          message: input,
+          context: context,
+          language: 'ru'
+        })
+      });
+
+      if (!res.ok) throw new Error('API Error');
+      const data = await res.json();
+      
+      setMessages(prev => prev.map(msg => 
+        msg.id === loadingId 
+          ? { ...msg, content: data.response || 'Ошибка ответа от ИИ.' } 
+          : msg
+      ));
+    } catch (err) {
+      setMessages(prev => prev.map(msg => 
+        msg.id === loadingId 
+          ? { ...msg, content: 'Извините, возникла ошибка соединения с сервером. Попробуйте позже.' } 
+          : msg
+      ));
+    }
   };
 
   return (
