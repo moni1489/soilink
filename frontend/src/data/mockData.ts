@@ -1,19 +1,22 @@
 import { addDays, subHours, format } from 'date-fns';
 import type { Field, Sensor, SoilZone, Recommendation, Prediction, StatisticCard, ScannerData, WeatherData } from '@/types';
 
+// Реальные сельхозугодья южнее Усть-Каменогорска (Ertis / Tishinka area)
 export const fields: Field[] = [
   {
     id: 'f-1',
-    name: 'Алма-Ата — Поле №4',
+    name: 'УКГ — Тишинское поле',
     areaHectares: 124.5,
-    center: { latitude: 43.238949, longitude: 76.889709 },
+    // Центр: южнее города, вблизи с. Тишинка
+    center: { latitude: 49.9260, longitude: 82.5420 },
     boundary: [],
   },
   {
     id: 'f-2',
-    name: 'Каскелен — Участок Запад',
+    name: 'УКГ — Усть-Тарханское поле',
     areaHectares: 86.2,
-    center: { latitude: 43.2012, longitude: 76.6201 },
+    // Юго-восток, вблизи поймы Иртыша
+    center: { latitude: 49.8920, longitude: 82.6380 },
     boundary: [],
   },
 ];
@@ -54,47 +57,63 @@ const createSensor = (id: string, fieldId: string, name: string, lat: number, ln
 });
 
 export const sensors: Sensor[] = [
-  // Field 1
-  createSensor('s-1', 'f-1', 'Датчик 01 (Север)', 43.242, 76.892, 'healthy'),
-  createSensor('s-2', 'f-1', 'Датчик 02 (Центр)', 43.239, 76.890, 'warning'),
-  createSensor('s-3', 'f-1', 'Датчик 03 (Запад)', 43.237, 76.885, 'healthy'),
-  createSensor('s-4', 'f-1', 'Датчик 04 (Юг)', 43.235, 76.888, 'critical'),
-  createSensor('s-5', 'f-1', 'Датчик 05 (Восток)', 43.240, 76.895, 'healthy'),
-  createSensor('s-11', 'f-1', 'Датчик 06 (СВ)', 43.243, 76.896, 'healthy'),
-  createSensor('s-12', 'f-1', 'Датчик 07 (ЮЗ)', 43.234, 76.882, 'warning'),
-  createSensor('s-13', 'f-1', 'Датчик 08 (Глубинный)', 43.238, 76.891, 'healthy'),
-  
-  // Field 2
-  createSensor('s-6', 'f-2', 'S-Alpha 01', 43.203, 76.622, 'healthy'),
-  createSensor('s-7', 'f-2', 'S-Alpha 02', 43.200, 76.618, 'healthy'),
-  createSensor('s-8', 'f-2', 'S-Beta 01', 43.205, 76.625, 'warning'),
+  // Field 1 — Тишинское поле (юг УКГ)
+  createSensor('s-1', 'f-1', 'Датчик 01 (Зона А — Север)', 49.9315, 82.5340, 'healthy'),
+  createSensor('s-2', 'f-1', 'Датчик 02 (Зона А — Центр)', 49.9295, 82.5370, 'warning'),
+  createSensor('s-3', 'f-1', 'Датчик 03 (Зона А — Запад)', 49.9305, 82.5295, 'healthy'),
+  createSensor('s-4', 'f-1', 'Датчик 04 (Зона Б — Юг)', 49.9270, 82.5555, 'critical'),
+  createSensor('s-5', 'f-1', 'Датчик 05 (Зона Б — Восток)', 49.9290, 82.5600, 'healthy'),
+  createSensor('s-11', 'f-1', 'Датчик 06 (Зона В — Центр)', 49.9155, 82.5340, 'healthy'),
+  createSensor('s-12', 'f-1', 'Датчик 07 (Зона В — Юг)', 49.9130, 82.5360, 'warning'),
+  createSensor('s-13', 'f-1', 'Датчик 08 (Зона В — Глубинный)', 49.9145, 82.5310, 'healthy'),
+
+  // Field 2 — Усть-Тарханское поле
+  createSensor('s-6', 'f-2', 'S-Alpha 01', 49.8940, 82.6320, 'healthy'),
+  createSensor('s-7', 'f-2', 'S-Alpha 02', 49.8910, 82.6400, 'healthy'),
+  createSensor('s-8', 'f-2', 'S-Beta 01', 49.8950, 82.6450, 'warning'),
 ];
 
 export const zones: SoilZone[] = [
   {
+    // ЗОНА А — трапеция (шире сверху), северная часть поля
+    // Расположена: ~49.928-49.935°N, 82.524-82.545°E
     id: 'z-1', fieldId: 'f-1', name: 'Зона А (Пшеница)', color: 'green',
     healthScore: 92,
     coordinates: [
-      { lng: 76.885, lat: 43.245 }, { lng: 76.895, lat: 43.245 },
-      { lng: 76.895, lat: 43.240 }, { lng: 76.885, lat: 43.240 },
+      { lng: 82.524, lat: 49.935 },
+      { lng: 82.537, lat: 49.934 },
+      { lng: 82.545, lat: 49.930 },
+      { lng: 82.540, lat: 49.926 },
+      { lng: 82.525, lat: 49.927 },
     ],
     polygon: [],
   },
   {
-    id: 'z-2', fieldId: 'f-1', name: 'Зона Б (Пшеница)', color: 'yellow',
+    // ЗОНА Б — неправильный пятиугольник, ~400м восточнее зоны А (ближе к центру экрана)
+    // Расположена: ~49.923-49.935°N, 82.548-82.562°E
+    id: 'z-2', fieldId: 'f-1', name: 'Зона Б (Подсолнечник)', color: 'yellow',
     healthScore: 68,
     coordinates: [
-      { lng: 76.885, lat: 43.240 }, { lng: 76.895, lat: 43.240 },
-      { lng: 76.895, lat: 43.235 }, { lng: 76.885, lat: 43.235 },
+      { lng: 82.549, lat: 49.933 },
+      { lng: 82.559, lat: 49.935 },
+      { lng: 82.563, lat: 49.929 },
+      { lng: 82.560, lat: 49.923 },
+      { lng: 82.548, lat: 49.924 },
     ],
     polygon: [],
   },
   {
+    // ЗОНА В — Г-образная (L-shape), ~900м южнее зоны А
+    // Расположена: ~49.910-49.921°N, 82.523-82.545°E
     id: 'z-3', fieldId: 'f-1', name: 'Зона В (Пар)', color: 'red',
     healthScore: 42,
     coordinates: [
-      { lng: 76.885, lat: 43.235 }, { lng: 76.895, lat: 43.235 },
-      { lng: 76.895, lat: 43.230 }, { lng: 76.885, lat: 43.230 },
+      { lng: 82.523, lat: 49.921 },
+      { lng: 82.545, lat: 49.921 },
+      { lng: 82.545, lat: 49.917 },
+      { lng: 82.534, lat: 49.917 },
+      { lng: 82.534, lat: 49.910 },
+      { lng: 82.523, lat: 49.910 },
     ],
     polygon: [],
   },

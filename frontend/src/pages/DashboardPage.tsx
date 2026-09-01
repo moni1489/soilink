@@ -86,7 +86,7 @@ export function DashboardPage() {
         <div className="h-4 w-px bg-black/10" />
 
         <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5 overflow-hidden">
-          {([['zones', 'Зоны'], ['heatmap', 'Карта'], ['satellite', 'Спутник']] as [MapMode, string][]).map(([m, lbl]) => (
+          {([['zones', 'Зоны'], ['heatmap', 'Хитмап'], ['satellite', 'Спутник']] as [MapMode, string][]).map(([m, lbl]) => (
             <button key={m} onClick={() => setMapMode(m)}
               className={`px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${mapMode === m ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
             >{lbl}</button>
