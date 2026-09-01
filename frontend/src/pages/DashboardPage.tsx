@@ -13,6 +13,7 @@ import {
   Thermometer, FlaskConical, Settings2, Info,
   Activity, Zap, ShieldCheck
 } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import type { Sensor, SoilZone, MapMode, SoilDepth } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 
@@ -20,7 +21,8 @@ type RightPanel = 'recommendations' | 'chat' | null;
 
 export function DashboardPage() {
   const [activeFieldId, setActiveFieldId] = useState(fields[0].id);
-  const [mapMode, setMapMode] = useState<MapMode>('zones');
+  const [activeZoneFilter, setActiveZoneFilter] = useState<string | null>(null);
+  const [mapMode, setMapMode] = useState<MapMode>('heatmap');
   const [selectedDepth, setSelectedDepth] = useState<SoilDepth>('0-5cm');
   const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
   const [selectedZone, setSelectedZone] = useState<SoilZone | null>(null);
@@ -30,9 +32,12 @@ export function DashboardPage() {
   const [fieldDropdown, setFieldDropdown] = useState(false);
   const [ndviEnabled, setNdviEnabled] = useState(false);
 
+  const [zoneDropdown, setZoneDropdown] = useState(false);
+
   const activeField = useMemo(() => fields.find(f => f.id === activeFieldId) ?? fields[0], [activeFieldId]);
   const activeSensors = useMemo(() => sensors.filter(s => s.fieldId === activeFieldId), [activeFieldId]);
-  const activeZones = useMemo(() => zones.filter(z => z.fieldId === activeFieldId), [activeFieldId]);
+  const allFieldZones = useMemo(() => zones.filter(z => z.fieldId === activeFieldId), [activeFieldId]);
+  const activeZones = useMemo(() => activeZoneFilter ? allFieldZones.filter(z => z.id === activeZoneFilter) : allFieldZones, [allFieldZones, activeZoneFilter]);
   const activeRecs = useMemo(() => recommendations.filter(r => !r.fieldId || r.fieldId === activeFieldId), [activeFieldId]);
   const activeWeather = weather[activeFieldId] || weather['f-1'];
 
@@ -43,10 +48,10 @@ export function DashboardPage() {
     const avgPh = activeSensors.reduce((s, x) => s + x.pH, 0) / activeSensors.length;
     
     return [
-      { id: 'moisture', label: 'Влажность', value: `${avgMoisture.toFixed(0)}%`, icon: Droplet, color: 'text-blue-500', trend: '+2%' },
-      { id: 'temp', label: 'Температура', value: `${avgTemp.toFixed(1)}°`, icon: Thermometer, color: 'text-orange-500', trend: '-1°' },
-      { id: 'ph', label: 'Кислотность', value: `${avgPh.toFixed(1)}`, icon: FlaskConical, color: 'text-purple-500', trend: 'OK' },
-      { id: 'health', label: 'NDVI Индекс', value: '0.74', icon: TrendingUp, color: 'text-green-600', trend: '+0.05' },
+      { id: 'moisture', label: 'Влажность', value: `${avgMoisture.toFixed(0)}%`, icon: Droplet, color: 'text-blue-500', trend: '+2%', data: [35, 42, 38, 45, 49, avgMoisture] },
+      { id: 'temp', label: 'Температура', value: `${avgTemp.toFixed(1)}°`, icon: Thermometer, color: 'text-orange-500', trend: '-1°', data: [18, 19, 22, 21, 20, avgTemp] },
+      { id: 'ph', label: 'Кислотность', value: `${avgPh.toFixed(1)}`, icon: FlaskConical, color: 'text-purple-500', trend: 'OK', data: [6.1, 6.2, 6.1, 6.3, 6.4, avgPh] },
+      { id: 'health', label: 'NDVI Индекс', value: '0.74', icon: TrendingUp, color: 'text-green-600', trend: '+0.05', data: [0.65, 0.68, 0.70, 0.71, 0.73, 0.74] },
     ];
   }, [activeSensors]);
 
@@ -70,7 +75,7 @@ export function DashboardPage() {
                   className="absolute top-full left-0 mt-2 w-64 bg-white border border-black/5 rounded-xl shadow-xl z-50 p-1"
                 >
                   {fields.map(f => (
-                    <button key={f.id} onClick={() => { setActiveFieldId(f.id); setFieldDropdown(false); }}
+                    <button key={f.id} onClick={() => { setActiveFieldId(f.id); setActiveZoneFilter(null); setFieldDropdown(false); }}
                       className={`w-full text-left px-4 py-2 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeFieldId === f.id ? 'font-bold bg-black/5' : ''}`}
                     >
                       <span className="truncate">{f.name}</span>
@@ -83,10 +88,48 @@ export function DashboardPage() {
           </AnimatePresence>
         </div>
 
+        <div className="relative">
+          <button onClick={() => setZoneDropdown(v => !v)}
+            className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold"
+          >
+            <Layers className="w-4 h-4 text-purple-500" />
+            <span className="truncate max-w-[120px]">{activeZoneFilter ? allFieldZones.find(z => z.id === activeZoneFilter)?.name : 'Все зоны'}</span>
+            <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform ${zoneDropdown ? 'rotate-180' : ''}`} />
+          </button>
+          <AnimatePresence>
+            {zoneDropdown && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setZoneDropdown(false)} />
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-full left-0 mt-2 w-64 bg-white border border-black/5 rounded-xl shadow-xl z-50 p-1"
+                >
+                  <button onClick={() => { setActiveZoneFilter(null); setZoneDropdown(false); }}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${!activeZoneFilter ? 'font-bold bg-black/5' : ''}`}
+                  >
+                    <span>Все зоны</span>
+                    {!activeZoneFilter && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
+                  </button>
+                  {allFieldZones.map(z => (
+                    <button key={z.id} onClick={() => { setActiveZoneFilter(z.id); setZoneDropdown(false); }}
+                      className={`w-full text-left px-4 py-2 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeZoneFilter === z.id ? 'font-bold bg-black/5' : ''}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: z.color === 'green' ? '#10b981' : z.color === 'yellow' ? '#f59e0b' : '#ef4444' }} />
+                        <span className="truncate">{z.name}</span>
+                      </div>
+                      {activeZoneFilter === z.id && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
+                    </button>
+                  ))}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+
         <div className="h-4 w-px bg-black/10" />
 
         <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5 overflow-hidden">
-          {([['zones', 'Зоны'], ['heatmap', 'Хитмап'], ['satellite', 'Спутник']] as [MapMode, string][]).map(([m, lbl]) => (
+          {([['heatmap', 'Хитмап'], ['zones', 'Зоны'], ['satellite', 'Спутник']] as [MapMode, string][]).map(([m, lbl]) => (
             <button key={m} onClick={() => setMapMode(m)}
               className={`px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${mapMode === m ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
             >{lbl}</button>
@@ -94,6 +137,7 @@ export function DashboardPage() {
         </div>
 
         <button onClick={() => setNdviEnabled(!ndviEnabled)}
+          title="NDVI (Нормализованный относительный индекс растительности) показывает качество и плотность биомассы"
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border ${ndviEnabled ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-200' : 'bg-white border-black/10 text-[#6e6e73] hover:border-black/20'}`}
         >
           <Activity className="w-3.5 h-3.5" /> NDVI
@@ -105,18 +149,35 @@ export function DashboardPage() {
 
       {/* Grid Stats */}
       <div className="flex-shrink-0 grid grid-cols-4 bg-white border-b border-black/5">
-        {stats.map((s, i) => (
-          <div key={s.id} className={`p-5 flex flex-col gap-1.5 relative ${i < 3 ? 'border-r border-black/5' : ''}`}>
-             <div className="flex items-center justify-between min-w-0">
-                <span className="text-[10px] font-black text-[#6e6e73] uppercase tracking-widest truncate">{s.label}</span>
-                <s.icon className={`w-3.5 h-3.5 flex-shrink-0 ${s.color}`} />
-             </div>
-             <div className="flex items-baseline gap-2 min-w-0">
-                <span className="text-3xl font-bold tracking-tight font-data leading-none truncate">{s.value}</span>
-                <span className={`text-[10px] font-black font-data px-1.5 py-0.5 rounded bg-black/5 ${s.trend.includes('+') ? 'text-green-600' : s.trend.includes('-') ? 'text-orange-600' : 'text-[#86868b]'}`}>{s.trend}</span>
-             </div>
-          </div>
-        ))}
+        {stats.map((s, i) => {
+          const colorHex = s.color.includes('blue') ? '#3b82f6' : s.color.includes('orange') ? '#f97316' : s.color.includes('purple') ? '#a855f7' : '#16a34a';
+          return (
+            <div key={s.id} className={`p-5 flex flex-col gap-1.5 relative group overflow-hidden ${i < 3 ? 'border-r border-black/5' : ''}`}>
+               <div className="flex items-center justify-between min-w-0 z-10 relative">
+                  <span className="text-[10px] font-black text-[#6e6e73] uppercase tracking-widest truncate">{s.label}</span>
+                  <s.icon className={`w-3.5 h-3.5 flex-shrink-0 ${s.color}`} />
+               </div>
+               <div className="flex items-baseline gap-2 min-w-0 z-10 relative">
+                  <span className="text-3xl font-bold tracking-tight font-data leading-none truncate">{s.value}</span>
+                  <span className={`text-[10px] font-black font-data px-1.5 py-0.5 rounded bg-black/5 ${s.trend.includes('+') ? 'text-green-600' : s.trend.includes('-') ? 'text-orange-600' : 'text-[#86868b]'}`}>{s.trend}</span>
+               </div>
+               {/* Sparkline background */}
+               <div className="absolute inset-x-0 bottom-0 h-12 opacity-15 pointer-events-none group-hover:opacity-30 transition-opacity">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <AreaChart data={s.data.map((val, idx) => ({ val, idx }))}>
+                        <defs>
+                           <linearGradient id={`spark-${s.id}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={colorHex} stopOpacity={1} />
+                              <stop offset="100%" stopColor={colorHex} stopOpacity={0} />
+                           </linearGradient>
+                        </defs>
+                        <Area type="monotone" dataKey="val" stroke={colorHex} strokeWidth={2} fill={`url(#spark-${s.id})`} />
+                     </AreaChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex-1 flex overflow-hidden relative">
