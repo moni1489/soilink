@@ -14,10 +14,11 @@ import {
   Activity, Zap, ShieldCheck
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
 import type { Sensor, SoilZone, MapMode, SoilDepth } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 
-type RightPanel = 'recommendations' | 'chat' | null;
+type RightPanel = 'recommendations' | 'chat' | 'analysis' | null;
 
 export function DashboardPage() {
   const [activeFieldId, setActiveFieldId] = useState(fields[0].id);
@@ -276,18 +277,24 @@ export function DashboardPage() {
               </button>
               <button onClick={() => setRightPanel('chat')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all ${rightPanel === 'chat' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
                  <MessageSquare className="w-4 h-4" />
-                 <span className="text-[11px] font-black uppercase tracking-wider">Ассистент</span>
+                 <span className="text-[11px] font-black uppercase tracking-wider">Чат</span>
+              </button>
+              <button onClick={() => setRightPanel('analysis')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all ${rightPanel === 'analysis' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
+                 <Layers className="w-4 h-4" />
+                 <span className="text-[11px] font-black uppercase tracking-wider">Почва</span>
               </button>
            </div>
            <div className="flex-1 overflow-hidden">
               <AnimatePresence mode="wait">
-                 <motion.div key={rightPanel} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full">
-                    {rightPanel === 'chat' ? (
-                      <ChatInterface isOpen={true} onClose={() => setRightPanel(null)} context={{ field: activeField, sensors: activeSensors }} />
-                    ) : (
-                      <RecommendationsPanel recommendations={activeRecs} />
-                    )}
-                 </motion.div>
+                  <motion.div key={rightPanel} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full overflow-y-auto p-4">
+                     {rightPanel === 'chat' ? (
+                       <ChatInterface isOpen={true} onClose={() => setRightPanel(null)} context={{ field: activeField, sensors: activeSensors }} />
+                     ) : rightPanel === 'analysis' ? (
+                       <SoilAnalysisCard fieldId={activeFieldId} />
+                     ) : (
+                       <RecommendationsPanel recommendations={activeRecs} />
+                     )}
+                  </motion.div>
               </AnimatePresence>
            </div>
         </div>
