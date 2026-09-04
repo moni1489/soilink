@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmVicnVzZDMyIiwiYSI6ImNtbXozZTEzZTA0M3oycG93M3R5NHBranQifQ.pc5OgxomRXUl5pRDVktXuA';
 
 const MAP_STYLES: Record<MapMode, string> = {
   zones: 'mapbox://styles/mapbox/light-v11',
@@ -97,18 +97,41 @@ export function MapboxViewer({
         properties: { weight: p.weight },
       })),
     };
-  }, [zones, sensors]);
+  const [token, setToken] = useState(() => MAPBOX_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('mapbox_token') || '' : ''));
+  const [inputToken, setInputToken] = useState('');
 
-  if (!MAPBOX_TOKEN) {
+  if (!token) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-[#f5f5f7]">
-        <div className="w-20 h-20 bg-white rounded-[32px] shadow-xl flex items-center justify-center mb-8">
-           <span className="text-4xl">🗺️</span>
+      <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#f5f5f7] z-20 relative">
+        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-4">
+           <span className="text-3xl">🗺️</span>
         </div>
-        <h3 className="text-2xl font-black tracking-tight text-[#1d1d1f] mb-3">Map Infrastructure Offline</h3>
-        <p className="text-sm text-[#86868b] max-w-sm leading-relaxed font-medium">
-          Please configure your <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">VITE_MAPBOX_TOKEN</code> in the environment settings to enable geospatial visualization.
+        <h3 className="text-xl font-black tracking-tight text-[#1d1d1f] mb-2">Активация спутниковой карты</h3>
+        <p className="text-xs text-[#86868b] max-w-sm leading-relaxed mb-6 font-medium">
+          Вставьте ваш публичный токен Mapbox (начинается с <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">pk.eyJ...</code>), чтобы включить отображение полей и датчиков:
         </p>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          const clean = inputToken.trim();
+          if (clean) {
+            localStorage.setItem('mapbox_token', clean);
+            setToken(clean);
+          }
+        }} className="flex flex-col sm:flex-row gap-2 w-full max-w-md pointer-events-auto">
+          <input
+            type="text"
+            placeholder="pk.eyJ1..."
+            value={inputToken}
+            onChange={(e) => setInputToken(e.target.value)}
+            className="flex-1 px-4 py-2.5 bg-white border border-black/15 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-[#1d1d1f]"
+          />
+          <button
+            type="submit"
+            className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] text-white text-xs font-bold rounded-xl transition-all shadow-sm whitespace-nowrap active:scale-95"
+          >
+            Включить карту
+          </button>
+        </form>
       </div>
     );
   }
@@ -122,7 +145,7 @@ export function MapboxViewer({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onMove={(evt: any) => setViewState(evt.viewState)}
         mapStyle={MAP_STYLES[mapMode]}
-        mapboxAccessToken={MAPBOX_TOKEN}
+        mapboxAccessToken={token}
         style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" />

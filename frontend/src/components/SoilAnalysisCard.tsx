@@ -26,7 +26,7 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
       setLoading(true);
       setError(null);
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const apiUrl = import.meta.env.VITE_API_URL || '';
         const res = await fetch(`${apiUrl}/api/fields/${fieldId}/analysis`);
         if (!res.ok) throw new Error('Ошибка загрузки данных');
         const json = await res.json();

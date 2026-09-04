@@ -53,7 +53,7 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
     setMessages(prev => [...prev, loadingMsg]);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiUrl = import.meta.env.VITE_API_URL || '';
       const res = await fetch(`${apiUrl}/api/chat/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
