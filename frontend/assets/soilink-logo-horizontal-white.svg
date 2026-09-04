@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="420" height="120" fill="none">
+  <style>
+    .brand-text {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 64px;
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      fill: #FFFFFF;
+    }
+  </style>
+
+  <!-- Blue Leaf Badge -->
+  <g transform="translate(10, 10)">
+    <rect width="100" height="100" rx="28" fill="#007AFF" />
+    <g stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M33 67 C 29 49, 37 33, 67 33 C 67 63, 51 71, 33 67 Z" />
+      <path d="M27 73 C 33 67, 45 55, 67 33" />
+    </g>
+  </g>
+
+  <!-- Brand Text -->
+  <text x="135" y="80" class="brand-text">SoiLink</text>
+</svg>

@@ -17,59 +17,56 @@ def seed():
     
     db = SessionLocal()
     
-    # 1. Create Field
-    field_id = "field-1"
-    field = db.query(Field).filter(Field.id == field_id).first()
-    if not field:
-        field = Field(
-            id=field_id,
-            name="North Sector",
-            latitude=51.5074,
-            longitude=-0.1278,
-            area_hectares=12.5
-        )
-        db.add(field)
-        db.commit()
-        print(f"Created field: {field_id}")
+    # 1. Create Fields
+    initial_fields = [
+        {"id": "f-1", "name": "УКГ — Тишинское поле", "latitude": 49.9260, "longitude": 82.5420, "area_hectares": 124.5},
+        {"id": "f-2", "name": "УКГ — Усть-Тарханское поле", "latitude": 49.8920, "longitude": 82.6380, "area_hectares": 86.2},
+        {"id": "field-1", "name": "North Sector", "latitude": 51.5074, "longitude": -0.1278, "area_hectares": 12.5},
+    ]
+    for f_info in initial_fields:
+        f_obj = db.query(Field).filter(Field.id == f_info["id"]).first()
+        if not f_obj:
+            f_obj = Field(**f_info)
+            db.add(f_obj)
+            db.commit()
+            print(f"Created field: {f_info['id']}")
 
     # 2. Add Sensor Readings
     now = datetime.utcnow()
-    for i in range(10):
-        reading = SensorReading(
-            field_id=field_id,
-            sensor_id=f"sensor-{i+1}",
-            timestamp=now - timedelta(hours=i),
-            ph=6.5 + (i * 0.05),
-            soil_moisture=48.0 + (i * 1.5),
-            soil_temperature=19.2 - (i * 0.4),
-            electrical_conductivity=1.1 + (i * 0.03),
-            gas_composition="Stable",
-            vibroacoustic="Nominal"
-        )
-        db.add(reading)
+    for field_id in ["f-1", "field-1"]:
+        for i in range(10):
+            reading = SensorReading(
+                field_id=field_id,
+                sensor_id=f"{field_id}-sensor-{i+1}",
+                timestamp=now - timedelta(hours=i),
+                ph=6.5 + (i * 0.05),
+                soil_moisture=48.0 + (i * 1.5),
+                soil_temperature=19.2 - (i * 0.4),
+                electrical_conductivity=1.1 + (i * 0.03),
+                gas_composition="Stable",
+                vibroacoustic="Nominal"
+            )
+            db.add(reading)
+        print(f"Added 10 sensor readings for {field_id}")
     db.commit()
-    print(f"Added 10 sensor readings for {field_id}")
     
-    # 3. Add Prediction
-    prediction = Prediction(
-        field_id=field_id,
-        timestamp=now,
-        soil_state="Highly Productive",
-        soil_state_confidence=0.94,
-        crop_recommendation="Premium Wheat (Elite)",
-        crop_confidence=0.91,
-        fertilizer_recommendation="Liquid Nitro-Phosphorus",
-        fertilizer_source="AI Analysis",
-        feature_snapshot={"soilgrid_data": {"clay_content": 220, "sand_content": 450, "phh2o": 68}}
-    )
-    db.add(prediction)
-    db.commit()
-    print(f"Added prediction for {field_id}")
+    # 3. Add Predictions & Recommendations
+    for f_id in ["f-1", "field-1"]:
+        prediction = Prediction(
+            field_id=f_id,
+            timestamp=now,
+            soil_state="Highly Productive",
+            soil_state_confidence=0.94,
+            crop_recommendation="Premium Wheat (Elite)",
+            crop_confidence=0.91,
+            fertilizer_recommendation="Liquid Nitro-Phosphorus",
+            fertilizer_source="AI Analysis",
+            feature_snapshot={"soilgrid_data": {"clay_content": 220, "sand_content": 450, "phh2o": 68}}
+        )
+        db.add(prediction)
 
-    # 4. Add Recommendations
-    recs = [
-        Recommendation(
-            field_id=field_id,
+        rec = Recommendation(
+            field_id=f_id,
             timestamp=now,
             level="warning",
             title_key="recMicronutrientTitle",
@@ -78,11 +75,9 @@ def seed():
             message_text="Boron levels are slightly below target. Foliar application recommended.",
             timeline=[]
         )
-    ]
-    for r in recs:
-        db.add(r)
+        db.add(rec)
     db.commit()
-    print(f"Added recommendations for {field_id}")
+    print("Added predictions and recommendations for fields")
 
     db.close()
     print("Database seeded successfully and verified!")
