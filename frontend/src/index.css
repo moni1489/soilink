@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-background: #f5f5f7; /* Apple Grey Background */
+  --color-foreground: #1d1d1f;
+  
+  --color-card: #ffffff;
+  --color-primary: #0071e3;
+  --color-primary-foreground: #ffffff;
+  
+  --color-secondary: #ffffff;
+  --color-muted: #f5f5f7;
+  --color-muted-foreground: #6e6e73; /* Refined Apple Muted */
+  
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-ring: #0071e3;
+}
+
+:root {
+  --radius-xl: 12px;
+  --radius-2xl: 18px;
+  --radius-3xl: 24px;
+  --radius-4xl: 32px;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.015em; /* Subtle tight tracking */
+}
+
+/* Professional Data Font */
+.font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+}
+
+/* Glassmorphism Refinement */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Presentation Grade Shadows */
+.shadow-pro {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-pro-lg {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+/* Utility for better containment */
+.container-pro {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* Scrollbar Cleanliness */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}

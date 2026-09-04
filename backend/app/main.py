@@ -1,8 +1,11 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
-from app.core.db import create_tables, SessionLocal
-from app.api import readings, fields, predictions, recommendations, chat, demo
+from app.core.db import create_tables
+from app.api import readings, fields, predictions, recommendations, chat
 
 app = FastAPI(title="SoiLink Backend", version="0.1.0")
 
@@ -19,27 +22,27 @@ app.include_router(fields.router)
 app.include_router(predictions.router)
 app.include_router(recommendations.router)
 app.include_router(chat.router)
-app.include_router(demo.router)
 
 
 @app.on_event("startup")
 def on_startup():
     create_tables()
-    _seed_demo_data()
 
 
-def _seed_demo_data():
-    from app.services.random_data_service import seed_random_scenario
-    db = SessionLocal()
-    try:
-        seed_random_scenario(db, field_id="demo-field-1", n_sensors=3, readings_per_sensor=5, language="en")
-        seed_random_scenario(db, field_id="demo-field-2", n_sensors=2, readings_per_sensor=4, language="en")
-    except Exception as exc:
-        print(f"[demo seed] warning: {exc}")
-    finally:
-        db.close()
-
-
-@app.get("/")
+@app.get("/health")
 def health():
     return {"status": "ok", "service": "soilink-backend"}
+
+# Mount the static directory
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "static")
+
+if os.path.exists(static_dir):
+    # Serve assets directory directly
+    assets_dir = os.path.join(static_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+    
+    # Catch-all route to serve index.html for SPA routing
+    @app.get("/{full_path:path}")
+    def serve_react_app(full_path: str):
+        return FileResponse(os.path.join(static_dir, "index.html"))

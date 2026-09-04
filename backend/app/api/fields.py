@@ -116,3 +116,23 @@ def get_field_scanner(
     
     from app.services.soilgrid_service import get_soilgrid_all_depths
     return get_soilgrid_all_depths(field.latitude, field.longitude, field.soil_type)
+
+@router.get("/{field_id}/analysis")
+def get_field_analysis(
+    field_id: str, 
+    depth: str = "0-5cm", 
+    db: Session = Depends(get_db)
+):
+    """
+    Returns an agronomic analysis based on SoilGrids properties for the given field.
+    """
+    field = db.query(Field).filter(Field.id == field_id).first()
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+    
+    from app.services.soilgrid_service import get_soilgrid_properties
+    from app.services.soil_analysis_service import analyze_soil
+    
+    soil_data = get_soilgrid_properties(field.latitude, field.longitude, field.soil_type, depth)
+    return analyze_soil(soil_data)
+
