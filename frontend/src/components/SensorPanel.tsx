@@ -25,10 +25,10 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-          className="absolute top-0 right-0 bottom-0 w-[480px] bg-white border-l border-black/5 z-50 flex flex-col shadow-pro-lg overflow-hidden"
+          className="absolute top-0 right-0 bottom-0 w-full sm:w-[480px] bg-white border-l border-black/5 z-50 flex flex-col shadow-pro-lg overflow-hidden"
         >
           {/* Diagnostic Header */}
-          <div className="px-8 py-6 border-b border-black/5 flex items-center justify-between">
+          <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-black/5 flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
                <div className="w-10 h-10 bg-[#f5f5f7] rounded-xl flex items-center justify-center flex-shrink-0">
                   <Cpu className="w-5 h-5 text-blue-500" />
@@ -46,9 +46,9 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-10 scrollbar-hide">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col gap-6 sm:gap-10 scrollbar-hide">
             {/* Real-time Status */}
-            <div className="flex items-center gap-8 justify-between px-2">
+            <div className="flex items-center gap-4 sm:gap-8 justify-between px-2">
                <StatusIndicator label="Статус" value="ОНЛАЙН" color="text-green-500" />
                <StatusIndicator label="Заряд" value={`${sensor.battery}%`} color={sensor.battery < 20 ? 'text-red-500' : 'text-[#1d1d1f]'} />
                <StatusIndicator label="Сигнал" value={`${sensor.signalStrength}%`} color="text-[#1d1d1f]" />

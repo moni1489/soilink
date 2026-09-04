@@ -58,37 +58,37 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
     <AnimatePresence>
       {isOpen && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/25 backdrop-blur-xl z-[100] flex items-center justify-center p-12"
+          className="fixed inset-0 bg-black/25 backdrop-blur-xl z-[100] flex items-center justify-center p-3 sm:p-12"
           onClick={onClose}
         >
           <motion.div initial={{ y: 100, scale: 0.9, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 100, scale: 0.9, opacity: 0 }}
             transition={{ type: 'spring', damping: 30, stiffness: 200 }}
             onClick={e => e.stopPropagation()}
-            className="bg-white/95 backdrop-blur-3xl border border-white rounded-[50px] shadow-[0_60px_120px_rgba(0,0,0,0.25)] w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-white/95 backdrop-blur-3xl border border-white rounded-[24px] sm:rounded-[50px] shadow-[0_60px_120px_rgba(0,0,0,0.25)] w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center gap-8 p-12 border-b border-[#d2d2d7]/20">
-              <div className="w-16 h-16 bg-[#f5f5f7] rounded-[22px] flex items-center justify-center shadow-sm">
+            <div className="flex items-center gap-4 sm:gap-8 p-5 sm:p-12 border-b border-[#d2d2d7]/20">
+              <div className="hidden sm:flex w-16 h-16 bg-[#f5f5f7] rounded-[22px] items-center justify-center shadow-sm flex-shrink-0">
                  <BarChart3 className="w-8 h-8 text-[#0071e3]" />
               </div>
-              <div className="flex-1">
-                <h2 className="text-4xl font-black tracking-tightest text-[#1d1d1f]">Геопространственное сравнение</h2>
-                <p className="text-[#86868b] font-bold mt-2 text-lg leading-none">
-                  <span className="text-[#0071e3]">{sensor?.name}</span> vs Эталон SoilGrids · Горизонт: <span className="text-[#1d1d1f]">{depth}</span>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-4xl font-black tracking-tightest text-[#1d1d1f] truncate">Геопространственное сравнение</h2>
+                <p className="text-[#86868b] font-bold mt-1 sm:mt-2 text-[11px] sm:text-lg leading-tight sm:leading-none truncate">
+                  <span className="text-[#0071e3]">{sensor?.name}</span> vs SoilGrids · <span className="text-[#1d1d1f]">{depth}</span>
                 </p>
               </div>
-              <button onClick={onClose} className="p-4 bg-[#f5f5f7] rounded-full hover:bg-[#e5e5ea] transition-all active:scale-90">
-                <X className="w-8 h-8 text-[#1d1d1f]" />
+              <button onClick={onClose} className="p-2.5 sm:p-4 bg-[#f5f5f7] rounded-full hover:bg-[#e5e5ea] transition-all active:scale-90 flex-shrink-0">
+                <X className="w-5 h-5 sm:w-8 sm:h-8 text-[#1d1d1f]" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-12 flex flex-col gap-12 scrollbar-hide">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-12 flex flex-col gap-6 sm:gap-12 scrollbar-hide">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12">
                 {/* Bar Chart Card */}
-                <div className="bg-white rounded-[40px] p-10 border border-[#d2d2d7]/20 shadow-sm">
-                  <div className="flex items-center justify-between mb-10">
-                    <h3 className="text-[12px] font-black text-[#86868b] uppercase tracking-[0.3em]">Корреляция метрик</h3>
-                    <div className="flex gap-6">
+                <div className="bg-white rounded-[24px] sm:rounded-[40px] p-4 sm:p-10 border border-[#d2d2d7]/20 shadow-sm">
+                  <div className="flex items-center justify-between mb-4 sm:mb-10">
+                    <h3 className="text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em] sm:tracking-[0.3em]">Корреляция метрик</h3>
+                    <div className="flex gap-3 sm:gap-6">
                       {[{ color: '#d2d2d7', label: 'SoilGrids' }, { color: '#0071e3', label: 'Датчик' }].map(l => (
                         <div key={l.label} className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-[#86868b]">
                           <span className="w-3 h-3 rounded-full" style={{ backgroundColor: l.color }} />{l.label}
@@ -111,8 +111,8 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                 </div>
 
                 {/* Radar Chart Card */}
-                <div className="bg-white rounded-[40px] p-10 border border-[#d2d2d7]/20 shadow-sm">
-                   <h3 className="text-[12px] font-black text-[#86868b] uppercase tracking-[0.3em] mb-10">Химический баланс</h3>
+                <div className="bg-white rounded-[24px] sm:rounded-[40px] p-4 sm:p-10 border border-[#d2d2d7]/20 shadow-sm">
+                   <h3 className="text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-4 sm:mb-10">Химический баланс</h3>
                    <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart data={radarData}>
@@ -128,14 +128,14 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
               </div>
 
               {/* High-End Table */}
-              <div className="bg-white rounded-[40px] border border-[#d2d2d7]/20 overflow-hidden shadow-sm">
-                <table className="w-full">
+              <div className="flex-shrink-0 bg-white rounded-[24px] sm:rounded-[40px] border border-[#d2d2d7]/20 overflow-x-auto shadow-sm">
+                <table className="w-full min-w-[500px]">
                   <thead>
                     <tr className="bg-[#f5f5f7]">
-                      <th className="px-10 py-6 text-left text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em]">Свойство почвы</th>
-                      <th className="px-10 py-6 text-right text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em]">SoilGrids</th>
-                      <th className="px-10 py-6 text-right text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em]">Live Узел</th>
-                      <th className="px-10 py-6 text-right text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em]">Дельта (Δ)</th>
+                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-left text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">Свойство почвы</th>
+                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">SoilGrids</th>
+                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">Live Узел</th>
+                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">Дельта (Δ)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f5f5f7]">
@@ -145,10 +145,10 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                       const diff = sv - gv;
                       return (
                         <tr key={key} className="hover:bg-[#f5f5f7]/50 transition-all">
-                          <td className="px-10 py-6 text-[15px] font-black text-[#1d1d1f] tracking-tight">{label}</td>
-                          <td className="px-10 py-6 text-right text-[15px] font-bold text-[#86868b] font-mono-data">{gv}</td>
-                          <td className="px-10 py-6 text-right text-[16px] font-black text-[#1d1d1f] font-mono-data">{sv}</td>
-                          <td className={`px-10 py-6 text-right text-[16px] font-black font-mono-data ${diff > 0 ? 'text-[#34c759]' : diff < 0 ? 'text-[#ff3b30]' : 'text-[#86868b]'}`}>
+                          <td className="px-4 sm:px-10 py-3 sm:py-6 text-[13px] sm:text-[15px] font-black text-[#1d1d1f] tracking-tight">{label}</td>
+                          <td className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[13px] sm:text-[15px] font-bold text-[#86868b] font-mono-data">{gv}</td>
+                          <td className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[14px] sm:text-[16px] font-black text-[#1d1d1f] font-mono-data">{sv}</td>
+                          <td className={`px-4 sm:px-10 py-3 sm:py-6 text-right text-[14px] sm:text-[16px] font-black font-mono-data ${diff > 0 ? 'text-[#34c759]' : diff < 0 ? 'text-[#ff3b30]' : 'text-[#86868b]'}`}>
                             {diff > 0 ? '+' : ''}{diff}
                           </td>
                         </tr>
@@ -158,12 +158,12 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                 </table>
               </div>
 
-              <div className="p-8 bg-[#f0f5ff] rounded-[32px] flex items-center gap-6 border border-[#adc6ff]/30">
-                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+              <div className="p-4 sm:p-8 bg-[#f0f5ff] rounded-[20px] sm:rounded-[32px] flex items-center gap-4 sm:gap-6 border border-[#adc6ff]/30">
+                 <div className="hidden sm:flex w-12 h-12 bg-white rounded-2xl items-center justify-center shadow-sm flex-shrink-0">
                     <Info className="w-6 h-6 text-[#0071e3]" />
                  </div>
-                 <p className="text-[14px] font-bold text-[#1d1d1f] leading-relaxed max-w-4xl">
-                   Данные с датчиков калибруются каждые 6 часов на основе локальных проб почвы для обеспечения максимальной точности. 
+                 <p className="text-[12px] sm:text-[14px] font-bold text-[#1d1d1f] leading-relaxed max-w-4xl">
+                   Данные с датчиков калибруются каждые 6 часов на основе локальных проб почвы для обеспечения максимальной точности.
                    Значительные отклонения (Δ) могут указывать на локальное переувлажнение или специфическое минеральное обогащение участка.
                  </p>
               </div>

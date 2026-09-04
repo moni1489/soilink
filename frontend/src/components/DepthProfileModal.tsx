@@ -39,27 +39,27 @@ export function DepthProfileModal({ isOpen, onClose }: DepthProfileModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6" onClick={onClose}>
-          <motion.div 
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-6" onClick={onClose}>
+          <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
             onClick={e => e.stopPropagation()}
-            className="bg-white rounded-[24px] w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-black/5"
+            className="bg-white rounded-[16px] sm:rounded-[24px] w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-black/5"
           >
             {/* Minimalist Header */}
-            <div className="px-8 py-5 border-b border-black/5 flex items-center justify-between flex-shrink-0 bg-[#fbfbfd]">
-              <div className="flex items-center gap-3">
-                <Layers className="w-5 h-5 text-blue-500" />
-                <h2 className="text-[15px] font-bold tracking-tight text-[#1d1d1f]">Вертикальный сканер почвенных горизонтов</h2>
+            <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-black/5 flex items-center justify-between flex-shrink-0 bg-[#fbfbfd]">
+              <div className="flex items-center gap-3 min-w-0">
+                <Layers className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                <h2 className="text-[13px] sm:text-[15px] font-bold tracking-tight text-[#1d1d1f] truncate">Вертикальный сканер горизонтов</h2>
               </div>
-              <button onClick={onClose} className="p-1.5 hover:bg-black/5 rounded-lg transition-all text-[#86868b]">
+              <button onClick={onClose} className="p-1.5 hover:bg-black/5 rounded-lg transition-all text-[#86868b] flex-shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-10 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col gap-6 sm:gap-10 scrollbar-hide">
               {/* Precision Table - Fixed Layout */}
-              <div className="border border-black/5 rounded-xl overflow-hidden shadow-sm">
-                <table className="w-full table-fixed border-collapse bg-white">
+              <div className="flex-shrink-0 border border-black/5 rounded-xl overflow-x-auto shadow-sm">
+                <table className="w-full min-w-[700px] table-fixed border-collapse bg-white">
                   <thead>
                     <tr className="bg-[#f5f5f7] border-b border-black/5">
                       <th className="w-32 px-6 py-4 text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider text-left">Горизонт</th>
@@ -119,12 +119,12 @@ export function DepthProfileModal({ isOpen, onClose }: DepthProfileModalProps) {
             </div>
             
             {/* Technical Footer */}
-            <div className="px-8 py-4 border-t border-black/5 bg-[#f5f5f7] flex items-center justify-between text-[10px] text-[#86868b] font-bold uppercase tracking-widest">
-               <div className="flex gap-6">
+            <div className="px-4 sm:px-8 py-3 sm:py-4 border-t border-black/5 bg-[#f5f5f7] flex flex-wrap items-center justify-between gap-2 text-[9px] sm:text-[10px] text-[#86868b] font-bold uppercase tracking-widest">
+               <div className="flex gap-4 sm:gap-6">
                   <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> Калибровка: Активна</span>
-                  <span>Аппаратная версия: V4.2</span>
+                  <span className="hidden sm:inline">Аппаратная версия: V4.2</span>
                </div>
-               <span>SoiLink Precision Vertical Probe</span>
+               <span className="hidden sm:inline">SoiLink Precision Vertical Probe</span>
             </div>
           </motion.div>
         </div>

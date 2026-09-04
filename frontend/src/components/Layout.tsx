@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Leaf, Map as MapIcon, Calendar, Cog, Bell, Search, Menu, Command } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const NAV = [
   { to: '/', icon: MapIcon, label: 'Обзор поля' },
@@ -12,11 +13,12 @@ const NAV = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f5f5f7] text-[#1d1d1f] font-sans">
-      {/* Refined Sidebar */}
-      <aside className="w-64 flex-shrink-0 flex flex-col bg-white border-r border-black/5 z-50">
+      {/* Refined Sidebar — desktop only, replaced by bottom tab bar on mobile */}
+      <aside className="hidden md:flex w-64 flex-shrink-0 flex-col bg-white border-r border-black/5 z-50">
         <div className="h-16 flex items-center px-6 border-b border-black/5">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#0071e3] rounded-lg flex items-center justify-center">
@@ -61,19 +63,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        <header className="h-16 flex-shrink-0 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-black/5 z-40">
-          <div className="flex items-center gap-4">
-             <h1 className="text-[15px] font-semibold">
+        <header className="h-14 md:h-16 flex-shrink-0 flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md border-b border-black/5 z-40">
+          <div className="flex items-center gap-4 min-w-0">
+             {isMobile && (
+               <div className="w-7 h-7 bg-[#0071e3] rounded-lg flex items-center justify-center flex-shrink-0">
+                 <Leaf className="w-4 h-4 text-white" />
+               </div>
+             )}
+             <h1 className="text-[14px] md:text-[15px] font-semibold truncate">
                 {pathname === '/' ? 'Мониторинг' : pathname === '/schedule' ? 'Операции' : 'Настройки'}
              </h1>
-             <div className="w-px h-4 bg-black/10" />
-             <div className="flex items-center gap-1.5">
+             <div className="hidden sm:block w-px h-4 bg-black/10" />
+             <div className="hidden sm:flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
                 <span className="text-[10px] font-medium text-[#6e6e73] uppercase tracking-wider">Система активна</span>
              </div>
           </div>
-          
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-2 md:gap-4">
             <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 bg-[#f5f5f7] rounded-lg border border-black/5 w-64 transition-all focus-within:ring-2 focus-within:ring-blue-500/20">
               <Search className="w-3.5 h-3.5 text-[#6e6e73]" />
               <input type="text" placeholder="Поиск..." className="bg-transparent border-none outline-none text-[12px] flex-1 text-[#1d1d1f] placeholder-[#86868b]" />
@@ -89,7 +96,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {showNotifications && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                  <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-black/5 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                  <div className="absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] max-w-80 bg-white border border-black/5 rounded-2xl shadow-2xl z-50 overflow-hidden">
                     <div className="p-4 border-b border-black/5 flex items-center justify-between bg-[#fbfbfd]">
                       <h3 className="text-[13px] font-bold">Уведомления</h3>
                       <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">1 НОВОЕ</span>
@@ -116,9 +123,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden pb-16 md:pb-0">
           {children}
         </main>
+
+        {/* Mobile bottom tab bar — replaces the sidebar as primary navigation */}
+        <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-white/95 backdrop-blur-md border-t border-black/5 flex items-stretch z-50">
+          {NAV.map(({ to, icon: Icon, label }) => (
+            <NavLink key={to} to={to} end={to === '/'}
+              className={({ isActive }) =>
+                `flex-1 flex flex-col items-center justify-center gap-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                  isActive ? 'text-[#0071e3]' : 'text-[#86868b]'
+                }`
+              }
+            >
+              <Icon className="w-5 h-5" />
+              <span className="truncate max-w-[80px]">{label.split(' ')[0]}</span>
+            </NavLink>
+          ))}
+        </nav>
       </div>
     </div>
   );
