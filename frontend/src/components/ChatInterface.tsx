@@ -70,7 +70,7 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
       
       setMessages(prev => prev.map(msg => 
         msg.id === loadingId 
-          ? { ...msg, content: data.response || 'Ошибка ответа от ИИ.' } 
+          ? { ...msg, content: data.reply || 'Ошибка ответа от ИИ.' }
           : msg
       ));
     } catch (err) {
