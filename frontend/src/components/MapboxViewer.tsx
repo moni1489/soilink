@@ -97,6 +97,8 @@ export function MapboxViewer({
         properties: { weight: p.weight },
       })),
     };
+  }, [zones, sensors]);
+
   const [token, setToken] = useState(() => MAPBOX_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('mapbox_token') || '' : ''));
   const [inputToken, setInputToken] = useState('');
 
