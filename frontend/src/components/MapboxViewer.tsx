@@ -225,7 +225,7 @@ export function MapboxViewer({
 
         {/* ─── HEATMAP LEGEND (only in heatmap mode) ─── */}
         {isHeatmap && (
-          <div className="absolute bottom-10 left-4 z-10 bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 flex flex-col gap-2">
+          <div className="absolute bottom-28 md:bottom-10 left-4 z-10 bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 flex flex-col gap-2">
             <span className="text-white text-[9px] font-black uppercase tracking-widest mb-1">Здоровье почвы</span>
             <div className="flex items-center gap-2">
               <div className="w-32 h-2.5 rounded-full" style={{

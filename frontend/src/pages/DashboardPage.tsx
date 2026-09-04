@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { MapboxViewer } from '@/components/MapboxViewer';
 import { SensorPanel } from '@/components/SensorPanel';
 import { ChatInterface } from '@/components/ChatInterface';
@@ -9,9 +9,9 @@ import { WeatherWidget } from '@/components/WeatherWidget';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Map as MapIcon, MessageSquare, Layers, BarChart3,
-  TrendingUp, AlertTriangle, ChevronDown, X, Droplet, 
+  TrendingUp, AlertTriangle, ChevronDown, X, Droplet,
   Thermometer, FlaskConical, Settings2, Info,
-  Activity, Zap, ShieldCheck
+  Activity, Zap, ShieldCheck, Maximize2, Minimize2
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
@@ -19,7 +19,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Sensor, SoilZone, MapMode, SoilDepth } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 
-type RightPanel = 'recommendations' | 'chat' | 'analysis' | null;
+type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | null;
 
 export function DashboardPage() {
   const isMobile = useIsMobile();
@@ -29,13 +29,28 @@ export function DashboardPage() {
   const [selectedDepth, setSelectedDepth] = useState<SoilDepth>('0-5cm');
   const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
   const [selectedZone, setSelectedZone] = useState<SoilZone | null>(null);
-  const [rightPanel, setRightPanel] = useState<RightPanel>('recommendations');
+  const [rightPanel, setRightPanel] = useState<RightPanel>(isMobile ? 'map' : 'recommendations');
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [depthProfileOpen, setDepthProfileOpen] = useState(false);
   const [fieldDropdown, setFieldDropdown] = useState(false);
   const [ndviEnabled, setNdviEnabled] = useState(false);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
 
   const [zoneDropdown, setZoneDropdown] = useState(false);
+
+  useEffect(() => {
+    if (!mapFullscreen) return;
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setMapFullscreen(false); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mapFullscreen]);
+
+  // Mapbox GL only recomputes its canvas size on a real window resize event,
+  // not on a CSS class/layout change — nudge it after toggling fullscreen.
+  useEffect(() => {
+    const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+    return () => clearTimeout(t);
+  }, [mapFullscreen]);
 
   const activeField = useMemo(() => fields.find(f => f.id === activeFieldId) ?? fields[0], [activeFieldId]);
   const activeSensors = useMemo(() => sensors.filter(s => s.fieldId === activeFieldId), [activeFieldId]);
@@ -188,8 +203,28 @@ export function DashboardPage() {
         })}
       </div>
 
+      {/* Mobile View Switcher — Карта / Инсайты / Чат / Почва */}
+      <div className="md:hidden flex-shrink-0 flex items-center gap-1 px-2 py-2 bg-white border-b border-black/5 z-20">
+         {([
+           ['map', MapIcon, 'Карта'],
+           ['recommendations', Zap, 'Инсайты'],
+           ['chat', MessageSquare, 'Чат'],
+           ['analysis', Layers, 'Почва'],
+         ] as [RightPanel, typeof MapIcon, string][]).map(([key, Icon, label]) => (
+           <button key={key} onClick={() => setRightPanel(key)}
+             className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-xl transition-all ${rightPanel === key ? 'bg-[#f5f5f7] text-[#1d1d1f]' : 'text-[#86868b]'}`}
+           >
+              <Icon className="w-4 h-4" />
+              <span className="text-[9px] font-black uppercase tracking-wider">{label}</span>
+           </button>
+         ))}
+      </div>
+
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        <div className="h-[42vh] flex-shrink-0 md:h-auto md:flex-1 relative bg-white overflow-hidden">
+        <div className={mapFullscreen
+          ? 'fixed inset-0 z-[100] bg-white'
+          : `${isMobile ? (rightPanel === 'map' ? 'flex-1' : 'hidden') : 'h-auto flex-1'} relative bg-white overflow-hidden`
+        }>
           <MapboxViewer
             sensors={activeSensors}
             zones={activeZones}
@@ -201,8 +236,16 @@ export function DashboardPage() {
             activeZoneId={selectedZone?.id ?? null}
           />
 
-          {/* Convenient Field Health Hub */}
-          <div className="absolute top-4 left-4 right-4 md:right-auto md:top-6 md:left-6 z-10 flex flex-col gap-4 pointer-events-none">
+          {/* Fullscreen Toggle */}
+          <button onClick={() => setMapFullscreen(v => !v)}
+            title={mapFullscreen ? 'Выйти из полноэкранного режима' : 'На весь экран'}
+            className="absolute top-4 right-16 md:right-20 z-20 w-9 h-9 md:w-10 md:h-10 bg-white/95 backdrop-blur-xl border border-black/10 rounded-xl shadow-pro flex items-center justify-center hover:bg-black/5 active:scale-95 transition-all pointer-events-auto"
+          >
+            {mapFullscreen ? <Minimize2 className="w-4 h-4 text-[#1d1d1f]" /> : <Maximize2 className="w-4 h-4 text-[#1d1d1f]" />}
+          </button>
+
+          {/* Convenient Field Health Hub — desktop only; mobile gets a compact bar at the bottom */}
+          <div className="hidden md:flex absolute md:top-6 md:left-6 z-10 flex-col gap-4 pointer-events-none">
              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
                className="bg-white/95 backdrop-blur-xl border border-black/5 p-4 md:p-6 rounded-2xl pointer-events-auto shadow-pro w-full md:w-[320px]"
              >
@@ -236,10 +279,30 @@ export function DashboardPage() {
              </motion.div>
           </div>
 
-          {/* Quick Controls Bottom */}
-          <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2.5">
-             <button onClick={() => setDepthProfileOpen(true)} className="flex items-center gap-2 md:gap-2.5 px-4 md:px-6 py-2.5 md:py-3 bg-[#1d1d1f] text-white rounded-full text-[11px] md:text-[13px] font-bold shadow-pro-lg hover:bg-black hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
-                <Settings2 className="w-4 h-4" /> <span className="hidden sm:inline">ОТКРЫТЬ </span>СКАНЕР ПРОФИЛЯ
+          {/* Quick Controls Bottom — desktop */}
+          <div className="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 z-10 gap-2.5">
+             <button onClick={() => setDepthProfileOpen(true)} className="flex items-center gap-2.5 px-6 py-3 bg-[#1d1d1f] text-white rounded-full text-[13px] font-bold shadow-pro-lg hover:bg-black hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
+                <Settings2 className="w-4 h-4" /> ОТКРЫТЬ СКАНЕР ПРОФИЛЯ
+             </button>
+          </div>
+
+          {/* Compact Field Status + Controls — mobile only */}
+          <div className="md:hidden absolute bottom-4 inset-x-4 z-10 flex flex-col items-stretch gap-2">
+             <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+               className="bg-white/95 backdrop-blur-xl border border-black/5 rounded-2xl shadow-pro px-4 py-2.5 flex items-center justify-between gap-3 pointer-events-auto"
+             >
+                <div className="flex items-center gap-2 min-w-0">
+                   <ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
+                   <span className="text-[10px] font-black uppercase tracking-wider truncate">Статус поля</span>
+                   <div className="px-1.5 py-0.5 bg-green-50 text-green-600 text-[8px] font-bold rounded uppercase flex-shrink-0">Стабильно</div>
+                </div>
+                <div className="flex items-center gap-2.5 flex-shrink-0 text-[11px] font-bold font-data">
+                   <span>88%</span>
+                   <span className="text-green-600">Оптимально</span>
+                </div>
+             </motion.div>
+             <button onClick={() => setDepthProfileOpen(true)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1d1d1f] text-white rounded-full text-[11px] font-bold shadow-pro-lg active:scale-95 transition-all whitespace-nowrap pointer-events-auto">
+                <Settings2 className="w-4 h-4" /> СКАНЕР ПРОФИЛЯ
              </button>
           </div>
 
@@ -276,8 +339,8 @@ export function DashboardPage() {
           </AnimatePresence>
         </div>
 
-        <div className="w-full md:w-[420px] flex-1 min-h-0 md:flex-shrink-0 flex flex-col border-t md:border-t-0 md:border-l border-black/5 bg-white relative">
-           <div className="h-14 md:h-16 flex items-center gap-1 px-4 border-b border-black/5 bg-[#fbfbfd]">
+        <div className={`w-full md:w-[420px] ${isMobile ? (rightPanel === 'map' ? 'hidden' : 'flex-1') : 'flex-1 md:flex-none'} min-h-0 md:flex-shrink-0 flex flex-col border-t md:border-t-0 md:border-l border-black/5 bg-white relative`}>
+           <div className="hidden md:flex h-14 md:h-16 items-center gap-1 px-4 border-b border-black/5 bg-[#fbfbfd]">
               <button onClick={() => setRightPanel('recommendations')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all ${rightPanel === 'recommendations' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
                  <Zap className="w-4 h-4" />
                  <span className="text-[11px] font-black uppercase tracking-wider">Инсайты</span>
