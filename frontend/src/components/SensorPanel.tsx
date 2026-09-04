@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Droplet, Thermometer, FlaskConical, Activity, Zap, Wind,
@@ -14,8 +15,9 @@ interface SensorPanelProps {
 }
 
 export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
-  const moistureHistory = sensor ? getMoistureHistory(sensor.id) : [];
-  const tempHistory = sensor ? getTemperatureHistory(sensor.id) : [];
+  const [timeframe, setTimeframe] = useState<'7d' | '24h'>('7d');
+  const moistureHistory = sensor ? getMoistureHistory(sensor.id, timeframe) : [];
+  const tempHistory = sensor ? getTemperatureHistory(sensor.id, timeframe) : [];
 
   return (
     <AnimatePresence>
@@ -79,9 +81,48 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
             </div>
 
             {/* Historical Trends */}
-            <div className="space-y-8">
-               <TrendChart title="Тренд влажности (24ч)" data={moistureHistory} color="#0071e3" />
-               <TrendChart title="Стабильность температуры (24ч)" data={tempHistory} color="#ff9500" />
+            <div className="space-y-6">
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                     <Activity className="w-4 h-4 text-blue-500" />
+                     <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">
+                        Динамика показателей
+                     </span>
+                  </div>
+                  <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5">
+                     <button
+                        onClick={() => setTimeframe('7d')}
+                        className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
+                           timeframe === '7d' ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                        }`}
+                     >
+                        За неделю
+                     </button>
+                     <button
+                        onClick={() => setTimeframe('24h')}
+                        className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
+                           timeframe === '24h' ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                        }`}
+                     >
+                        24 часа
+                     </button>
+                  </div>
+               </div>
+
+               <TrendChart
+                  id="moisture"
+                  title={`Тренд влажности (${timeframe === '7d' ? 'За неделю' : '24ч'})`}
+                  data={moistureHistory}
+                  color="#0071e3"
+                  unit="%"
+               />
+               <TrendChart
+                  id="temp"
+                  title={`Стабильность температуры (${timeframe === '7d' ? 'За неделю' : '24ч'})`}
+                  data={tempHistory}
+                  color="#ff9500"
+                  unit="°C"
+               />
             </div>
 
             {/* System Info Footnote */}
@@ -134,30 +175,45 @@ function NutrientRow({ label, value, max, color }: { label: string; value: numbe
   );
 }
 
-function TrendChart({ title, data, color }: { title: string; data: any[]; color: string }) {
+function TrendChart({ id, title, data, color, unit }: { id: string; title: string; data: any[]; color: string; unit: string }) {
+  const gradId = `sensor-chart-grad-${id}`;
   return (
-    <div className="flex flex-col gap-4">
-       <div className="flex items-center gap-2">
-          <Activity className="w-3.5 h-3.5 text-[#6e6e73]" />
+    <div className="flex flex-col gap-3 p-4 bg-[#fbfbfd] rounded-2xl border border-black/5">
+       <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">{title}</span>
+          <span className="text-[11px] font-black font-data" style={{ color }}>{data[data.length - 1]?.value}{unit}</span>
        </div>
-       <div className="h-40">
+       <div className="h-36 w-full">
           <ResponsiveContainer width="100%" height="100%">
-             <AreaChart data={data}>
+             <AreaChart data={data} margin={{ top: 10, right: 8, left: 8, bottom: 0 }}>
                 <defs>
-                   <linearGradient id={`color-${title}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor={color} stopOpacity={0}/>
+                   <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={color} stopOpacity={0.02} />
                    </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="10 10" stroke="#000" vertical={false} strokeOpacity={0.05} />
-                <XAxis hide />
-                <YAxis hide />
-                <Tooltip 
-                   contentStyle={{ backgroundColor: '#fff', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }}
-                   itemStyle={{ color: '#1d1d1f' }}
+                <CartesianGrid strokeDasharray="4 4" stroke="#000" vertical={false} strokeOpacity={0.05} />
+                <XAxis 
+                   dataKey="label" 
+                   axisLine={false} 
+                   tickLine={false} 
+                   tick={{ fontSize: 10, fill: '#86868b', fontWeight: 700 }}
+                   interval="preserveStartEnd"
                 />
-                <Area type="monotone" dataKey="value" stroke={color} strokeWidth={3} fillOpacity={1} fill={`url(#color-${title})`} />
+                <YAxis hide domain={['dataMin - 3', 'dataMax + 3']} />
+                <Tooltip 
+                   contentStyle={{ backgroundColor: '#fff', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)', fontSize: '11px', fontWeight: 'bold' }}
+                   formatter={(val: any) => [`${val}${unit}`, title.split(' ')[0]]}
+                   labelStyle={{ color: '#86868b', fontSize: '10px' }}
+                />
+                <Area 
+                   type="monotone" 
+                   dataKey="value" 
+                   stroke={color} 
+                   strokeWidth={2.5} 
+                   fillOpacity={1} 
+                   fill={`url(#${gradId})`} 
+                />
              </AreaChart>
           </ResponsiveContainer>
        </div>
