@@ -15,12 +15,14 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Sensor, SoilZone, MapMode, SoilDepth } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 
 type RightPanel = 'recommendations' | 'chat' | 'analysis' | null;
 
 export function DashboardPage() {
+  const isMobile = useIsMobile();
   const [activeFieldId, setActiveFieldId] = useState(fields[0].id);
   const [activeZoneFilter, setActiveZoneFilter] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<MapMode>('heatmap');
@@ -59,8 +61,8 @@ export function DashboardPage() {
   return (
     <div className="h-full flex flex-col bg-[#f5f5f7] overflow-hidden">
       {/* Precision Toolbar */}
-      <div className="flex-shrink-0 bg-white border-b border-black/5 px-6 py-3 flex items-center gap-6 z-20">
-        <div className="relative">
+      <div className="flex-shrink-0 bg-white border-b border-black/5 px-4 md:px-6 py-3 flex items-center gap-4 md:gap-6 z-20 overflow-x-auto scrollbar-hide">
+        <div className="relative flex-shrink-0">
           <button onClick={() => setFieldDropdown(v => !v)}
             className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold"
           >
@@ -89,7 +91,7 @@ export function DashboardPage() {
           </AnimatePresence>
         </div>
 
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <button onClick={() => setZoneDropdown(v => !v)}
             className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold"
           >
@@ -127,9 +129,9 @@ export function DashboardPage() {
           </AnimatePresence>
         </div>
 
-        <div className="h-4 w-px bg-black/10" />
+        <div className="h-4 w-px bg-black/10 flex-shrink-0" />
 
-        <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5 overflow-hidden">
+        <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5 overflow-hidden flex-shrink-0">
           {([['heatmap', 'Хитмап'], ['zones', 'Зоны'], ['satellite', 'Спутник']] as [MapMode, string][]).map(([m, lbl]) => (
             <button key={m} onClick={() => setMapMode(m)}
               className={`px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${mapMode === m ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
@@ -139,27 +141,32 @@ export function DashboardPage() {
 
         <button onClick={() => setNdviEnabled(!ndviEnabled)}
           title="NDVI (Нормализованный относительный индекс растительности) показывает качество и плотность биомассы"
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border ${ndviEnabled ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-200' : 'bg-white border-black/10 text-[#6e6e73] hover:border-black/20'}`}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border flex-shrink-0 ${ndviEnabled ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-200' : 'bg-white border-black/10 text-[#6e6e73] hover:border-black/20'}`}
         >
           <Activity className="w-3.5 h-3.5" /> NDVI
         </button>
 
-        <div className="flex-1" />
-        <WeatherWidget data={activeWeather} />
+        <div className="flex-1 hidden md:block" />
+        <div className="flex-shrink-0 hidden md:block">
+          <WeatherWidget data={activeWeather} />
+        </div>
       </div>
 
       {/* Grid Stats */}
-      <div className="flex-shrink-0 grid grid-cols-4 bg-white border-b border-black/5">
+      <div className="flex-shrink-0 grid grid-cols-2 md:grid-cols-4 bg-white border-b border-black/5">
         {stats.map((s, i) => {
           const colorHex = s.color.includes('blue') ? '#3b82f6' : s.color.includes('orange') ? '#f97316' : s.color.includes('purple') ? '#a855f7' : '#16a34a';
+          const borderClasses = isMobile
+            ? `${i % 2 === 0 ? 'border-r' : ''} ${i < 2 ? 'border-b' : ''} border-black/5`
+            : `${i < 3 ? 'border-r' : ''} border-black/5`;
           return (
-            <div key={s.id} className={`p-5 flex flex-col gap-1.5 relative group overflow-hidden ${i < 3 ? 'border-r border-black/5' : ''}`}>
+            <div key={s.id} className={`p-3 md:p-5 flex flex-col gap-1 md:gap-1.5 relative group overflow-hidden ${borderClasses}`}>
                <div className="flex items-center justify-between min-w-0 z-10 relative">
-                  <span className="text-[10px] font-black text-[#6e6e73] uppercase tracking-widest truncate">{s.label}</span>
+                  <span className="text-[9px] md:text-[10px] font-black text-[#6e6e73] uppercase tracking-widest truncate">{s.label}</span>
                   <s.icon className={`w-3.5 h-3.5 flex-shrink-0 ${s.color}`} />
                </div>
                <div className="flex items-baseline gap-2 min-w-0 z-10 relative">
-                  <span className="text-3xl font-bold tracking-tight font-data leading-none truncate">{s.value}</span>
+                  <span className="text-xl md:text-3xl font-bold tracking-tight font-data leading-none truncate">{s.value}</span>
                   <span className={`text-[10px] font-black font-data px-1.5 py-0.5 rounded bg-black/5 ${s.trend.includes('+') ? 'text-green-600' : s.trend.includes('-') ? 'text-orange-600' : 'text-[#86868b]'}`}>{s.trend}</span>
                </div>
                {/* Sparkline background */}
@@ -181,8 +188,8 @@ export function DashboardPage() {
         })}
       </div>
 
-      <div className="flex-1 flex overflow-hidden relative">
-        <div className="flex-1 relative bg-white overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        <div className="h-[42vh] flex-shrink-0 md:h-auto md:flex-1 relative bg-white overflow-hidden">
           <MapboxViewer
             sensors={activeSensors}
             zones={activeZones}
@@ -195,19 +202,19 @@ export function DashboardPage() {
           />
 
           {/* Convenient Field Health Hub */}
-          <div className="absolute top-6 left-6 z-10 flex flex-col gap-4 pointer-events-none">
+          <div className="absolute top-4 left-4 right-4 md:right-auto md:top-6 md:left-6 z-10 flex flex-col gap-4 pointer-events-none">
              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
-               className="bg-white/95 backdrop-blur-xl border border-black/5 p-6 rounded-2xl pointer-events-auto shadow-pro w-[320px]"
+               className="bg-white/95 backdrop-blur-xl border border-black/5 p-4 md:p-6 rounded-2xl pointer-events-auto shadow-pro w-full md:w-[320px]"
              >
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between mb-4 md:mb-5">
                    <div className="flex items-center gap-2.5">
                       <ShieldCheck className="w-5 h-5 text-green-500" />
                       <span className="text-[11px] font-black uppercase tracking-wider">Общий статус поля</span>
                    </div>
                    <div className="px-2 py-0.5 bg-green-50 text-green-600 text-[9px] font-bold rounded uppercase">Стабильно</div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-6 mb-6">
+
+                <div className="grid grid-cols-2 gap-6 mb-4 md:mb-6">
                    <div className="flex flex-col gap-1">
                       <span className="text-[9px] font-bold text-[#6e6e73] uppercase">Однородность</span>
                       <span className="text-xl font-bold font-data text-[#1d1d1f]">88%</span>
@@ -230,16 +237,16 @@ export function DashboardPage() {
           </div>
 
           {/* Quick Controls Bottom */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2.5">
-             <button onClick={() => setDepthProfileOpen(true)} className="flex items-center gap-2.5 px-6 py-3 bg-[#1d1d1f] text-white rounded-full text-[13px] font-bold shadow-pro-lg hover:bg-black hover:scale-105 active:scale-95 transition-all">
-                <Settings2 className="w-4 h-4" /> ОТКРЫТЬ СКАНЕР ПРОФИЛЯ
+          <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2.5">
+             <button onClick={() => setDepthProfileOpen(true)} className="flex items-center gap-2 md:gap-2.5 px-4 md:px-6 py-2.5 md:py-3 bg-[#1d1d1f] text-white rounded-full text-[11px] md:text-[13px] font-bold shadow-pro-lg hover:bg-black hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
+                <Settings2 className="w-4 h-4" /> <span className="hidden sm:inline">ОТКРЫТЬ </span>СКАНЕР ПРОФИЛЯ
              </button>
           </div>
 
           <AnimatePresence>
             {selectedZone && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-                className="absolute top-6 right-6 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-pro-lg z-30 overflow-hidden border border-black/5"
+                className="absolute top-4 left-4 right-4 md:left-auto md:top-6 md:right-6 md:w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-pro-lg z-30 overflow-hidden border border-black/5"
               >
                 <div className="p-5 border-b border-black/5 flex items-center justify-between">
                    <h3 className="font-bold text-[14px] truncate">{selectedZone.name}</h3>
@@ -269,8 +276,8 @@ export function DashboardPage() {
           </AnimatePresence>
         </div>
 
-        <div className="w-[420px] flex-shrink-0 flex flex-col border-l border-black/5 bg-white relative">
-           <div className="h-16 flex items-center gap-1 px-4 border-b border-black/5 bg-[#fbfbfd]">
+        <div className="w-full md:w-[420px] flex-1 min-h-0 md:flex-shrink-0 flex flex-col border-t md:border-t-0 md:border-l border-black/5 bg-white relative">
+           <div className="h-14 md:h-16 flex items-center gap-1 px-4 border-b border-black/5 bg-[#fbfbfd]">
               <button onClick={() => setRightPanel('recommendations')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all ${rightPanel === 'recommendations' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
                  <Zap className="w-4 h-4" />
                  <span className="text-[11px] font-black uppercase tracking-wider">Инсайты</span>

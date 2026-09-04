@@ -14,16 +14,16 @@ export function SettingsPage() {
 
   return (
     <div className="h-full flex flex-col bg-[#f5f5f7] overflow-y-auto">
-      <div className="px-8 py-8 bg-white border-b border-black/5">
-        <h1 className="text-2xl font-bold tracking-tight text-[#1d1d1f]">Управление системой</h1>
-        <p className="text-[13px] text-[#6e6e73] font-medium mt-1">Настройки профиля, доступов и оборудования</p>
+      <div className="px-4 sm:px-8 py-5 sm:py-8 bg-white border-b border-black/5">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1d1d1f]">Управление системой</h1>
+        <p className="text-[12px] sm:text-[13px] text-[#6e6e73] font-medium mt-1">Настройки профиля, доступов и оборудования</p>
       </div>
 
-      <div className="max-w-5xl mx-auto w-full p-8 flex gap-8">
-        <div className="w-64 flex-shrink-0 flex flex-col gap-2">
+      <div className="max-w-5xl mx-auto w-full p-4 sm:p-8 flex flex-col md:flex-row gap-4 md:gap-8">
+        <div className="w-full md:w-64 flex-shrink-0 flex flex-row md:flex-col gap-2 overflow-x-auto scrollbar-hide">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-[14px] font-semibold ${
+              className={`flex-shrink-0 flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-[13px] sm:text-[14px] font-semibold whitespace-nowrap ${
                 activeTab === t.id ? 'bg-[#0071e3] text-white shadow-md shadow-blue-500/20' : 'text-[#6e6e73] hover:bg-black/5'
               }`}
             >
@@ -33,13 +33,13 @@ export function SettingsPage() {
           ))}
         </div>
 
-        <div className="flex-1">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-3xl border border-black/5 shadow-sm p-8">
+        <div className="flex-1 min-w-0">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-3xl border border-black/5 shadow-sm p-5 sm:p-8">
             {activeTab === 'profile' && (
-              <div className="space-y-8">
-                <div className="flex items-center gap-6 pb-8 border-b border-black/5">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-black/5 text-center sm:text-left">
                   <div className="relative">
-                    <img src="https://i.pravatar.cc/150?u=agronomist" alt="Profile" className="w-24 h-24 rounded-2xl border-2 border-white shadow-md object-cover" onError={e => { (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=Admin&background=0071e3&color=fff'; }} />
+                    <img src="https://i.pravatar.cc/150?u=agronomist" alt="Profile" className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-white shadow-md object-cover" onError={e => { (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=Admin&background=0071e3&color=fff'; }} />
                     <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full border border-black/10 shadow-sm flex items-center justify-center hover:bg-black/5">📷</button>
                   </div>
                   <div>
@@ -48,7 +48,7 @@ export function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider">Имя пользователя</label>
                     <input type="text" defaultValue="monya" className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" />

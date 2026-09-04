@@ -99,9 +99,9 @@ def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Opt
     Includes optional rich_context from the UI (depth, selected layers).
     Returns {reply, context_used}.
     """
-    if not settings.GROQ_API_KEY:
+    if not settings.OPENROUTER_API_KEY:
         return {
-            "reply": "Chatbot is not configured. Please set GROQ_API_KEY in the backend .env file.",
+            "reply": "Chatbot is not configured. Please set OPENROUTER_API_KEY in the backend .env file.",
             "context_used": False,
         }
 
@@ -171,12 +171,14 @@ def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Opt
     ]
 
     headers = {
-        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://soilink.app",
+        "X-Title": "SoiLink",
     }
 
     payload = {
-        "model": "llama-3.3-70b-versatile",
+        "model": settings.OPENROUTER_MODEL,
         "messages": [
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": messages[0]["content"]}
@@ -188,7 +190,7 @@ def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Opt
     try:
         with httpx.Client() as client:
             response = client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
+                "https://openrouter.ai/api/v1/chat/completions",
                 headers=headers,
                 json=payload,
                 timeout=30.0
@@ -197,7 +199,7 @@ def ask_chatbot(db: Session, field_id: str, user_message: str, rich_context: Opt
             data = response.json()
             reply = data["choices"][0]["message"]["content"]
     except Exception as e:
-        reply = f"Error calling Groq API: {str(e)}"
+        reply = f"Error calling OpenRouter API: {str(e)}"
     return {
         "reply": reply,
         "context_used": True,
