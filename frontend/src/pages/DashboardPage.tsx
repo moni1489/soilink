@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { MapboxViewer } from '@/components/MapboxViewer';
 import { SensorPanel } from '@/components/SensorPanel';
 import { ChatInterface } from '@/components/ChatInterface';
@@ -16,8 +16,9 @@ import {
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import type { Sensor, SoilZone, MapMode, SoilDepth } from '@/types';
+import type { Sensor, SoilZone, MapMode, SoilDepth, WeatherData } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
+import { fetchRealWeather } from '@/services/weatherService';
 
 type RightPanel = 'recommendations' | 'chat' | 'analysis' | null;
 
@@ -42,7 +43,24 @@ export function DashboardPage() {
   const allFieldZones = useMemo(() => zones.filter(z => z.fieldId === activeFieldId), [activeFieldId]);
   const activeZones = useMemo(() => activeZoneFilter ? allFieldZones.filter(z => z.id === activeZoneFilter) : allFieldZones, [allFieldZones, activeZoneFilter]);
   const activeRecs = useMemo(() => recommendations.filter(r => !r.fieldId || r.fieldId === activeFieldId), [activeFieldId]);
-  const activeWeather = weather[activeFieldId] || weather['f-1'];
+  
+  const [realWeather, setRealWeather] = useState<WeatherData | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadWeather() {
+      try {
+        const live = await fetchRealWeather(activeField.center.latitude, activeField.center.longitude);
+        if (isMounted) setRealWeather(live);
+      } catch (err) {
+        console.warn('Real weather fetch error, using fallback:', err);
+      }
+    }
+    loadWeather();
+    return () => { isMounted = false; };
+  }, [activeField.center.latitude, activeField.center.longitude]);
+
+  const activeWeather = realWeather || weather[activeFieldId] || weather['f-1'];
 
   const stats = useMemo(() => {
     if (!activeSensors.length) return [];
