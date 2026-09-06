@@ -2,6 +2,11 @@
 FROM node:20 AS frontend-builder
 WORKDIR /app/frontend
 
+ARG VITE_MAPBOX_TOKEN=""
+ARG VITE_API_URL=""
+ENV VITE_MAPBOX_TOKEN=$VITE_MAPBOX_TOKEN
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY frontend/package*.json ./
 RUN npm install
 
