@@ -244,6 +244,7 @@ export function DashboardPage() {
             {mapFullscreen ? <Minimize2 className="w-4 h-4 text-[#1d1d1f]" /> : <Maximize2 className="w-4 h-4 text-[#1d1d1f]" />}
           </button>
 
+
           {/* Convenient Field Health Hub — desktop only; mobile gets a compact bar at the bottom */}
           <div className="hidden md:flex absolute md:top-6 md:left-6 z-10 flex-col gap-4 pointer-events-none">
             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
