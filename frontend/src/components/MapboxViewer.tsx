@@ -1,5 +1,5 @@
 import Map, { Source, Layer, Marker, NavigationControl, ScaleControl } from 'react-map-gl/mapbox';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
@@ -99,7 +99,32 @@ export function MapboxViewer({
     };
   }, [zones, sensors]);
 
-  if (!MAPBOX_TOKEN) {
+  const [token, setToken] = useState(() => MAPBOX_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('mapbox_token') || '' : ''));
+  const [loadingConfig, setLoadingConfig] = useState(!MAPBOX_TOKEN);
+
+  useEffect(() => {
+    if (!token) {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      fetch(`${apiUrl}/api/config`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.mapbox_token) {
+            setToken(data.mapbox_token);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoadingConfig(false));
+    }
+  }, [token]);
+
+  if (!token) {
+    if (loadingConfig) {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-[#f5f5f7]">
+          <div className="w-6 h-6 border-2 border-[#1d1d1f] border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-[#f5f5f7]">
         <div className="w-20 h-20 bg-white rounded-[32px] shadow-xl flex items-center justify-center mb-8">
@@ -107,7 +132,7 @@ export function MapboxViewer({
         </div>
         <h3 className="text-2xl font-black tracking-tight text-[#1d1d1f] mb-3">Map Infrastructure Offline</h3>
         <p className="text-sm text-[#86868b] max-w-sm leading-relaxed font-medium">
-          Please configure your <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">VITE_MAPBOX_TOKEN</code> in the environment settings to enable geospatial visualization.
+          Configure <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">MAPBOX_TOKEN</code> in your Fly.io secrets or environment to enable geospatial visualization.
         </p>
       </div>
     );
@@ -122,7 +147,7 @@ export function MapboxViewer({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onMove={(evt: any) => setViewState(evt.viewState)}
         mapStyle={MAP_STYLES[mapMode]}
-        mapboxAccessToken={MAPBOX_TOKEN}
+        mapboxAccessToken={token}
         style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" />
