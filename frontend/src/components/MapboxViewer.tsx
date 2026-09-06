@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmVicnVzZDMyIiwiYSI6ImNtbXozZTEzZTA0M3oycG93M3R5NHBranQifQ.pc5OgxomRXUl5pRDVktXuA';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 const MAP_STYLES: Record<MapMode, string> = {
   zones: 'mapbox://styles/mapbox/light-v11',
@@ -30,14 +30,14 @@ interface MapboxViewerProps {
 }
 
 /** Simple point-in-polygon check using ray-casting algorithm */
-function pointInPolygon(point: {lng: number, lat: number}, vs: {lng: number, lat: number}[]) {
+function pointInPolygon(point: { lng: number, lat: number }, vs: { lng: number, lat: number }[]) {
   const x = point.lng, y = point.lat;
   let inside = false;
   for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
     const xi = vs[i].lng, yi = vs[i].lat;
     const xj = vs[j].lng, yj = vs[j].lat;
     const intersect = ((yi > y) !== (yj > y))
-        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
     if (intersect) inside = !inside;
   }
   return inside;
@@ -60,8 +60,8 @@ function generateZoneHeatPoints(zone: SoilZone, gridSize = 12) {
     for (let j = 0; j < gridSize; j++) {
       const lng = minLng + (maxLng - minLng) * (i + 0.5) / gridSize;
       const lat = minLat + (maxLat - minLat) * (j + 0.5) / gridSize;
-      
-      if (pointInPolygon({lng, lat}, zone.coordinates)) {
+
+      if (pointInPolygon({ lng, lat }, zone.coordinates)) {
         points.push({ lng, lat, weight: weight * 0.75 });
       }
     }
@@ -86,7 +86,7 @@ export function MapboxViewer({
       lat: s.coordinates.latitude,
       weight:
         s.status === 'critical' ? 1.0 :
-        s.status === 'warning'  ? 0.62 : 0.08,
+          s.status === 'warning' ? 0.62 : 0.08,
     }));
 
     return {
@@ -99,41 +99,16 @@ export function MapboxViewer({
     };
   }, [zones, sensors]);
 
-  const [token, setToken] = useState(() => MAPBOX_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('mapbox_token') || '' : ''));
-  const [inputToken, setInputToken] = useState('');
-
-  if (!token) {
+  if (!MAPBOX_TOKEN) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#f5f5f7] z-20 relative">
-        <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-4">
-           <span className="text-3xl">🗺️</span>
+      <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-[#f5f5f7]">
+        <div className="w-20 h-20 bg-white rounded-[32px] shadow-xl flex items-center justify-center mb-8">
+          <span className="text-4xl">🗺️</span>
         </div>
-        <h3 className="text-xl font-black tracking-tight text-[#1d1d1f] mb-2">Активация спутниковой карты</h3>
-        <p className="text-xs text-[#86868b] max-w-sm leading-relaxed mb-6 font-medium">
-          Вставьте ваш публичный токен Mapbox (начинается с <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">pk.eyJ...</code>), чтобы включить отображение полей и датчиков:
+        <h3 className="text-2xl font-black tracking-tight text-[#1d1d1f] mb-3">Map Infrastructure Offline</h3>
+        <p className="text-sm text-[#86868b] max-w-sm leading-relaxed font-medium">
+          Please configure your <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">VITE_MAPBOX_TOKEN</code> in the environment settings to enable geospatial visualization.
         </p>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          const clean = inputToken.trim();
-          if (clean) {
-            localStorage.setItem('mapbox_token', clean);
-            setToken(clean);
-          }
-        }} className="flex flex-col sm:flex-row gap-2 w-full max-w-md pointer-events-auto">
-          <input
-            type="text"
-            placeholder="pk.eyJ1..."
-            value={inputToken}
-            onChange={(e) => setInputToken(e.target.value)}
-            className="flex-1 px-4 py-2.5 bg-white border border-black/15 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-[#1d1d1f]"
-          />
-          <button
-            type="submit"
-            className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] text-white text-xs font-bold rounded-xl transition-all shadow-sm whitespace-nowrap active:scale-95"
-          >
-            Включить карту
-          </button>
-        </form>
       </div>
     );
   }
@@ -147,7 +122,7 @@ export function MapboxViewer({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onMove={(evt: any) => setViewState(evt.viewState)}
         mapStyle={MAP_STYLES[mapMode]}
-        mapboxAccessToken={token}
+        mapboxAccessToken={MAPBOX_TOKEN}
         style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" />
@@ -171,12 +146,12 @@ export function MapboxViewer({
                 // Color ramp: green (healthy/cool) → amber (warning) → red (critical/hot)
                 'heatmap-color': [
                   'interpolate', ['linear'], ['heatmap-density'],
-                  0,    'rgba(16,185,129,0)',      // transparent
+                  0, 'rgba(16,185,129,0)',      // transparent
                   0.10, 'rgba(16,185,129,0.55)',   // green — optimal
                   0.35, 'rgba(132,204,22,0.65)',   // lime
                   0.55, 'rgba(245,158,11,0.75)',   // amber — warning
                   0.75, 'rgba(249,115,22,0.85)',   // orange
-                  1.0,  'rgba(239,68,68,0.92)',    // red — critical
+                  1.0, 'rgba(239,68,68,0.92)',    // red — critical
                 ],
                 // Smaller radius so heatmap stays mostly inside the polygon
                 'heatmap-radius': [
@@ -250,7 +225,7 @@ export function MapboxViewer({
 
         {/* ─── HEATMAP LEGEND (only in heatmap mode) ─── */}
         {isHeatmap && (
-          <div className="absolute bottom-10 left-4 z-10 bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 flex flex-col gap-2">
+          <div className="absolute bottom-28 md:bottom-10 left-4 z-10 bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 flex flex-col gap-2">
             <span className="text-white text-[9px] font-black uppercase tracking-widest mb-1">Здоровье почвы</span>
             <div className="flex items-center gap-2">
               <div className="w-32 h-2.5 rounded-full" style={{
@@ -269,7 +244,7 @@ export function MapboxViewer({
           const isActive = activeSensorId === sensor.id;
           const color =
             sensor.status === 'critical' ? '#ff3b30' :
-            sensor.status === 'warning'  ? '#ff9500' : '#34c759';
+              sensor.status === 'warning' ? '#ff9500' : '#34c759';
 
           return (
             <Marker
@@ -310,18 +285,18 @@ export function MapboxViewer({
                   <div className="bg-[#1d1d1f] text-white p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] border border-white/10">
                     <span className="text-[10px] font-black uppercase tracking-widest truncate">{sensor.name}</span>
                     <div className="flex items-center justify-between gap-3 text-[10px] font-bold">
-                       <div className="flex items-center gap-1.5">
-                          <div className={`w-1.5 h-1.5 rounded-full ${sensor.battery < 20 ? 'bg-red-500' : 'bg-green-500'}`} />
-                          <span className="text-white/80">{sensor.battery}% Заряд</span>
-                       </div>
-                       <div className="flex items-center gap-1.5">
-                          <div className="flex gap-0.5 items-end h-2.5">
-                             <div className="w-0.5 h-1.5 bg-white/40" />
-                             <div className="w-0.5 h-2 bg-white/60" />
-                             <div className="w-0.5 h-2.5 bg-white/90" />
-                          </div>
-                          <span className="text-white/80">{sensor.signalStrength}%</span>
-                       </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${sensor.battery < 20 ? 'bg-red-500' : 'bg-green-500'}`} />
+                        <span className="text-white/80">{sensor.battery}% Заряд</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex gap-0.5 items-end h-2.5">
+                          <div className="w-0.5 h-1.5 bg-white/40" />
+                          <div className="w-0.5 h-2 bg-white/60" />
+                          <div className="w-0.5 h-2.5 bg-white/90" />
+                        </div>
+                        <span className="text-white/80">{sensor.signalStrength}%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
