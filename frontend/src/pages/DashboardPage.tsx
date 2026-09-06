@@ -16,8 +16,9 @@ import {
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import type { Sensor, SoilZone, MapMode, SoilDepth } from '@/types';
+import type { Sensor, SoilZone, MapMode, SoilDepth, WeatherData } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
+import { fetchRealWeather } from '@/services/weatherService';
 
 type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | null;
 
@@ -57,7 +58,23 @@ export function DashboardPage() {
   const allFieldZones = useMemo(() => zones.filter(z => z.fieldId === activeFieldId), [activeFieldId]);
   const activeZones = useMemo(() => activeZoneFilter ? allFieldZones.filter(z => z.id === activeZoneFilter) : allFieldZones, [allFieldZones, activeZoneFilter]);
   const activeRecs = useMemo(() => recommendations.filter(r => !r.fieldId || r.fieldId === activeFieldId), [activeFieldId]);
-  const activeWeather = weather[activeFieldId] || weather['f-1'];
+  const [realWeather, setRealWeather] = useState<WeatherData | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadWeather() {
+      try {
+        const live = await fetchRealWeather(activeField.center.latitude, activeField.center.longitude);
+        if (isMounted) setRealWeather(live);
+      } catch (err) {
+        console.warn('Real weather fetch error, using fallback:', err);
+      }
+    }
+    loadWeather();
+    return () => { isMounted = false; };
+  }, [activeField.center.latitude, activeField.center.longitude]);
+
+  const activeWeather = realWeather || weather[activeFieldId] || weather['f-1'];
 
   const stats = useMemo(() => {
     if (!activeSensors.length) return [];
@@ -76,90 +93,96 @@ export function DashboardPage() {
   return (
     <div className="h-full flex flex-col bg-[#f5f5f7] overflow-hidden">
       {/* Precision Toolbar */}
-      <div className="flex-shrink-0 bg-white border-b border-black/5 px-4 md:px-6 py-3 flex items-center gap-4 md:gap-6 z-20 overflow-x-auto scrollbar-hide">
-        <div className="relative flex-shrink-0">
-          <button onClick={() => setFieldDropdown(v => !v)}
-            className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold"
-          >
-            <MapIcon className="w-4 h-4 text-blue-500" />
-            <span className="truncate max-w-[120px]">{activeField.name.split(' — ')[0]}</span>
-            <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform ${fieldDropdown ? 'rotate-180' : ''}`} />
-          </button>
-          <AnimatePresence>
-            {fieldDropdown && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setFieldDropdown(false)} />
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full left-0 mt-2 w-64 bg-white border border-black/5 rounded-xl shadow-xl z-50 p-1"
-                >
-                  {fields.map(f => (
-                    <button key={f.id} onClick={() => { setActiveFieldId(f.id); setActiveZoneFilter(null); setFieldDropdown(false); }}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeFieldId === f.id ? 'font-bold bg-black/5' : ''}`}
-                    >
-                      <span className="truncate">{f.name}</span>
-                      {activeFieldId === f.id && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                    </button>
-                  ))}
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <div className="relative flex-shrink-0">
-          <button onClick={() => setZoneDropdown(v => !v)}
-            className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold"
-          >
-            <Layers className="w-4 h-4 text-purple-500" />
-            <span className="truncate max-w-[120px]">{activeZoneFilter ? allFieldZones.find(z => z.id === activeZoneFilter)?.name : 'Все зоны'}</span>
-            <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform ${zoneDropdown ? 'rotate-180' : ''}`} />
-          </button>
-          <AnimatePresence>
-            {zoneDropdown && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setZoneDropdown(false)} />
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full left-0 mt-2 w-64 bg-white border border-black/5 rounded-xl shadow-xl z-50 p-1"
-                >
-                  <button onClick={() => { setActiveZoneFilter(null); setZoneDropdown(false); }}
-                    className={`w-full text-left px-4 py-2 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${!activeZoneFilter ? 'font-bold bg-black/5' : ''}`}
+      <div className="flex-shrink-0 bg-white border-b border-black/5 px-3 md:px-6 py-2.5 flex items-center justify-between gap-3 md:gap-6 z-30 relative">
+        {/* Dropdowns Container (NO overflow-hidden so popups float freely) */}
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 relative z-40">
+          <div className="relative flex-shrink-0">
+            <button onClick={() => setFieldDropdown(v => !v)}
+              className="flex items-center gap-2 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold border border-black/5 md:border-transparent"
+            >
+              <MapIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+              <span className="truncate max-w-[110px] md:max-w-[140px]">{activeField.name.split(' — ')[0]}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform flex-shrink-0 ${fieldDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence>
+              {fieldDropdown && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setFieldDropdown(false)} />
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                    className="absolute top-full left-0 mt-2 w-64 max-w-[calc(100vw-32px)] bg-white border border-black/10 rounded-xl shadow-2xl z-50 p-1.5"
                   >
-                    <span>Все зоны</span>
-                    {!activeZoneFilter && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
-                  </button>
-                  {allFieldZones.map(z => (
-                    <button key={z.id} onClick={() => { setActiveZoneFilter(z.id); setZoneDropdown(false); }}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeZoneFilter === z.id ? 'font-bold bg-black/5' : ''}`}
+                    {fields.map(f => (
+                      <button key={f.id} onClick={() => { setActiveFieldId(f.id); setActiveZoneFilter(null); setFieldDropdown(false); }}
+                        className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeFieldId === f.id ? 'font-bold bg-black/5' : ''}`}
+                      >
+                        <span className="truncate">{f.name}</span>
+                        {activeFieldId === f.id && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 ml-2" />}
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="relative flex-shrink-0">
+            <button onClick={() => setZoneDropdown(v => !v)}
+              className="flex items-center gap-2 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold border border-black/5 md:border-transparent"
+            >
+              <Layers className="w-4 h-4 text-purple-500 flex-shrink-0" />
+              <span className="truncate max-w-[110px] md:max-w-[140px]">{activeZoneFilter ? allFieldZones.find(z => z.id === activeZoneFilter)?.name : 'Все зоны'}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform flex-shrink-0 ${zoneDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence>
+              {zoneDropdown && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setZoneDropdown(false)} />
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                    className="absolute top-full left-0 mt-2 w-64 max-w-[calc(100vw-32px)] bg-white border border-black/10 rounded-xl shadow-2xl z-50 p-1.5"
+                  >
+                    <button onClick={() => { setActiveZoneFilter(null); setZoneDropdown(false); }}
+                      className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${!activeZoneFilter ? 'font-bold bg-black/5' : ''}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: z.color === 'green' ? '#10b981' : z.color === 'yellow' ? '#f59e0b' : '#ef4444' }} />
-                        <span className="truncate">{z.name}</span>
-                      </div>
-                      {activeZoneFilter === z.id && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
+                      <span>Все зоны</span>
+                      {!activeZoneFilter && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
                     </button>
-                  ))}
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+                    {allFieldZones.map(z => (
+                      <button key={z.id} onClick={() => { setActiveZoneFilter(z.id); setZoneDropdown(false); }}
+                        className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeZoneFilter === z.id ? 'font-bold bg-black/5' : ''}`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: z.color === 'green' ? '#10b981' : z.color === 'yellow' ? '#f59e0b' : '#ef4444' }} />
+                          <span className="truncate">{z.name}</span>
+                        </div>
+                        {activeZoneFilter === z.id && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0 ml-2" />}
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
-        <div className="h-4 w-px bg-black/10 flex-shrink-0" />
+        {/* Scrollable Map Controls */}
+        <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-hide py-0.5">
+          <div className="h-4 w-px bg-black/10 flex-shrink-0" />
 
-        <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5 overflow-hidden flex-shrink-0">
-          {([['heatmap', 'Хитмап'], ['zones', 'Зоны'], ['satellite', 'Спутник']] as [MapMode, string][]).map(([m, lbl]) => (
-            <button key={m} onClick={() => setMapMode(m)}
-              className={`px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${mapMode === m ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
-            >{lbl}</button>
-          ))}
+          <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5 overflow-hidden flex-shrink-0">
+            {([['heatmap', 'Хитмап'], ['zones', 'Зоны'], ['satellite', 'Спутник']] as [MapMode, string][]).map(([m, lbl]) => (
+              <button key={m} onClick={() => setMapMode(m)}
+                className={`px-3 md:px-4 py-1.5 rounded-md text-[11px] font-bold transition-all whitespace-nowrap ${mapMode === m ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+              >{lbl}</button>
+            ))}
+          </div>
+
+          <button onClick={() => setNdviEnabled(!ndviEnabled)}
+            title="NDVI (Нормализованный относительный индекс растительности) показывает качество и плотность биомассы"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border flex-shrink-0 whitespace-nowrap ${ndviEnabled ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-200' : 'bg-white border-black/10 text-[#6e6e73] hover:border-black/20'}`}
+          >
+            <Activity className="w-3.5 h-3.5" /> NDVI
+          </button>
         </div>
-
-        <button onClick={() => setNdviEnabled(!ndviEnabled)}
-          title="NDVI (Нормализованный относительный индекс растительности) показывает качество и плотность биомассы"
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border flex-shrink-0 ${ndviEnabled ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-200' : 'bg-white border-black/10 text-[#6e6e73] hover:border-black/20'}`}
-        >
-          <Activity className="w-3.5 h-3.5" /> NDVI
-        </button>
 
         <div className="flex-1 hidden md:block" />
         <div className="flex-shrink-0 hidden md:block">
@@ -168,7 +191,7 @@ export function DashboardPage() {
       </div>
 
       {/* Grid Stats */}
-      <div className="flex-shrink-0 grid grid-cols-2 md:grid-cols-4 bg-white border-b border-black/5">
+      <div className="flex-shrink-0 grid grid-cols-2 md:grid-cols-4 bg-white border-b border-black/5 relative z-10">
         {stats.map((s, i) => {
           const colorHex = s.color.includes('blue') ? '#3b82f6' : s.color.includes('orange') ? '#f97316' : s.color.includes('purple') ? '#a855f7' : '#16a34a';
           const borderClasses = isMobile
