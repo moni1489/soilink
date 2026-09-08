@@ -128,3 +128,65 @@ def classification_metrics(y_true, y_pred) -> dict:
 
 def fmt_metrics(m: dict) -> str:
     return "  ".join(f"{k}={v:.3f}" for k, v in m.items())
+
+
+# --- Целевая метка состояния почвы ---------------------------------------
+SOIL_STATE_CLASSES = ["critical", "poor", "moderate", "healthy"]
+# Границы суммарного балла (0..18) между классами
+SOIL_STATE_CUTS = (6, 10, 14)
+
+
+def _score_row(r) -> int:
+    """
+    Агрономический балл состояния почвы, 0..18.
+
+    Складывается из четырёх независимых измерений качества почвы.
+    Органика (углерод и азот) весит вдвое: именно она определяет
+    плодородие и именно её нельзя измерить дешёвым полевым датчиком.
+
+      TOC, г/кг      — градация по классам содержания органического углерода
+      TN,  г/кг      — обеспеченность общим азотом
+      pH             — оптимум 6.0-7.5, штраф за отклонение в обе стороны
+      EC, дСм/м      — засолённость (вытяжка 1:5)
+    """
+    toc = 0 if r.toc < 6 else 1 if r.toc < 12 else 2 if r.toc < 20 else 3
+    tn = 0 if r.tn < 0.75 else 1 if r.tn < 1.25 else 2 if r.tn < 2.0 else 3
+
+    p = r.ph_sn
+    if 6.0 <= p <= 7.5:
+        ph = 3
+    elif 5.5 <= p < 6.0 or 7.5 < p <= 8.0:
+        ph = 2
+    elif 5.0 <= p < 5.5 or 8.0 < p <= 8.5:
+        ph = 1
+    else:
+        ph = 0
+
+    e = r.ec_ds_m
+    ec = 3 if e < 0.5 else 2 if e < 1.0 else 1 if e < 2.0 else 0
+
+    return 2 * toc + 2 * tn + ph + ec
+
+
+def add_soil_state_label(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["soil_score"] = df.apply(_score_row, axis=1)
+    df["soil_state"] = pd.cut(
+        df["soil_score"], [-1, *SOIL_STATE_CUTS, 999],
+        labels=SOIL_STATE_CLASSES).astype(str)
+    df["soil_state_idx"] = df["soil_state"].map(
+        {c: i for i, c in enumerate(SOIL_STATE_CLASSES)})
+    return df
+
+
+def spatial_blocks(df: pd.DataFrame, n_blocks: int = 5) -> np.ndarray:
+    """
+    Пространственные блоки по широте.
+
+    Точки лежат вдоль транссекта север-юг (54.9 -> 42.9 с.ш.), а климат
+    меняется вдоль него монотонно. Соседние точки похожи друг на друга,
+    поэтому Leave-One-Site-Out всё ещё оптимистичен: модель интерполирует
+    между соседями. Блочная CV по широте отвечает на более честный вопрос —
+    переносится ли модель на новый, не виденный регион.
+    """
+    return pd.qcut(df["latitude"], n_blocks, labels=False).to_numpy()
