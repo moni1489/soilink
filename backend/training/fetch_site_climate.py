@@ -35,8 +35,23 @@ def main() -> None:
         "Internal sample #": "sample_id",
         "Longtitude": "longitude", "Latitude ": "latitude"})
 
-    rows = []
+    # Выкачка возобновляемая: результат каждой точки сразу пишется на диск.
+    # Один запрос — это 30 лет суточных данных (~1 МБ), все 40 точек занимают
+    # около десяти минут, и обрыв на середине не должен стоить всей работы.
+    done: dict[int, dict] = {}
+    if OUT.exists():
+        prev = pd.read_csv(OUT).to_dict("records")
+        done = {int(r["sample_id"]): r for r in prev
+                if not r["climate_is_fallback"]}
+        if done:
+            print(f"Найден незаконченный прогон: {len(done)} точек уже собрано, "
+                  f"их пропускаем\n")
+
+    rows = list(done.values())
     for _, s in sites.iterrows():
+        sid = int(s.sample_id)
+        if sid in done:
+            continue
         for attempt in range(MAX_RETRIES):
             c = get_climate(float(s.latitude), float(s.longitude))
             if not c["is_fallback"]:
@@ -48,14 +63,16 @@ def main() -> None:
               f"t={c['mat_c']:6.2f} C  h={c['elevation_m']:6.1f} м  {status}",
               flush=True)
         rows.append({
-            "sample_id": int(s.sample_id),
+            "sample_id": sid,
             "era5_precip_mm": c["precip_mm"],
             "era5_mat_c": c["mat_c"],
             "era5_elevation_m": c["elevation_m"],
             "climate_is_fallback": int(c["is_fallback"]),
         })
+        # сохраняем после каждой точки, а не в конце
+        pd.DataFrame(rows).sort_values("sample_id").to_csv(OUT, index=False)
 
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows).sort_values("sample_id")
     df.to_csv(OUT, index=False)
     n_bad = int(df["climate_is_fallback"].sum())
     print(f"\nСохранено: {OUT}  ({len(df)} точек, фолбэков: {n_bad})")

@@ -46,7 +46,7 @@ def get_model_info():
     info = soil_models.model_info()
     return {
         "loaded": list(info),
-        "missing": [n for n in ("state", "nitrogen", "carbon", "moisture")
+        "missing": [n for n in ("state", "nitrogen", "carbon", "moisture", "ph")
                     if n not in info],
         "models": info,
         "training_domain": soil_models.TRAIN_BBOX,

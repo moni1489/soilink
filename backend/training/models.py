@@ -15,9 +15,12 @@
 кросс-валидации. Вложенный параллелизм на машине с двумя ядрами даёт
 oversubscription и замедляет обучение в разы.
 """
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import (GradientBoostingRegressor, RandomForestClassifier,
+                              RandomForestRegressor, StackingRegressor)
 from sklearn.linear_model import LogisticRegression, LinearRegression, Ridge
+from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.svm import SVR
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
@@ -48,6 +51,41 @@ def regressors() -> dict:
             reg_lambda=5.0, reg_alpha=0.5, min_child_weight=3,
             random_state=RANDOM_STATE, n_jobs=1, verbosity=0),
     }
+
+
+def ph_regressors() -> dict:
+    """
+    Расширенный набор под задачу pH.
+
+    Повторяет состав из репозитория-референса "Prediction of Soil pH":
+    Random Forest, XGBoost, Decision Tree, SVR, ANN и стекинг.
+    Там на своих данных лучшим оказался Random Forest с R2=0.62 и RMSE=0.52 —
+    это ориентир, с которым сравниваются наши цифры.
+    """
+    base = regressors()
+    base["SVR"] = _scaled(SVR(kernel="rbf", C=10.0, epsilon=0.1, gamma="scale"))
+    # ANN: одна скрытая прослойка, сильная L2-регуляризация и ранняя остановка.
+    # На 80 наблюдениях сеть побольше просто запомнит обучающую выборку.
+    base["ANN"] = _scaled(MLPRegressor(
+        hidden_layer_sizes=(32,), alpha=1.0, max_iter=3000,
+        early_stopping=True, n_iter_no_change=30,
+        random_state=RANDOM_STATE))
+    # cv=3 и 150 деревьев вместо 5 и 300: стекинг переобучает базовые модели
+    # внутри каждого внешнего фолда, и при 40 фолдах LOSO полный вариант
+    # обходится в десятки минут без заметного выигрыша в качестве.
+    base["Stacking"] = StackingRegressor(
+        estimators=[
+            ("rf", RandomForestRegressor(
+                n_estimators=150, max_depth=6, min_samples_leaf=3,
+                max_features="sqrt", random_state=RANDOM_STATE, n_jobs=1)),
+            ("svr", _scaled(SVR(kernel="rbf", C=10.0, epsilon=0.1))),
+            ("gbr", GradientBoostingRegressor(
+                n_estimators=200, max_depth=2, learning_rate=0.05,
+                random_state=RANDOM_STATE)),
+        ],
+        final_estimator=Ridge(alpha=1.0),
+        cv=3, n_jobs=1)
+    return base
 
 
 def classifiers() -> dict:
