@@ -26,7 +26,10 @@ sys.path.insert(0, str(HERE.parent))
 from app.services.climate_service import get_climate  # noqa: E402
 
 OUT = HERE / "site_climate.csv"
-MAX_RETRIES = 4
+MAX_RETRIES = 6
+# Пауза между точками: 40 запросов подряд по 30 лет суточных данных
+# упираются в лимит бесплатного тарифа Open-Meteo.
+PAUSE_SEC = 3.0
 
 
 def main() -> None:
@@ -56,8 +59,8 @@ def main() -> None:
             c = get_climate(float(s.latitude), float(s.longitude))
             if not c["is_fallback"]:
                 break
-            # сеть подвела — ждём с нарастающей паузой и пробуем снова
-            time.sleep(2 * (attempt + 1))
+            # сеть подвела или сработал лимит — ждём дольше и пробуем снова
+            time.sleep(5 * (attempt + 1))
         status = "ok" if not c["is_fallback"] else "ФОЛБЭК"
         print(f"  точка {int(s.sample_id):>2}: precip={c['precip_mm']:7.1f} мм  "
               f"t={c['mat_c']:6.2f} C  h={c['elevation_m']:6.1f} м  {status}",
@@ -71,6 +74,7 @@ def main() -> None:
         })
         # сохраняем после каждой точки, а не в конце
         pd.DataFrame(rows).sort_values("sample_id").to_csv(OUT, index=False)
+        time.sleep(PAUSE_SEC)
 
     df = pd.DataFrame(rows).sort_values("sample_id")
     df.to_csv(OUT, index=False)
