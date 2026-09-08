@@ -45,29 +45,3 @@ def build_fertilizer_features(reading: SensorReading, field: Field) -> dict:
         "phosphorus": field.phosphorus,
         "potassium": field.potassium,
     }
-
-
-def build_soil_state_features(reading: SensorReading, field: Field, soilgrid: dict) -> dict:
-    """
-    Build the full feature vector for the soil state classifier.
-    Combines live sensor readings with SoilGrids physical composition.
-    """
-    return {
-        "N":  field.nitrogen,
-        "P":  field.phosphorus,
-        "K":  field.potassium,
-        "pH": reading.ph,
-        "soil_moisture":          reading.soil_moisture,
-        "soil_temperature":       reading.soil_temperature,
-        "electrical_conductivity": reading.electrical_conductivity,
-        "humidity":    field.humidity,
-        "rainfall":    field.rainfall,
-        "soil_type_enc": _soil_type_enc(field.soil_type),
-        # SoilGrids physical composition
-        "clay_content": soilgrid.get("clay_content", 220),
-        "sand_content": soilgrid.get("sand_content", 420),
-        "silt_content": soilgrid.get("silt_content", 360),
-        "soc":  soilgrid.get("soc",  25),
-        "cec":  soilgrid.get("cec",  180),
-        "bdod": soilgrid.get("bdod", 135),
-    }
