@@ -1,0 +1,398 @@
+{
+  "dataset": {
+    "n_obs": 80,
+    "n_sites": 40,
+    "seasons": [
+      "may",
+      "sep"
+    ],
+    "source": "Supplement 2.xlsx"
+  },
+  "moisture": {
+    "algorithms": {
+      "Ridge": {
+        "by_site": {
+          "R2": 0.5498181485238113,
+          "RMSE": 6.30750074634112,
+          "MAE": 4.1555128796380485,
+          "RMSE/SD": 0.6667492619663979
+        },
+        "by_region": {
+          "R2": 0.40939570826962646,
+          "RMSE": 7.2245635950399105,
+          "MAE": 5.206064631287273,
+          "RMSE/SD": 0.7636895560918349
+        }
+      },
+      "RandomForest": {
+        "by_site": {
+          "R2": 0.6258867482892083,
+          "RMSE": 5.749960549997897,
+          "MAE": 4.04376052737787,
+          "RMSE/SD": 0.6078131588443991
+        },
+        "by_region": {
+          "R2": 0.43176688784954886,
+          "RMSE": 7.086415090727913,
+          "MAE": 5.193675438370842,
+          "RMSE/SD": 0.7490862421968317
+        }
+      }
+    },
+    "best": "RandomForest"
+  },
+  "nitrogen": {
+    "algorithms": {
+      "Ridge": {
+        "by_site": {
+          "R2": 0.592716439092284,
+          "RMSE": 0.5482865603132637,
+          "MAE": 0.4061984416252873,
+          "RMSE/SD": 0.6341864996957675
+        },
+        "by_region": {
+          "R2": 0.5071852256379954,
+          "RMSE": 0.6031162355811293,
+          "MAE": 0.46238767256913976,
+          "RMSE/SD": 0.6976063285854562
+        }
+      },
+      "RandomForest": {
+        "by_site": {
+          "R2": 0.6800955283771446,
+          "RMSE": 0.4859250805285315,
+          "MAE": 0.3321774335717553,
+          "RMSE/SD": 0.5620548600693439
+        },
+        "by_region": {
+          "R2": 0.4732085326427301,
+          "RMSE": 0.6235603984968345,
+          "MAE": 0.49206092482922636,
+          "RMSE/SD": 0.7212534741790184
+        }
+      }
+    },
+    "best": "RandomForest",
+    "ega": {
+      "features": [
+        "bd",
+        "doy",
+        "ec_log",
+        "has_solonetz",
+        "is_september",
+        "land_use_barren land",
+        "land_use_crop cover",
+        "land_use_grass cover",
+        "longitude",
+        "mat_c",
+        "ph_sn",
+        "precip_mm",
+        "sm_grav",
+        "soil_group_arenosol",
+        "soil_group_chernozem",
+        "soil_group_kastanozem",
+        "soil_group_other",
+        "soil_group_saline"
+      ],
+      "params": {
+        "n_estimators": 300,
+        "max_depth": 2,
+        "min_samples_leaf": 1,
+        "max_features": 0.8
+      },
+      "metrics": {
+        "by_site": {
+          "R2": 0.7106962095728822,
+          "RMSE": 0.4621002695460022,
+          "MAE": 0.3614596420423839,
+          "RMSE/SD": 0.5344974209917003
+        },
+        "by_region": {
+          "R2": 0.618670888619941,
+          "RMSE": 0.5305290148865978,
+          "MAE": 0.42417956207132723,
+          "RMSE/SD": 0.6136468833847429
+        }
+      },
+      "history": [
+        {
+          "generation": 0,
+          "best_fitness": 0.657066854641603,
+          "best_raw": 0.729066854641603,
+          "mean_fitness": 0.547354282077196,
+          "n_features": 18
+        },
+        {
+          "generation": 1,
+          "best_fitness": 0.657066854641603,
+          "best_raw": 0.729066854641603,
+          "mean_fitness": 0.5925499687222809,
+          "n_features": 18
+        }
+      ]
+    }
+  },
+  "carbon": {
+    "algorithms": {
+      "Ridge": {
+        "by_site": {
+          "R2": 0.45872911446657405,
+          "RMSE": 7.240410097490427,
+          "MAE": 5.032715467136304,
+          "RMSE/SD": 0.7310984882108963
+        },
+        "by_region": {
+          "R2": 0.40505561912396026,
+          "RMSE": 7.590913021345535,
+          "MAE": 5.56439872207301,
+          "RMSE/SD": 0.7664904279344192
+        }
+      },
+      "RandomForest": {
+        "by_site": {
+          "R2": 0.5934058636066435,
+          "RMSE": 6.275327375318458,
+          "MAE": 3.9680225068887927,
+          "RMSE/SD": 0.6336495164429935
+        },
+        "by_region": {
+          "R2": 0.4842830165533777,
+          "RMSE": 7.067430534485603,
+          "MAE": 5.362459970583801,
+          "RMSE/SD": 0.7136319227399651
+        }
+      }
+    },
+    "best": "RandomForest",
+    "ega": {
+      "features": [
+        "aridity",
+        "doy",
+        "has_solonetz",
+        "is_september",
+        "land_use_barren land",
+        "land_use_crop cover",
+        "land_use_grass cover",
+        "land_use_shrub cover",
+        "land_use_tree cover",
+        "latitude",
+        "longitude",
+        "mat_c",
+        "ph_sn",
+        "precip_mm",
+        "sm_grav",
+        "soil_group_arenosol",
+        "soil_group_chernozem",
+        "soil_group_other"
+      ],
+      "params": {
+        "n_estimators": 300,
+        "max_depth": 3,
+        "min_samples_leaf": 2,
+        "max_features": 1.0
+      },
+      "metrics": {
+        "by_site": {
+          "R2": 0.6490367643451216,
+          "RMSE": 5.830242840750004,
+          "MAE": 4.223030239520688,
+          "RMSE/SD": 0.5887072236767547
+        },
+        "by_region": {
+          "R2": 0.5679003203263138,
+          "RMSE": 6.469158678472052,
+          "MAE": 4.932163853244771,
+          "RMSE/SD": 0.6532215808420333
+        }
+      },
+      "history": [
+        {
+          "generation": 0,
+          "best_fitness": 0.5698139518523582,
+          "best_raw": 0.6298139518523582,
+          "mean_fitness": 0.5388044727224252,
+          "n_features": 15
+        },
+        {
+          "generation": 1,
+          "best_fitness": 0.5833676334664892,
+          "best_raw": 0.6553676334664893,
+          "mean_fitness": 0.5701043965085669,
+          "n_features": 18
+        }
+      ]
+    }
+  },
+  "state": {
+    "algorithms": {
+      "LogisticRegression": {
+        "by_site": {
+          "accuracy": 0.55,
+          "balanced_accuracy": 0.5569085757872942,
+          "macro_F1": 0.5592493383890238,
+          "cohen_kappa": 0.39291736930860033
+        },
+        "by_region": {
+          "accuracy": 0.3875,
+          "balanced_accuracy": 0.336122234935164,
+          "macro_F1": 0.31789789086366255,
+          "cohen_kappa": 0.16023993144815774
+        }
+      },
+      "RandomForest": {
+        "by_site": {
+          "accuracy": 0.65,
+          "balanced_accuracy": 0.6514519995641277,
+          "macro_F1": 0.627719629375429,
+          "cohen_kappa": 0.5278246205733559
+        },
+        "by_region": {
+          "accuracy": 0.4375,
+          "balanced_accuracy": 0.38510678871090775,
+          "macro_F1": 0.3733230134158927,
+          "cohen_kappa": 0.2364793213149523
+        }
+      }
+    },
+    "best": "RandomForest",
+    "control_ph_ec_only": {
+      "by_site": {
+        "accuracy": 0.5125,
+        "balanced_accuracy": 0.5315939304783698,
+        "macro_F1": 0.5197303411691283,
+        "cohen_kappa": 0.3467336683417086
+      },
+      "by_region": {
+        "accuracy": 0.325,
+        "balanced_accuracy": 0.29638634630053395,
+        "macro_F1": 0.2900089206066012,
+        "cohen_kappa": 0.07731738573259284
+      }
+    },
+    "ega": {
+      "features": [
+        "doy",
+        "elevation_m",
+        "land_use_crop cover",
+        "mat_c",
+        "ph_sn",
+        "soil_group_arenosol",
+        "soil_group_other"
+      ],
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 3,
+        "min_samples_leaf": 2,
+        "max_features": 0.8
+      },
+      "metrics": {
+        "by_site": {
+          "accuracy": 0.6,
+          "balanced_accuracy": 0.6114981747847881,
+          "macro_F1": 0.6243597168597169,
+          "cohen_kappa": 0.4552032347307937
+        },
+        "by_region": {
+          "accuracy": 0.4,
+          "balanced_accuracy": 0.35933924485125857,
+          "macro_F1": 0.3364819004524887,
+          "cohen_kappa": 0.18158567774936063
+        }
+      },
+      "history": [
+        {
+          "generation": 0,
+          "best_fitness": 0.6302978723404256,
+          "best_raw": 0.6582978723404256,
+          "mean_fitness": 0.5598833288659982,
+          "n_features": 7
+        },
+        {
+          "generation": 1,
+          "best_fitness": 0.6302978723404256,
+          "best_raw": 0.6582978723404256,
+          "mean_fitness": 0.5640946910829723,
+          "n_features": 7
+        }
+      ]
+    },
+    "confusion_matrix": [
+      [
+        11,
+        3,
+        0,
+        0
+      ],
+      [
+        0,
+        9,
+        4,
+        6
+      ],
+      [
+        0,
+        3,
+        11,
+        9
+      ],
+      [
+        0,
+        3,
+        4,
+        17
+      ]
+    ]
+  },
+  "artifacts": {
+    "moisture": {
+      "file": "soil_moisture_model.pkl",
+      "algorithm": "RandomForest",
+      "n_features": 22,
+      "metrics": {
+        "R2": 0.6258867482892083,
+        "RMSE": 5.749960549997897,
+        "MAE": 4.04376052737787,
+        "RMSE/SD": 0.6078131588443991
+      }
+    },
+    "nitrogen": {
+      "file": "soil_nitrogen_model.pkl",
+      "algorithm": "EGA-RandomForest",
+      "n_features": 18,
+      "metrics": {
+        "R2": 0.7106962095728822,
+        "RMSE": 0.4621002695460022,
+        "MAE": 0.3614596420423839,
+        "RMSE/SD": 0.5344974209917003
+      }
+    },
+    "carbon": {
+      "file": "soil_carbon_model.pkl",
+      "algorithm": "EGA-RandomForest",
+      "n_features": 18,
+      "metrics": {
+        "R2": 0.6490367643451216,
+        "RMSE": 5.830242840750004,
+        "MAE": 4.223030239520688,
+        "RMSE/SD": 0.5887072236767547
+      }
+    },
+    "state": {
+      "file": "soil_state_model.pkl",
+      "algorithm": "RandomForest",
+      "n_features": 23,
+      "metrics": {
+        "accuracy": 0.65,
+        "balanced_accuracy": 0.6514519995641277,
+        "macro_F1": 0.627719629375429,
+        "cohen_kappa": 0.5278246205733559
+      }
+    }
+  },
+  "class_distribution": {
+    "healthy": 24,
+    "moderate": 23,
+    "poor": 19,
+    "critical": 14
+  }
+}
