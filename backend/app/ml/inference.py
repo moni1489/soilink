@@ -6,20 +6,22 @@ from typing import Optional
 
 from app.core.config import settings
 
+# Модель состояния почвы переехала в app/ml/soil_models.py: она переобучена
+# на лабораторных измерениях (Supplement 2) и работает на другом наборе
+# признаков. Здесь остались только модели культуры и удобрения.
+
 _crop_model = None
 _crop_encoder = None
 _crop_meta = None       # features list for new SoilGrid-enriched model
 _fert_model = None
 _fert_encoders = None
-_soil_state_model = None
-_soil_state_meta = None
 _loaded = False
 
 
 def load_models():
     global _crop_model, _crop_encoder, _crop_meta
     global _fert_model, _fert_encoders
-    global _soil_state_model, _soil_state_meta, _loaded
+    global _loaded
     if _loaded:
         return
 
@@ -30,8 +32,6 @@ def load_models():
     crop_meta_path   = models_dir / "crop_model_meta.pkl"
     fert_model_path  = models_dir / "fertilizer_recommendation_model.pkl"
     fert_encoders_path = models_dir / "fertilizer_encoders.pkl"
-    soil_state_path  = models_dir / "soil_state_model.pkl"
-    soil_state_meta_path = models_dir / "soil_state_meta.pkl"
 
     if crop_model_path.exists() and crop_encoder_path.exists():
         _crop_model = joblib.load(crop_model_path)
@@ -42,10 +42,6 @@ def load_models():
     if fert_model_path.exists() and fert_encoders_path.exists():
         _fert_model = joblib.load(fert_model_path)
         _fert_encoders = joblib.load(fert_encoders_path)
-
-    if soil_state_path.exists() and soil_state_meta_path.exists():
-        _soil_state_model = joblib.load(soil_state_path)
-        _soil_state_meta = joblib.load(soil_state_meta_path)
 
     _loaded = True
 
@@ -137,55 +133,3 @@ def predict_fertilizer_ml(
     df = pd.DataFrame([[row_data[f] for f in features]], columns=features)
     pred = _fert_model.predict(df)[0]
     return fert_enc.inverse_transform([pred])[0]
-
-
-def predict_soil_state(
-    N: float,
-    P: float,
-    K: float,
-    pH: float,
-    soil_moisture: float,
-    soil_temperature: float,
-    electrical_conductivity: float,
-    humidity: float,
-    rainfall: float,
-    soil_type_enc: float,
-    clay_content: float,
-    sand_content: float,
-    silt_content: float,
-    soc: float,
-    cec: float,
-    bdod: float,
-) -> Optional[tuple[str, float]]:
-    """
-    Predict soil health state using sensor + SoilGrids features.
-
-    Returns (state_label, confidence) or None if model not loaded.
-    States: 'critical', 'poor', 'moderate', 'healthy'
-    """
-    load_models()
-    if _soil_state_model is None or _soil_state_meta is None:
-        return None
-
-    features = _soil_state_meta["features"]
-    row = pd.DataFrame([{
-        "N": N, "P": P, "K": K, "pH": pH,
-        "soil_moisture": soil_moisture,
-        "soil_temperature": soil_temperature,
-        "electrical_conductivity": electrical_conductivity,
-        "humidity": humidity,
-        "rainfall": rainfall,
-        "soil_type_enc": soil_type_enc,
-        "clay_content": clay_content,
-        "sand_content": sand_content,
-        "silt_content": silt_content,
-        "soc": soc,
-        "cec": cec,
-        "bdod": bdod,
-    }])[features]
-
-    pred = _soil_state_model.predict(row)[0]
-    proba = _soil_state_model.predict_proba(row)[0]
-    confidence = float(proba.max())
-    label = _soil_state_meta["classes"][pred]
-    return label, confidence
