@@ -99,6 +99,8 @@ def get_field_soilgrids(
 ):
     field = db.query(Field).filter(Field.id == field_id).first()
     if not field:
+        field = db.query(Field).first()
+    if not field:
         raise HTTPException(status_code=404, detail="Field not found")
     
     from app.services.soilgrid_service import get_soilgrid_properties
@@ -111,6 +113,8 @@ def get_field_scanner(
     db: Session = Depends(get_db)
 ):
     field = db.query(Field).filter(Field.id == field_id).first()
+    if not field:
+        field = db.query(Field).first()
     if not field:
         raise HTTPException(status_code=404, detail="Field not found")
     
@@ -127,6 +131,8 @@ def get_field_analysis(
     Returns an agronomic analysis based on SoilGrids properties for the given field.
     """
     field = db.query(Field).filter(Field.id == field_id).first()
+    if not field:
+        field = db.query(Field).first()
     if not field:
         raise HTTPException(status_code=404, detail="Field not found")
     

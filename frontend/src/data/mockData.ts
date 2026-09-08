@@ -172,17 +172,31 @@ export const mockScannerData: ScannerData = {
   '60-100cm': { phh2o: 68, nitrogen: 5, soc: 11, clay_content: 270, sand_content: 350, silt_content: 380, bdod: 145 },
 };
 
-export const getMoistureHistory = (sensorId: string) => {
-  return Array.from({ length: 24 }, (_, i) => ({
-    hour: `${i}:00`,
-    value: 30 + Math.random() * 20 + (i > 10 && i < 16 ? -5 : 0),
+export const getMoistureHistory = (sensorId: string, timeframe: '24h' | '7d' = '7d') => {
+  if (timeframe === '24h') {
+    return Array.from({ length: 24 }, (_, i) => ({
+      label: `${i}:00`,
+      value: Math.round(30 + Math.sin(i / 3) * 15 + (i > 10 && i < 16 ? -5 : 0)),
+    }));
+  }
+  const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  return days.map((day, i) => ({
+    label: day,
+    value: Math.round(38 + Math.sin(i * 1.3) * 12 + (i % 2 === 0 ? 5 : -3)),
   }));
 };
 
-export const getTemperatureHistory = (sensorId: string) => {
-  return Array.from({ length: 24 }, (_, i) => ({
-    hour: `${i}:00`,
-    value: 18 + Math.sin((i - 6) * (Math.PI / 12)) * 5,
+export const getTemperatureHistory = (sensorId: string, timeframe: '24h' | '7d' = '7d') => {
+  if (timeframe === '24h') {
+    return Array.from({ length: 24 }, (_, i) => ({
+      label: `${i}:00`,
+      value: Number((18 + Math.sin((i - 6) * (Math.PI / 12)) * 5).toFixed(1)),
+    }));
+  }
+  const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  return days.map((day, i) => ({
+    label: day,
+    value: Number((19 + Math.cos(i * 0.9) * 3.5 + (i % 2 === 0 ? 1 : -0.8)).toFixed(1)),
   }));
 };
 

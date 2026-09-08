@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80" fill="none">
+  <style>
+    .logo-text {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 56px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      fill: #0F172A;
+    }
+    .logo-dot {
+      fill: #10B981;
+    }
+  </style>
+  <text x="10" y="60" class="logo-text">SoiLink</text>
+  <circle cx="218" cy="53" r="7" class="logo-dot" />
+</svg>

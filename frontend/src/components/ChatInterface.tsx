@@ -42,11 +42,11 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
 
   const handleSend = async () => {
     if (!input.trim()) return;
-    
+
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    
+
     // Create a temporary loading message for the assistant
     const loadingId = (Date.now() + 1).toString();
     const loadingMsg: Message = { id: loadingId, role: 'assistant', content: '...', timestamp: new Date() };
@@ -67,16 +67,16 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
 
       if (!res.ok) throw new Error('API Error');
       const data = await res.json();
-      
-      setMessages(prev => prev.map(msg => 
-        msg.id === loadingId 
-          ? { ...msg, content: data.reply || 'Ошибка ответа от ИИ.' }
+
+      setMessages(prev => prev.map(msg =>
+        msg.id === loadingId
+          ? { ...msg, content: data.reply || data.response || 'Ошибка ответа от ИИ.' }
           : msg
       ));
     } catch (err) {
-      setMessages(prev => prev.map(msg => 
-        msg.id === loadingId 
-          ? { ...msg, content: 'Извините, возникла ошибка соединения с сервером. Попробуйте позже.' } 
+      setMessages(prev => prev.map(msg =>
+        msg.id === loadingId
+          ? { ...msg, content: 'Извините, возникла ошибка соединения с сервером. Попробуйте позже.' }
           : msg
       ));
     }
@@ -111,16 +111,16 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
       {/* Input Terminal */}
       <div className="p-6 border-t border-black/5 bg-white space-y-4">
         <div className="flex flex-wrap gap-2">
-           {SUGGESTIONS.map(s => (
-             <button key={s} onClick={() => setInput(s)}
-               className="text-[10px] font-bold px-3 py-1.5 bg-[#f5f5f7] hover:bg-black hover:text-white rounded-full transition-all border border-black/5"
-             >{s}</button>
-           ))}
+          {SUGGESTIONS.map(s => (
+            <button key={s} onClick={() => setInput(s)}
+              className="text-[10px] font-bold px-3 py-1.5 bg-[#f5f5f7] hover:bg-black hover:text-white rounded-full transition-all border border-black/5"
+            >{s}</button>
+          ))}
         </div>
-        
+
         <div className="relative group">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868b] group-focus-within:text-blue-500 transition-colors">
-             <Command className="w-4 h-4" />
+            <Command className="w-4 h-4" />
           </div>
           <input
             type="text"

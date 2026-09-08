@@ -1,5 +1,5 @@
 import Map, { Source, Layer, Marker, NavigationControl, ScaleControl } from 'react-map-gl/mapbox';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
@@ -30,14 +30,14 @@ interface MapboxViewerProps {
 }
 
 /** Simple point-in-polygon check using ray-casting algorithm */
-function pointInPolygon(point: {lng: number, lat: number}, vs: {lng: number, lat: number}[]) {
+function pointInPolygon(point: { lng: number, lat: number }, vs: { lng: number, lat: number }[]) {
   const x = point.lng, y = point.lat;
   let inside = false;
   for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
     const xi = vs[i].lng, yi = vs[i].lat;
     const xj = vs[j].lng, yj = vs[j].lat;
     const intersect = ((yi > y) !== (yj > y))
-        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
     if (intersect) inside = !inside;
   }
   return inside;
@@ -60,8 +60,8 @@ function generateZoneHeatPoints(zone: SoilZone, gridSize = 12) {
     for (let j = 0; j < gridSize; j++) {
       const lng = minLng + (maxLng - minLng) * (i + 0.5) / gridSize;
       const lat = minLat + (maxLat - minLat) * (j + 0.5) / gridSize;
-      
-      if (pointInPolygon({lng, lat}, zone.coordinates)) {
+
+      if (pointInPolygon({ lng, lat }, zone.coordinates)) {
         points.push({ lng, lat, weight: weight * 0.75 });
       }
     }
@@ -86,7 +86,7 @@ export function MapboxViewer({
       lat: s.coordinates.latitude,
       weight:
         s.status === 'critical' ? 1.0 :
-        s.status === 'warning'  ? 0.62 : 0.08,
+          s.status === 'warning' ? 0.62 : 0.08,
     }));
 
     return {
@@ -99,15 +99,40 @@ export function MapboxViewer({
     };
   }, [zones, sensors]);
 
-  if (!MAPBOX_TOKEN) {
+  const [token, setToken] = useState(() => MAPBOX_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('mapbox_token') || '' : ''));
+  const [loadingConfig, setLoadingConfig] = useState(!MAPBOX_TOKEN);
+
+  useEffect(() => {
+    if (!token) {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      fetch(`${apiUrl}/api/config`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.mapbox_token) {
+            setToken(data.mapbox_token);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoadingConfig(false));
+    }
+  }, [token]);
+
+  if (!token) {
+    if (loadingConfig) {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-[#f5f5f7]">
+          <div className="w-6 h-6 border-2 border-[#1d1d1f] border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-[#f5f5f7]">
         <div className="w-20 h-20 bg-white rounded-[32px] shadow-xl flex items-center justify-center mb-8">
-           <span className="text-4xl">🗺️</span>
+          <span className="text-4xl">🗺️</span>
         </div>
         <h3 className="text-2xl font-black tracking-tight text-[#1d1d1f] mb-3">Map Infrastructure Offline</h3>
         <p className="text-sm text-[#86868b] max-w-sm leading-relaxed font-medium">
-          Please configure your <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">VITE_MAPBOX_TOKEN</code> in the environment settings to enable geospatial visualization.
+          Configure <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">MAPBOX_TOKEN</code> in your Fly.io secrets or environment to enable geospatial visualization.
         </p>
       </div>
     );
@@ -122,7 +147,7 @@ export function MapboxViewer({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onMove={(evt: any) => setViewState(evt.viewState)}
         mapStyle={MAP_STYLES[mapMode]}
-        mapboxAccessToken={MAPBOX_TOKEN}
+        mapboxAccessToken={token}
         style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" />
@@ -146,12 +171,12 @@ export function MapboxViewer({
                 // Color ramp: green (healthy/cool) → amber (warning) → red (critical/hot)
                 'heatmap-color': [
                   'interpolate', ['linear'], ['heatmap-density'],
-                  0,    'rgba(16,185,129,0)',      // transparent
+                  0, 'rgba(16,185,129,0)',      // transparent
                   0.10, 'rgba(16,185,129,0.55)',   // green — optimal
                   0.35, 'rgba(132,204,22,0.65)',   // lime
                   0.55, 'rgba(245,158,11,0.75)',   // amber — warning
                   0.75, 'rgba(249,115,22,0.85)',   // orange
-                  1.0,  'rgba(239,68,68,0.92)',    // red — critical
+                  1.0, 'rgba(239,68,68,0.92)',    // red — critical
                 ],
                 // Smaller radius so heatmap stays mostly inside the polygon
                 'heatmap-radius': [
@@ -244,7 +269,7 @@ export function MapboxViewer({
           const isActive = activeSensorId === sensor.id;
           const color =
             sensor.status === 'critical' ? '#ff3b30' :
-            sensor.status === 'warning'  ? '#ff9500' : '#34c759';
+              sensor.status === 'warning' ? '#ff9500' : '#34c759';
 
           return (
             <Marker
@@ -285,18 +310,18 @@ export function MapboxViewer({
                   <div className="bg-[#1d1d1f] text-white p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] border border-white/10">
                     <span className="text-[10px] font-black uppercase tracking-widest truncate">{sensor.name}</span>
                     <div className="flex items-center justify-between gap-3 text-[10px] font-bold">
-                       <div className="flex items-center gap-1.5">
-                          <div className={`w-1.5 h-1.5 rounded-full ${sensor.battery < 20 ? 'bg-red-500' : 'bg-green-500'}`} />
-                          <span className="text-white/80">{sensor.battery}% Заряд</span>
-                       </div>
-                       <div className="flex items-center gap-1.5">
-                          <div className="flex gap-0.5 items-end h-2.5">
-                             <div className="w-0.5 h-1.5 bg-white/40" />
-                             <div className="w-0.5 h-2 bg-white/60" />
-                             <div className="w-0.5 h-2.5 bg-white/90" />
-                          </div>
-                          <span className="text-white/80">{sensor.signalStrength}%</span>
-                       </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${sensor.battery < 20 ? 'bg-red-500' : 'bg-green-500'}`} />
+                        <span className="text-white/80">{sensor.battery}% Заряд</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex gap-0.5 items-end h-2.5">
+                          <div className="w-0.5 h-1.5 bg-white/40" />
+                          <div className="w-0.5 h-2 bg-white/60" />
+                          <div className="w-0.5 h-2.5 bg-white/90" />
+                        </div>
+                        <span className="text-white/80">{sensor.signalStrength}%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
