@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.core.db import create_tables
+from app.core.config import settings
 from app.api import readings, fields, predictions, recommendations, chat
 
 app = FastAPI(title="SoiLink Backend", version="0.1.0")
@@ -32,6 +33,13 @@ def on_startup():
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "soilink-backend"}
+
+
+@app.get("/api/config")
+def get_public_config():
+    return {
+        "mapbox_token": settings.MAPBOX_TOKEN or os.getenv("MAPBOX_TOKEN") or os.getenv("VITE_MAPBOX_TOKEN") or ""
+    }
 
 # Mount the static directory
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "static")

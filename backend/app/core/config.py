@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     ML_MODELS_DIR: str = "ml_models"
     GEMINI_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
+    MAPBOX_TOKEN: str = ""
     OPENROUTER_MODEL: str = "meta-llama/llama-3.3-70b-instruct"
     OPENMETEO_API_URL: str = "https://api.open-meteo.com/v1/forecast"
 
