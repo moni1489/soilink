@@ -110,7 +110,10 @@ def get_climate(lat: Optional[float], lon: Optional[float],
         }
 
     result["aridity"] = _aridity(result)
-    _cache[key] = result.copy()
+    # Фолбэк не кешируем: одна сетевая ошибка иначе залипала бы на координате
+    # до перезапуска процесса, и поле навсегда получало бы климат по умолчанию.
+    if not result["is_fallback"]:
+        _cache[key] = result.copy()
     return result
 
 

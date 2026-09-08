@@ -130,6 +130,30 @@ SEASONAL = ["tc", "toc", "tic", "loi", "tn", "bd", "sm_grav", "sm_vol",
             "ph_sn", "ph_su", "ec"]
 
 
+def load_site_climate() -> pd.DataFrame | None:
+    """
+    Климатические нормы ERA5 (1991-2020), выкачанные fetch_site_climate.py.
+
+    Значения из самого Supplement 2 заданы поблочно и взяты из источника,
+    недоступного приложению. Обучаться на них, а в проде подавать Open-Meteo —
+    значит получить сдвиг домена на входе. Поэтому при наличии файла
+    климатические признаки берутся из ERA5, а колонки из статьи сохраняются
+    под суффиксом _paper для сравнения.
+    """
+    path = HERE / "site_climate.csv"
+    if not path.exists():
+        print("ВНИМАНИЕ: site_climate.csv не найден, климат берётся из статьи. "
+              "Запустите fetch_site_climate.py, иначе обучающие признаки не "
+              "совпадут с теми, что подаёт приложение.")
+        return None
+    df = pd.read_csv(path)
+    if df["climate_is_fallback"].any():
+        raise ValueError(
+            "В site_climate.csv есть точки с климатом по умолчанию. "
+            "Перезапустите fetch_site_climate.py.")
+    return df
+
+
 def build() -> pd.DataFrame:
     wide = load_annotation()
     for loader in (load_carbon, load_loi, load_nitrogen, load_bulk_density,
@@ -148,6 +172,16 @@ def build() -> pd.DataFrame:
         frames.append(part)
 
     df = pd.concat(frames, ignore_index=True)
+
+    climate = load_site_climate()
+    if climate is not None:
+        df = df.merge(climate, on="sample_id", how="left")
+        df = df.rename(columns={"precip_mm": "precip_mm_paper",
+                                "mat_c": "mat_c_paper",
+                                "elevation_m": "elevation_m_paper"})
+        df["precip_mm"] = df["era5_precip_mm"]
+        df["mat_c"] = df["era5_mat_c"]
+        df["elevation_m"] = df["era5_elevation_m"]
 
     # Производные признаки
     df["doy"] = df["sampling_dt"].dt.dayofyear
