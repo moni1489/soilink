@@ -88,7 +88,7 @@ def compare_zoo(name, X, y, groups, blocks, zoo, task="reg") -> tuple[str, dict]
 
 
 # ---------------------------------------------------------------------------
-def run_ga(X, y, groups, task="reg", generations=15):
+def run_ga(X, y, groups, task="reg", generations=12):
     """Отбор признаков + гиперпараметров генетическим алгоритмом."""
     cols = list(X.columns)
     Xv = X.to_numpy()
@@ -97,11 +97,11 @@ def run_ga(X, y, groups, task="reg", generations=15):
     make = make_ga_regressor if task == "reg" else make_ga_classifier
     space = GA_PARAM_SPACE_REG if task == "reg" else GA_PARAM_SPACE_CLF
 
-    # Внутри GA используем 8-фолдовую групповую CV, а не LOSO:
-    # LOSO на каждой особи из 30x15 оценок был бы неоправданно дорог,
+    # Внутри GA используем 5-фолдовую групповую CV, а не LOSO:
+    # LOSO на каждой особи из 24x12 оценок был бы неоправданно дорог,
     # а финальную честную оценку лучшей особи всё равно считаем по LOSO.
     from sklearn.model_selection import GroupKFold
-    inner = GroupKFold(n_splits=8)
+    inner = GroupKFold(n_splits=5)
 
     def score_fn(mask, params):
         try:
@@ -200,7 +200,7 @@ def main() -> None:
     res_d["control_ph_ec_only"] = res_ctrl
 
     print("\n  --- отбор признаков генетическим алгоритмом (EGA) ---")
-    sel_d, params_d, hist_d = run_ga(Xd, yd, groups, "clf", generations=12)
+    sel_d, params_d, hist_d = run_ga(Xd, yd, groups, "clf", generations=10)
     ga_model_d = make_ga_classifier(params_d)
     res_ga_d = evaluate(ga_model_d, Xd[sel_d], yd, groups, blocks, "clf")
     pred_ga_d = res_ga_d.pop("_pred_site")
