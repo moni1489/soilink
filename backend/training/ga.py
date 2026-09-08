@@ -31,8 +31,8 @@ class Individual:
 
 @dataclass
 class EGAConfig:
-    population_size: int = 24
-    generations: int = 12
+    population_size: int = 30
+    generations: int = 15
     elite_size: int = 3
     crossover_rate: float = 0.8
     mutation_rate_start: float = 0.25
