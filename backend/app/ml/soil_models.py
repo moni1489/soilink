@@ -7,6 +7,7 @@
     soil_nitrogen_model.pkl  — общий азот, г/кг
     soil_carbon_model.pkl    — органический углерод, г/кг
     soil_moisture_model.pkl  — гравиметрическая влажность, %
+    soil_ph_model.pkl        — кислотность pH (солевая вытяжка)
 
 Каждой паре model/meta соответствует свой список признаков — он лежит
 в meta["features"], поэтому код здесь не привязан к конкретному набору:
@@ -42,6 +43,7 @@ _SPECS = {
     "nitrogen": ("soil_nitrogen_model.pkl", "soil_nitrogen_meta.pkl"),
     "carbon": ("soil_carbon_model.pkl", "soil_carbon_meta.pkl"),
     "moisture": ("soil_moisture_model.pkl", "soil_moisture_meta.pkl"),
+    "ph": ("soil_ph_model.pkl", "soil_ph_meta.pkl"),
 }
 
 
@@ -205,6 +207,17 @@ def predict_carbon(features: dict) -> Optional[float]:
 def predict_moisture(features: dict) -> Optional[float]:
     """Гравиметрическая влажность, % — оценка при отказе датчика влаги."""
     return _predict_regression("moisture", features)
+
+
+def predict_ph(features: dict) -> Optional[float]:
+    """
+    Кислотность — оценка при отказе pH-электрода.
+
+    Обучена без признака ph_sn, поэтому её можно считать независимой
+    проверкой показаний датчика: сильное расхождение с измеренным pH —
+    повод заподозрить дрейф или поломку электрода.
+    """
+    return _predict_regression("ph", features)
 
 
 def model_info() -> dict:

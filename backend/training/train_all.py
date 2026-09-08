@@ -29,7 +29,8 @@ from common import (BINARY_FEATURES, CATEGORICAL_FEATURES, CLIMATE_FEATURES,
                     loso_cv, regression_metrics, spatial_blocks)
 from ga import EGAConfig, EnhancedGA
 from models import (GA_PARAM_SPACE_CLF, GA_PARAM_SPACE_REG, classifiers,
-                    make_ga_classifier, make_ga_regressor, regressors)
+                    make_ga_classifier, make_ga_regressor, ph_regressors,
+                    regressors)
 
 RESULTS: dict = {}
 
@@ -47,6 +48,9 @@ LEAKAGE = {
     # tc = toc + tic, поэтому и tc, и tic производны от цели; loi ~ органика
     "toc": ["toc_stock_t_ha", "cn_ratio", "tn", "tc", "tic", "loi",
             "tn_stock_t_ha", "carbonate_frac"],
+    # ph_su — та же кислотность, измеренная другим методом (суспензия против
+    # солевой вытяжки): держать её в признаках значит предсказывать pH по pH
+    "ph_sn": ["ph_su", "soil_score", "soil_state"],
     # метка состояния строится из toc/tn/ph/ec — лабораторную часть убираем
     "soil_state_idx": ["toc", "tn", "tc", "tic", "loi", "cn_ratio",
                        "toc_stock_t_ha", "tn_stock_t_ha", "carbonate_frac",
@@ -216,6 +220,32 @@ def main() -> None:
         print(f"  {c[:9]:<10}" + "".join(f"{v:>10}" for v in cm[i]))
     res_d["confusion_matrix"] = cm.tolist()
 
+    # ---------------- E. Кислотность (pH) --------------------------------
+    # В репозитории-референсе сильнейшими предикторами pH оказались Fe, CaCO3
+    # и Mn. Прямого аналога Fe и Mn в датасете нет, а вот карбонаты есть:
+    # TIC — это и есть неорганический (карбонатный) углерод. Поэтому в
+    # признаки идут TIC и доля карбонатов, плюс органика и обстановка.
+    num_e = (["ec_log", "sm_grav", "bd", "tic", "toc", "tn", "carbonate_frac"]
+             + CLIMATE_FEATURES + TERRAIN_FEATURES + SEASON_FEATURES
+             + BINARY_FEATURES)
+    Xe = encode(df, num_e, CATEGORICAL_FEATURES)
+    ye = df["ph_sn"].to_numpy()
+    best_e, res_e = compare_zoo("E. КИСЛОТНОСТЬ pH (солевая вытяжка)",
+                                Xe, ye, groups, blocks, ph_regressors(), "reg")
+    print(f"\n  Ориентир из репозитория-референса: R2=0.62, RMSE=0.52")
+
+    # Вариант без лабораторной химии: только то, что приложение реально имеет
+    # от датчика и по координатам. Нужен для восполнения пропусков, когда
+    # pH-электрод отказал.
+    print("\n  --- вариант только на доступных приложению признаках ---")
+    num_e_sensor = (["ec_log", "sm_grav", "bd"] + CLIMATE_FEATURES
+                    + TERRAIN_FEATURES + SEASON_FEATURES + BINARY_FEATURES)
+    Xe_s = encode(df, num_e_sensor, CATEGORICAL_FEATURES)
+    best_es, res_es = compare_zoo("E2. pH БЕЗ ЛАБОРАТОРНОЙ ХИМИИ",
+                                  Xe_s, ye, groups, blocks, ph_regressors(), "reg")
+    res_e["sensor_only"] = {"algorithms": res_es["algorithms"],
+                            "best": res_es["best"]}
+
     # ---------------- Сохранение артефактов -----------------------------
     print(f"\n{'='*78}\nСОХРАНЕНИЕ АРТЕФАКТОВ -> {MODELS_DIR}\n{'='*78}")
 
@@ -240,6 +270,7 @@ def main() -> None:
         ("nitrogen", res_b, Xb, yb, "reg", "soil_nitrogen_model.pkl"),
         ("carbon",   res_c, Xc, yc, "reg", "soil_carbon_model.pkl"),
         ("state",    res_d, Xd, yd, "clf", "soil_state_model.pkl"),
+        ("ph",       res_es, Xe_s, ye, "reg", "soil_ph_model.pkl"),
     ]:
         model, feats, algo, metrics = pick(res, X, y, task)
         joblib.dump(model, MODELS_DIR / fname)
@@ -249,7 +280,8 @@ def main() -> None:
             "task": task,
             "metrics_loso": metrics,
             "target": {"moisture": "sm_grav", "nitrogen": "tn",
-                       "carbon": "toc", "state": "soil_state_idx"}[tag],
+                       "carbon": "toc", "state": "soil_state_idx",
+                       "ph": "ph_sn"}[tag],
             "n_train": int(len(y)),
             "n_sites": int(df["sample_id"].nunique()),
             "dataset": "Supplement 2.xlsx (Kazakhstan transect, 2015)",
@@ -267,6 +299,7 @@ def main() -> None:
                     "seasons": ["may", "sep"], "source": "Supplement 2.xlsx"},
         "moisture": _clean(res_a), "nitrogen": _clean(res_b),
         "carbon": _clean(res_c), "state": _clean(res_d),
+        "ph": _clean(res_e),
         "artifacts": artifacts,
         "class_distribution": df["soil_state"].value_counts().to_dict(),
     })

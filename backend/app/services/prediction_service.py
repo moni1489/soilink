@@ -95,6 +95,9 @@ def run_inference(db: Session, field_id: str, sensor_id: str | None = None) -> P
             "predicted_nitrogen_g_kg": soil_models.predict_nitrogen(soil_features),
             "predicted_carbon_g_kg": soil_models.predict_carbon(soil_features),
             "predicted_moisture_pct": soil_models.predict_moisture(soil_features),
+            # Модель pH обучена без самого pH, поэтому расхождение с показанием
+            # датчика — независимый сигнал о возможном дрейфе электрода.
+            "predicted_ph": soil_models.predict_ph(soil_features),
             "in_training_domain": in_domain,
         },
     )
