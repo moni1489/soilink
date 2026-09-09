@@ -386,7 +386,7 @@ export function DashboardPage() {
                 ) : rightPanel === 'analysis' ? (
                   <SoilAnalysisCard fieldId={activeFieldId} />
                 ) : (
-                  <RecommendationsPanel recommendations={activeRecs} />
+                  <RecommendationsPanel recommendations={activeRecs} fieldId={activeFieldId} />
                 )}
               </motion.div>
             </AnimatePresence>

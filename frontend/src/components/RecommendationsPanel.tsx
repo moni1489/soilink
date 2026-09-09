@@ -4,10 +4,12 @@ import {
   ShieldCheck, AlertTriangle, TrendingUp, FlaskConical, 
   ChevronRight, Clock, Activity, FileText, CheckCircle2 
 } from 'lucide-react';
+import { MLPredictionCard } from './MLPredictionCard';
 import type { Recommendation } from '@/types';
 
 interface RecommendationsPanelProps {
   recommendations: Recommendation[];
+  fieldId?: string;
 }
 
 const LEVEL_THEMES = {
@@ -17,41 +19,42 @@ const LEVEL_THEMES = {
   premium: { icon: FlaskConical, label: 'АНАЛИТИКА+', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
 };
 
-export function RecommendationsPanel({ recommendations }: RecommendationsPanelProps) {
-  if (recommendations.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-12 opacity-40">
-        <CheckCircle2 className="w-12 h-12 text-green-500 mb-6" />
-        <h3 className="text-[15px] font-bold">Активность в норме</h3>
-        <p className="text-[12px] text-[#6e6e73] mt-1 font-medium">Все системы работают в штатном режиме</p>
-      </div>
-    );
-  }
-
+export function RecommendationsPanel({ recommendations, fieldId }: RecommendationsPanelProps) {
   return (
-    <div className="flex flex-col gap-4 p-6 overflow-y-auto h-full scrollbar-hide">
-       <div className="flex items-center justify-between mb-2 px-1">
-          <div className="flex items-center gap-2.5">
-             <Activity className="w-4 h-4 text-[#1d1d1f]" />
-             <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">Диагностическая лента</span>
-          </div>
-          <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-widest">{recommendations.length} ЗАПИСЕЙ</span>
-       </div>
-       
-       <div className="space-y-4">
+    <div className="flex flex-col gap-4 p-4 md:p-6 overflow-y-auto h-full scrollbar-hide">
+      {/* Live ML Prediction Hub */}
+      {fieldId && <MLPredictionCard fieldId={fieldId} />}
+
+      <div className="flex items-center justify-between mb-1 px-1">
+        <div className="flex items-center gap-2.5">
+          <Activity className="w-4 h-4 text-[#1d1d1f]" />
+          <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">Агрономический протокол</span>
+        </div>
+        <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-widest">{recommendations.length} ЗАДАЧ</span>
+      </div>
+
+      {recommendations.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-8 text-center bg-[#f5f5f7] rounded-2xl border border-black/5">
+          <CheckCircle2 className="w-8 h-8 text-green-500 mb-2" />
+          <h3 className="text-[13px] font-bold">Активность в норме</h3>
+          <p className="text-[11px] text-[#6e6e73] mt-0.5">Все показатели поля находятся в оптимальных диапазонах</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
           {recommendations.map((rec, i) => (
             <motion.div key={rec.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
-               <DiagnosticCard recommendation={rec} />
+              <DiagnosticCard recommendation={rec} />
             </motion.div>
           ))}
-       </div>
+        </div>
+      )}
 
-       <div className="mt-8 p-5 bg-[#f5f5f7] rounded-2xl border border-black/5 flex gap-4">
-          <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
-          <p className="text-[11px] text-[#6e6e73] leading-relaxed font-medium">
-             Данные анализируются нейронной сетью SoilLink v4. Последнее сканирование завершено успешно. Точность модели: 96.8%.
-          </p>
-       </div>
+      <div className="mt-4 p-4 bg-[#f5f5f7] rounded-2xl border border-black/5 flex gap-3">
+        <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+        <p className="text-[11px] text-[#6e6e73] leading-relaxed font-medium">
+          Диагностика и рекомендации формируются на основе сенсорных данных поля и ансамбля ML-моделей SoilLink (LightGBM, Random Forest, XGBoost).
+        </p>
+      </div>
     </div>
   );
 }
