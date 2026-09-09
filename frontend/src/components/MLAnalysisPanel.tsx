@@ -172,18 +172,18 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           <Brain className="w-8 h-8 text-[#86868b]" />
         </div>
         <div>
-          <p className="text-[15px] font-bold text-[#1d1d1f]">Нет данных ML</p>
-          <p className="text-[12px] text-[#6e6e73] mt-1 font-medium">
-            Нет предсказаний для этого поля. Запустите инференс вручную.
+          <p className="text-[15px] font-bold text-[#1d1d1f]">ML-анализ ещё не запускался</p>
+          <p className="text-[12px] text-[#6e6e73] mt-1 font-medium leading-relaxed">
+            Нажмите кнопку ниже чтобы запустить предсказание по текущим данным датчиков
           </p>
         </div>
         <button
           onClick={runInference}
           disabled={running}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#1d1d1f] text-white rounded-full text-[12px] font-bold shadow-lg hover:bg-black active:scale-95 transition-all disabled:opacity-50"
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#f5f5f7] border border-black/10 text-[#1d1d1f] rounded-full text-[12px] font-bold hover:bg-black/5 active:scale-95 transition-all disabled:opacity-50"
         >
-          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
-          {running ? 'Анализ...' : 'Запустить ML анализ'}
+          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4 text-blue-500" />}
+          {running ? 'Запуск анализа...' : 'Запустить ML анализ'}
         </button>
       </div>
     );
