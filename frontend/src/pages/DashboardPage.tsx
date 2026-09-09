@@ -5,6 +5,7 @@ import { ChatInterface } from '@/components/ChatInterface';
 import { ComparisonModal } from '@/components/ComparisonModal';
 import { DepthProfileModal } from '@/components/DepthProfileModal';
 import { RecommendationsPanel } from '@/components/RecommendationsPanel';
+import { MLAnalysisPanel } from '@/components/MLAnalysisPanel';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -20,7 +21,7 @@ import type { Sensor, SoilZone, MapMode, SoilDepth, WeatherData } from '@/types'
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 import { fetchRealWeather } from '@/services/weatherService';
 
-type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | null;
+type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | 'ml' | null;
 
 export function DashboardPage() {
   const isMobile = useIsMobile();
@@ -226,16 +227,17 @@ export function DashboardPage() {
         })}
       </div>
 
-      {/* Mobile View Switcher — Карта / Инсайты / Чат / Почва */}
-      <div className="md:hidden flex-shrink-0 flex items-center gap-1 px-2 py-2 bg-white border-b border-black/5 z-20">
+      {/* Mobile View Switcher — Карта / Инсайты / ML / Чат / Почва */}
+      <div className="md:hidden flex-shrink-0 flex items-center gap-1 px-2 py-2 bg-white border-b border-black/5 z-20 overflow-x-auto scrollbar-hide">
         {([
           ['map', MapIcon, 'Карта'],
           ['recommendations', Zap, 'Инсайты'],
+          ['ml', BarChart3, 'ML'],
           ['chat', MessageSquare, 'Чат'],
           ['analysis', Layers, 'Почва'],
         ] as [RightPanel, typeof MapIcon, string][]).map(([key, Icon, label]) => (
           <button key={key} onClick={() => setRightPanel(key)}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-xl transition-all ${rightPanel === key ? 'bg-[#f5f5f7] text-[#1d1d1f]' : 'text-[#86868b]'}`}
+            className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-xl transition-all ${rightPanel === key ? 'bg-[#f5f5f7] text-[#1d1d1f]' : 'text-[#86868b]'}`}
           >
             <Icon className="w-4 h-4" />
             <span className="text-[9px] font-black uppercase tracking-wider">{label}</span>
@@ -364,18 +366,22 @@ export function DashboardPage() {
         </div>
 
         <div className={`w-full md:w-[420px] ${isMobile ? (rightPanel === 'map' ? 'hidden' : 'flex-1') : 'flex-1 md:flex-none'} min-h-0 md:flex-shrink-0 flex flex-col border-t md:border-t-0 md:border-l border-black/5 bg-white relative`}>
-          <div className="hidden md:flex h-14 md:h-16 items-center gap-1 px-4 border-b border-black/5 bg-[#fbfbfd]">
-            <button onClick={() => setRightPanel('recommendations')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all ${rightPanel === 'recommendations' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
-              <Zap className="w-4 h-4" />
-              <span className="text-[11px] font-black uppercase tracking-wider">Инсайты</span>
+          <div className="hidden md:flex h-14 md:h-16 items-center gap-0.5 px-2 border-b border-black/5 bg-[#fbfbfd] overflow-x-auto scrollbar-hide">
+            <button onClick={() => setRightPanel('recommendations')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'recommendations' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
+              <Zap className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-black uppercase tracking-wider">Инсайты</span>
             </button>
-            <button onClick={() => setRightPanel('chat')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all ${rightPanel === 'chat' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
-              <MessageSquare className="w-4 h-4" />
-              <span className="text-[11px] font-black uppercase tracking-wider">Чат</span>
+            <button onClick={() => setRightPanel('ml')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'ml' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-black uppercase tracking-wider">ML</span>
             </button>
-            <button onClick={() => setRightPanel('analysis')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all ${rightPanel === 'analysis' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
-              <Layers className="w-4 h-4" />
-              <span className="text-[11px] font-black uppercase tracking-wider">Почва</span>
+            <button onClick={() => setRightPanel('chat')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'chat' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-black uppercase tracking-wider">Чат</span>
+            </button>
+            <button onClick={() => setRightPanel('analysis')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'analysis' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
+              <Layers className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-black uppercase tracking-wider">Почва</span>
             </button>
           </div>
           <div className="flex-1 overflow-hidden">
@@ -385,6 +391,8 @@ export function DashboardPage() {
                   <ChatInterface isOpen={true} onClose={() => setRightPanel(null)} context={{ field: activeField, sensors: activeSensors }} />
                 ) : rightPanel === 'analysis' ? (
                   <SoilAnalysisCard fieldId={activeFieldId} />
+                ) : rightPanel === 'ml' ? (
+                  <MLAnalysisPanel fieldId={activeFieldId} />
                 ) : (
                   <RecommendationsPanel recommendations={activeRecs} fieldId={activeFieldId} />
                 )}
