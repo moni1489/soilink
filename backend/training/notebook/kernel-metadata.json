@@ -1,5 +1,5 @@
 {
-  "id": "YOUR_KAGGLE_USERNAME/soilink-soil-state-models",
+  "id": "superduperspacezebra/soilink-soil-state-models",
   "title": "Soilink: Soil State Models",
   "code_file": "soilink_soil_models.ipynb",
   "language": "python",
@@ -7,7 +7,7 @@
   "is_private": true,
   "enable_gpu": false,
   "enable_internet": false,
-  "dataset_sources": ["YOUR_KAGGLE_USERNAME/kazakhstan-soil-transect"],
+  "dataset_sources": ["superduperspacezebra/kazakhstan-soil-transect"],
   "competition_sources": [],
   "kernel_sources": []
 }
