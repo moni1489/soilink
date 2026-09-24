@@ -1,0 +1,37 @@
+# Локальная разработка: PostgreSQL для бэкенда.
+#   docker compose up -d db          — только база (бэкенд и фронтенд запускаются локально)
+#   docker compose --profile app up -d --build — база + собранное приложение на http://localhost:8000
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: soilink
+      POSTGRES_PASSWORD: soilink
+      POSTGRES_DB: soilink
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soilink -d soilink"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    profiles: ["app"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://soilink:soilink@db:5432/soilink
+    env_file:
+      - path: backend/.env
+        required: false
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

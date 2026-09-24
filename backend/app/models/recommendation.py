@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, Integer, JSON
-from app.core.db import Base
+from sqlalchemy import Column, String, DateTime, Integer
+from app.core.db import Base, JSONType
 
 
 class Recommendation(Base):
@@ -14,5 +14,5 @@ class Recommendation(Base):
     message_key = Column(String, nullable=False)
     title_text = Column(String, nullable=False)
     message_text = Column(String, nullable=False)
-    timeline = Column(JSON, default=list)
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    timeline = Column(JSONType, default=list)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

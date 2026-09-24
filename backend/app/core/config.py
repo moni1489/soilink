@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./soilink.db"
+    DATABASE_URL: str = "postgresql+psycopg://soilink:soilink@localhost:5432/soilink"
     ML_MODELS_DIR: str = "ml_models"
     GEMINI_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""

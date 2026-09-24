@@ -20,11 +20,26 @@ Follow these steps to run the backend and frontend of the SoiLink project.
     pip install -r requirements.txt
     ```
 
-4.  **Configure Environment**:
-    - Copy `.env.example` to `.env` if it doesn't exist.
-    - Ensure your `GOOGLE_API_KEY` (Gemini) is set for the AI chat features.
+4.  **Start PostgreSQL** (из корня репозитория, нужен Docker):
+    ```bash
+    docker compose up -d db
+    ```
+    База: `soilink` / пользователь `soilink` / пароль `soilink`, порт `5432`. Данные хранятся в томе `pgdata`.
 
-5.  **Run the server**:
+5.  **Configure Environment** — в `backend/.env`:
+    ```env
+    DATABASE_URL=postgresql+psycopg://soilink:soilink@localhost:5432/soilink
+    ```
+    Ссылки вида `postgres://…` (Fly, Heroku) тоже подходят — драйвер подставится автоматически.
+    Для AI-чата нужен `GOOGLE_API_KEY` (Gemini).
+
+6.  **Seed the database** (повторный запуск безопасен):
+    ```bash
+    python seed_db.py
+    ```
+    Перенести данные из старой SQLite-базы: `python migrate_sqlite_to_postgres.py soilink.db`.
+
+7.  **Run the server**:
     ```bash
     uvicorn app.main:app --reload --port 8000
     ```

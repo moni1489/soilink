@@ -9,7 +9,7 @@ class SensorReading(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     sensor_id = Column(String, nullable=False, index=True)
     field_id = Column(String, nullable=False, index=True)
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     ph = Column(Float)
     soil_temperature = Column(Float)
     soil_moisture = Column(Float)

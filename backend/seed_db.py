@@ -1,6 +1,6 @@
 import sys
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Add the backend directory to sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -32,8 +32,11 @@ def seed():
             print(f"Created field: {f_info['id']}")
 
     # 2. Add Sensor Readings
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
+    # Сид запускается при каждом старте контейнера — добавляем данные только в пустые поля
     for field_id in ["f-1", "field-1"]:
+        if db.query(SensorReading).filter(SensorReading.field_id == field_id).first():
+            continue
         for i in range(10):
             reading = SensorReading(
                 field_id=field_id,
@@ -52,6 +55,8 @@ def seed():
     
     # 3. Add Predictions & Recommendations
     for f_id in ["f-1", "field-1"]:
+        if db.query(Prediction).filter(Prediction.field_id == f_id).first():
+            continue
         prediction = Prediction(
             field_id=f_id,
             timestamp=now,
