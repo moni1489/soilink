@@ -70,6 +70,12 @@ export function canViewTask(user: User, task: WateringEvent) {
   return canViewField(user, task.fieldId);
 }
 
+/** Выгрузка данных почвы и ML-предсказаний файлом — специалисты и руководитель */
+export function canExportData(user: User) {
+  const level = levelOf(user);
+  return level === 'full' || level === 'specialist';
+}
+
 /** Планирование (создание / изменение нормы, сроков) — только своя область */
 export function canPlanTask(user: User, type: TaskType) {
   return ROLES[user.role].domains.includes(type);

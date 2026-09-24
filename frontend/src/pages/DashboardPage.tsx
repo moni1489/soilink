@@ -12,7 +12,7 @@ import {
   Map as MapIcon, MessageSquare, Layers, BarChart3,
   TrendingUp, AlertTriangle, ChevronDown, X, Droplet,
   Thermometer, FlaskConical, Settings2, Info,
-  Activity, Zap, ShieldCheck, Maximize2, Minimize2
+  Activity, Zap, ShieldCheck, Maximize2, Minimize2, Download
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
@@ -21,7 +21,8 @@ import type { Sensor, SoilZone, MapMode, SoilDepth, WeatherData } from '@/types'
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 import { fetchRealWeather } from '@/services/weatherService';
 import { useUser } from '@/auth/useAuth';
-import { canViewField } from '@/auth/roles';
+import { canViewField, canExportData } from '@/auth/roles';
+import { ExportDataModal } from '@/components/ExportDataModal';
 
 type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | 'ml' | null;
 
@@ -43,6 +44,7 @@ export function DashboardPage() {
   const [mapFullscreen, setMapFullscreen] = useState(false);
 
   const [zoneDropdown, setZoneDropdown] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   useEffect(() => {
     if (!mapFullscreen) return;
@@ -187,6 +189,14 @@ export function DashboardPage() {
           >
             <Activity className="w-3.5 h-3.5" /> NDVI
           </button>
+
+          {canExportData(user) && (
+            <button onClick={() => setExportOpen(true)} title="Выгрузить данные почвы и предсказания файлом"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border flex-shrink-0 whitespace-nowrap bg-white border-black/10 text-[#6e6e73] hover:border-[#0071e3] hover:text-[#0071e3]"
+            >
+              <Download className="w-3.5 h-3.5" /> Экспорт
+            </button>
+          )}
         </div>
 
         <div className="flex-1 hidden md:block" />
@@ -409,6 +419,11 @@ export function DashboardPage() {
       <SensorPanel isOpen={!!selectedSensor} sensor={selectedSensor} onClose={() => setSelectedSensor(null)} />
       <ComparisonModal isOpen={comparisonOpen} sensor={selectedSensor} depth={selectedDepth} onClose={() => setComparisonOpen(false)} />
       <DepthProfileModal isOpen={depthProfileOpen} onClose={() => setDepthProfileOpen(false)} />
+      {canExportData(user) && (
+        <ExportDataModal isOpen={exportOpen} onClose={() => setExportOpen(false)}
+          activeField={activeField} fields={visibleFields} exportedBy={user.name}
+        />
+      )}
     </div>
   );
 }
