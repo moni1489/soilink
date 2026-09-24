@@ -20,12 +20,16 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Sensor, SoilZone, MapMode, SoilDepth, WeatherData } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 import { fetchRealWeather } from '@/services/weatherService';
+import { useUser } from '@/auth/useAuth';
+import { canViewField } from '@/auth/roles';
 
 type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | 'ml' | null;
 
 export function DashboardPage() {
   const isMobile = useIsMobile();
-  const [activeFieldId, setActiveFieldId] = useState(fields[0].id);
+  const user = useUser();
+  const visibleFields = useMemo(() => fields.filter(f => canViewField(user, f.id)), [user]);
+  const [activeFieldId, setActiveFieldId] = useState((visibleFields[0] ?? fields[0]).id);
   const [activeZoneFilter, setActiveZoneFilter] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<MapMode>('heatmap');
   const [selectedDepth, setSelectedDepth] = useState<SoilDepth>('0-5cm');
@@ -54,7 +58,7 @@ export function DashboardPage() {
     return () => clearTimeout(t);
   }, [mapFullscreen]);
 
-  const activeField = useMemo(() => fields.find(f => f.id === activeFieldId) ?? fields[0], [activeFieldId]);
+  const activeField = useMemo(() => visibleFields.find(f => f.id === activeFieldId) ?? visibleFields[0] ?? fields[0], [visibleFields, activeFieldId]);
   const activeSensors = useMemo(() => sensors.filter(s => s.fieldId === activeFieldId), [activeFieldId]);
   const allFieldZones = useMemo(() => zones.filter(z => z.fieldId === activeFieldId), [activeFieldId]);
   const activeZones = useMemo(() => activeZoneFilter ? allFieldZones.filter(z => z.id === activeZoneFilter) : allFieldZones, [allFieldZones, activeZoneFilter]);
@@ -112,7 +116,7 @@ export function DashboardPage() {
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
                     className="absolute top-full left-0 mt-2 w-64 max-w-[calc(100vw-32px)] bg-white border border-black/10 rounded-xl shadow-2xl z-50 p-1.5"
                   >
-                    {fields.map(f => (
+                    {visibleFields.map(f => (
                       <button key={f.id} onClick={() => { setActiveFieldId(f.id); setActiveZoneFilter(null); setFieldDropdown(false); }}
                         className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeFieldId === f.id ? 'font-bold bg-black/5' : ''}`}
                       >

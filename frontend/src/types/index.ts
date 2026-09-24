@@ -59,12 +59,20 @@ export interface Prediction {
   lastUpdated: string; isHistorical?: boolean; historicalDate?: number;
 }
 
+export type TaskType = 'water' | 'fertilizer' | 'protection';
+export type TaskStatus = 'scheduled' | 'in_progress' | 'completed' | 'missed';
+
 export interface WateringEvent {
   id: string; date: Date; fieldId: string;
   sector: string; crop: string; managerName: string; managerAvatar: string;
-  type: 'water' | 'fertilizer'; volume: string;
-  duration: number; status: 'completed' | 'scheduled' | 'missed';
+  type: TaskType; volume: string;
+  duration: number; status: TaskStatus;
   targetMoisture: number;
+  /** Исполнитель-подрядчик (id аккаунта) */
+  assigneeId?: string;
+  /** Фактически внесённый объём */
+  factVolume?: string;
+  confirmedAt?: Date;
 }
 
 export interface ChatMessage {

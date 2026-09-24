@@ -1,5 +1,5 @@
 import { addDays, subHours, format } from 'date-fns';
-import type { Field, Sensor, SoilZone, Recommendation, Prediction, StatisticCard, ScannerData, WeatherData } from '@/types';
+import type { WateringEvent, Field, Sensor, SoilZone, Recommendation, Prediction, StatisticCard, ScannerData, WeatherData } from '@/types';
 
 // Реальные сельхозугодья южнее Усть-Каменогорска (Ertis / Tishinka area)
 export const fields: Field[] = [
@@ -200,28 +200,22 @@ export const getTemperatureHistory = (sensorId: string, timeframe: '24h' | '7d' 
   }));
 };
 
-export const generateWateringEvents = (fieldId: string) => {
-  return [
-    {
-      id: `w-${fieldId}-1`, fieldId,
-      date: subHours(new Date(), 2),
-      sector: 'Зона А', crop: 'Пшеница',
-      managerName: 'Алексей Н.', managerAvatar: 'https://i.pravatar.cc/150?u=1',
-      type: 'water' as const, volume: '15 л/м²', duration: 45, status: 'completed' as const, targetMoisture: 45,
-    },
-    {
-      id: `w-${fieldId}-2`, fieldId,
-      date: addDays(new Date(), 0),
-      sector: 'Зона Юг', crop: 'Пшеница',
-      managerName: 'Алексей Н.', managerAvatar: 'https://i.pravatar.cc/150?u=1',
-      type: 'water' as const, volume: '20 л/м²', duration: 60, status: 'scheduled' as const, targetMoisture: 50,
-    },
-    {
-      id: `w-${fieldId}-3`, fieldId,
-      date: addDays(new Date(), 1),
-      sector: 'Зона Б', crop: 'Пшеница',
-      managerName: 'Иван К.', managerAvatar: 'https://i.pravatar.cc/150?u=2',
-      type: 'fertilizer' as const, volume: '5 г/м²', duration: 30, status: 'scheduled' as const, targetMoisture: 40,
-    },
-  ];
-};
+const task = (
+  id: string, fieldId: string, date: Date, sector: string, crop: string,
+  managerName: string, type: WateringEvent['type'], volume: string, duration: number,
+  status: WateringEvent['status'], assigneeId?: string, factVolume?: string,
+): WateringEvent => ({
+  id, fieldId, date, sector, crop, managerName,
+  managerAvatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(managerName)}`,
+  type, volume, duration, status, targetMoisture: 50, assigneeId, factVolume,
+});
+
+export const generateTasks = (): WateringEvent[] => [
+  task('t-1', 'f-1', subHours(new Date(), 2),  'Зона А', 'Пшеница',     'Дмитрий К.', 'water',      '15 л/м²',  45, 'completed',   'u-contractor', '14 л/м²'),
+  task('t-2', 'f-1', addDays(new Date(), 0),   'Зона Б — Юг', 'Пшеница', 'Дмитрий К.', 'water',      '20 л/м²',  60, 'in_progress', 'u-contractor'),
+  task('t-3', 'f-1', addDays(new Date(), 0),   'Зона В', 'Ячмень',      'Айгерим С.', 'protection', '0.3 л/га', 50, 'scheduled',   'u-contractor2'),
+  task('t-4', 'f-1', addDays(new Date(), 1),   'Зона Б', 'Пшеница',     'Мария К.',   'fertilizer', '5 г/м²',   30, 'scheduled'),
+  task('t-5', 'f-2', addDays(new Date(), 0),   'Сектор Alpha', 'Рапс',  'Дмитрий К.', 'water',      '18 л/м²',  40, 'scheduled',   'u-contractor2'),
+  task('t-6', 'f-2', addDays(new Date(), 2),   'Сектор Beta', 'Рапс',   'Мария К.',   'fertilizer', '120 кг/га', 90, 'scheduled',  'u-contractor'),
+  task('t-7', 'f-2', subHours(new Date(), 26), 'Сектор Alpha', 'Рапс',  'Айгерим С.', 'protection', '0.2 л/га', 35, 'missed'),
+];

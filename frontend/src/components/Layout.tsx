@@ -1,19 +1,30 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Leaf, Map as MapIcon, Calendar, Cog, Bell, Search, Menu, Command } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Leaf, Map as MapIcon, Calendar, Cog, Bell, Search, Command, LogOut } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
-
-const NAV = [
-  { to: '/', icon: MapIcon, label: 'Обзор поля' },
-  { to: '/schedule', icon: Calendar, label: 'Календарь задач' },
-  { to: '/settings', icon: Cog, label: 'Управление' },
-];
+import { useAuth, useUser } from '@/auth/useAuth';
+import { initials } from '@/auth/accounts';
+import { ROLES, canViewDashboard } from '@/auth/roles';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const user = useUser();
   const [showNotifications, setShowNotifications] = useState(false);
   const isMobile = useIsMobile();
+
+  const isContractor = ROLES[user.role].level === 'contractor';
+  const NAV = [
+    ...(canViewDashboard(user) ? [{ to: '/', icon: MapIcon, label: 'Обзор поля' }] : []),
+    { to: '/schedule', icon: Calendar, label: isContractor ? 'Мои задания' : 'Календарь задач' },
+    { to: '/settings', icon: Cog, label: isContractor ? 'Профиль' : 'Управление' },
+  ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f5f5f7] text-[#1d1d1f] font-sans">
@@ -46,17 +57,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-4 border-t border-black/5">
-           <div className="flex items-center gap-3 p-2 hover:bg-black/5 rounded-xl transition-all cursor-pointer">
-              <img
-                src="https://i.pravatar.cc/150?u=agronomist"
-                alt="Profile"
-                className="w-8 h-8 rounded-full border border-black/10"
-                onError={e => { (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=Admin&background=0071e3&color=fff'; }}
-              />
-              <div className="flex flex-col min-w-0">
-                <p className="text-[12px] font-semibold truncate">monya</p>
-                <p className="text-[10px] text-[#6e6e73]">Администратор</p>
+           <div className="flex items-center gap-3 p-2 rounded-xl">
+              <div className="w-8 h-8 rounded-full bg-[#0071e3] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+                {initials(user.name)}
               </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <p className="text-[12px] font-semibold truncate">{user.name}</p>
+                <p className="text-[10px] text-[#6e6e73] truncate">{user.company ?? ROLES[user.role].label}</p>
+              </div>
+              <button onClick={handleLogout} title="Выйти" aria-label="Выйти"
+                className="p-1.5 rounded-lg text-[#86868b] hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
            </div>
         </div>
       </aside>
@@ -71,7 +84,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                </div>
              )}
              <h1 className="text-[14px] md:text-[15px] font-semibold truncate">
-                {pathname === '/' ? 'Мониторинг' : pathname === '/schedule' ? 'Операции' : 'Настройки'}
+                {pathname === '/' ? 'Мониторинг' : pathname === '/schedule' ? (isContractor ? 'Мои задания' : 'Операции') : 'Настройки'}
              </h1>
              <div className="hidden sm:block w-px h-4 bg-black/10" />
              <div className="hidden sm:flex items-center gap-1.5">
@@ -120,6 +133,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </>
               )}
             </div>
+            {isMobile && (
+              <button onClick={handleLogout} aria-label="Выйти" className="p-2 hover:bg-red-50 rounded-lg text-[#6e6e73] hover:text-red-500 transition-all">
+                <LogOut className="w-4.5 h-4.5" />
+              </button>
+            )}
           </div>
         </header>
 

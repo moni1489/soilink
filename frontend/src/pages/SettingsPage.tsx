@@ -1,9 +1,18 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Bell, Shield, Database, Smartphone, Globe, Save } from 'lucide-react';
+import { User, Bell, Shield, Database, Save } from 'lucide-react';
+import { useUser } from '@/auth/useAuth';
+import { initials } from '@/auth/accounts';
+import { ROLES, ACCESS_LEVELS, TASK_TYPE_LABELS } from '@/auth/roles';
+import { fields } from '@/data/mockData';
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
+  const user = useUser();
+  const role = ROLES[user.role];
+  const scope = role.level === 'field'
+    ? fields.filter(f => user.assignedFieldIds?.includes(f.id)).map(f => f.name).join(', ')
+    : role.level === 'contractor' ? 'Назначенные задания' : 'Все поля';
 
   const tabs = [
     { id: 'profile', icon: User, label: 'Профиль' },
@@ -39,32 +48,42 @@ export function SettingsPage() {
               <div className="space-y-6 sm:space-y-8">
                 <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-black/5 text-center sm:text-left">
                   <div className="relative">
-                    <img src="https://i.pravatar.cc/150?u=agronomist" alt="Profile" className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-white shadow-md object-cover" onError={e => { (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=Admin&background=0071e3&color=fff'; }} />
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-white shadow-md bg-[#0071e3] text-white flex items-center justify-center text-2xl font-bold">{initials(user.name)}</div>
                     <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full border border-black/10 shadow-sm flex items-center justify-center hover:bg-black/5">📷</button>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-[#1d1d1f]">monya</h2>
-                    <p className="text-[#6e6e73] text-[13px] font-medium">Администратор системы • SoiLink Усть-Каменогорск</p>
+                    <h2 className="text-xl font-bold text-[#1d1d1f]">{user.name}</h2>
+                    <p className="text-[#6e6e73] text-[13px] font-medium">{user.company ?? role.label} • SoiLink Усть-Каменогорск</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider">Имя пользователя</label>
-                    <input type="text" defaultValue="monya" className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" />
+                    <input type="text" defaultValue={user.login} className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider">Роль</label>
-                    <input type="text" defaultValue="Администратор" disabled className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] text-[#86868b] cursor-not-allowed" />
+                    <input type="text" defaultValue={role.label} disabled className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] text-[#86868b] cursor-not-allowed" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider">Email</label>
-                    <input type="email" defaultValue="admin@soilink.kz" className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" />
+                    <input type="email" defaultValue={user.email} className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider">Телефон</label>
-                    <input type="tel" defaultValue="+7 (705) 123-45-67" className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" />
+                    <input type="tel" defaultValue={user.phone} className="w-full h-11 px-4 rounded-xl bg-[#f5f5f7] border-transparent font-bold text-[14px] focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all" />
                   </div>
+                </div>
+
+                <div className="rounded-2xl bg-[#f5f5f7] p-4 sm:p-5 space-y-2">
+                  <p className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider flex items-center gap-2"><Shield className="w-3.5 h-3.5" /> Уровень доступа</p>
+                  <p className="text-[14px] font-bold">{ACCESS_LEVELS[role.level].label}</p>
+                  <p className="text-[12px] text-[#6e6e73]">{ACCESS_LEVELS[role.level].description}</p>
+                  <p className="text-[12px] text-[#6e6e73]">Область видимости: <b className="text-[#1d1d1f]">{scope}</b></p>
+                  {role.domains.length > 0 && (
+                    <p className="text-[12px] text-[#6e6e73]">Может планировать: <b className="text-[#1d1d1f]">{role.domains.map(d => TASK_TYPE_LABELS[d]).join(', ')}</b></p>
+                  )}
                 </div>
 
                 <div className="pt-6 border-t border-black/5 flex justify-end">
