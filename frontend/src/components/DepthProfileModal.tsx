@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { X, Layers, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { SoilDepth } from '@/types';
@@ -9,21 +10,21 @@ interface DepthProfileModalProps {
   onClose: () => void;
 }
 
-const DEPTHS: { key: SoilDepth; label: string }[] = [
-  { key: '0-5cm', label: '0-5 см' },
-  { key: '5-15cm', label: '5-15 см' },
-  { key: '15-30cm', label: '15-30 см' },
-  { key: '30-60cm', label: '30-60 см' },
-  { key: '60-100cm', label: '60-100 см' },
+const DEPTH_KEYS: { key: SoilDepth; range: string }[] = [
+  { key: '0-5cm', range: '0-5' },
+  { key: '5-15cm', range: '5-15' },
+  { key: '15-30cm', range: '15-30' },
+  { key: '30-60cm', range: '30-60' },
+  { key: '60-100cm', range: '60-100' },
 ];
 
-const PROPS = [
-  { key: 'phh2o', label: 'pH Почвы', color: '#af52de' },
-  { key: 'nitrogen', label: 'Азот (N)', color: '#0071e3' },
-  { key: 'soc', label: 'Углерод (SOC)', color: '#34c759' },
-  { key: 'clay_content', label: 'Глина (%)', color: '#ff9500' },
-  { key: 'sand_content', label: 'Песок (%)', color: '#f97316' },
-  { key: 'bdod', label: 'Плотность', color: '#ff3b30' },
+const PROP_KEYS = [
+  { key: 'phh2o', color: '#af52de' },
+  { key: 'nitrogen', color: '#0071e3' },
+  { key: 'soc', color: '#34c759' },
+  { key: 'clay_content', color: '#ff9500' },
+  { key: 'sand_content', color: '#f97316' },
+  { key: 'bdod', color: '#ff3b30' },
 ];
 
 const ttStyle = { 
@@ -36,6 +37,9 @@ const ttStyle = {
 };
 
 export function DepthProfileModal({ isOpen, onClose }: DepthProfileModalProps) {
+  const { t } = useTranslation();
+  const DEPTHS = DEPTH_KEYS.map(({ key, range }) => ({ key, label: t('depth.cm', { range }) }));
+  const PROPS = PROP_KEYS.map(({ key, color }) => ({ key, color, label: t(`depth.props.${key}`) }));
   return (
     <AnimatePresence>
       {isOpen && (
@@ -49,7 +53,7 @@ export function DepthProfileModal({ isOpen, onClose }: DepthProfileModalProps) {
             <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-black/5 flex items-center justify-between flex-shrink-0 bg-[#fbfbfd]">
               <div className="flex items-center gap-3 min-w-0">
                 <Layers className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                <h2 className="text-[13px] sm:text-[15px] font-bold tracking-tight text-[#1d1d1f] truncate">Вертикальный сканер горизонтов</h2>
+                <h2 className="text-[13px] sm:text-[15px] font-bold tracking-tight text-[#1d1d1f] truncate">{t('depth.title')}</h2>
               </div>
               <button onClick={onClose} className="p-1.5 hover:bg-black/5 rounded-lg transition-all text-[#86868b] flex-shrink-0">
                 <X className="w-5 h-5" />
@@ -62,7 +66,7 @@ export function DepthProfileModal({ isOpen, onClose }: DepthProfileModalProps) {
                 <table className="w-full min-w-[700px] table-fixed border-collapse bg-white">
                   <thead>
                     <tr className="bg-[#f5f5f7] border-b border-black/5">
-                      <th className="w-32 px-6 py-4 text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider text-left">Горизонт</th>
+                      <th className="w-32 px-6 py-4 text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider text-left">{t('depth.horizonCol')}</th>
                       {PROPS.map(p => (
                         <th key={p.key} className="px-4 py-4 text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider text-center">{p.label}</th>
                       ))}
@@ -121,8 +125,8 @@ export function DepthProfileModal({ isOpen, onClose }: DepthProfileModalProps) {
             {/* Technical Footer */}
             <div className="px-4 sm:px-8 py-3 sm:py-4 border-t border-black/5 bg-[#f5f5f7] flex flex-wrap items-center justify-between gap-2 text-[9px] sm:text-[10px] text-[#86868b] font-bold uppercase tracking-widest">
                <div className="flex gap-4 sm:gap-6">
-                  <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> Калибровка: Активна</span>
-                  <span className="hidden sm:inline">Аппаратная версия: V4.2</span>
+                  <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> {t('depth.calibrationActive')}</span>
+                  <span className="hidden sm:inline">{t('depth.hwVersion')}</span>
                </div>
                <span className="hidden sm:inline">SoiLink Precision Vertical Probe</span>
             </div>

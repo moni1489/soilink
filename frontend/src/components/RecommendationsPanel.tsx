@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldCheck, AlertTriangle, TrendingUp, FlaskConical, 
@@ -13,13 +14,14 @@ interface RecommendationsPanelProps {
 }
 
 const LEVEL_THEMES = {
-  critical: { icon: ShieldCheck, label: 'ПРИОРИТЕТ', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
-  warning: { icon: AlertTriangle, label: 'МОНИТОРИНГ', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
-  plan: { icon: TrendingUp, label: 'ОПТИМИЗАЦИЯ', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-  premium: { icon: FlaskConical, label: 'АНАЛИТИКА+', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+  critical: { icon: ShieldCheck, labelKey: 'rec.priority', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
+  warning: { icon: AlertTriangle, labelKey: 'rec.monitoring', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+  plan: { icon: TrendingUp, labelKey: 'rec.optimization', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+  premium: { icon: FlaskConical, labelKey: 'rec.analytics', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
 };
 
 export function RecommendationsPanel({ recommendations, fieldId }: RecommendationsPanelProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6 overflow-y-auto h-full scrollbar-hide">
       {/* Live ML Prediction Hub */}
@@ -28,16 +30,16 @@ export function RecommendationsPanel({ recommendations, fieldId }: Recommendatio
       <div className="flex items-center justify-between mb-1 px-1">
         <div className="flex items-center gap-2.5">
           <Activity className="w-4 h-4 text-[#1d1d1f]" />
-          <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">Агрономический протокол</span>
+          <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">{t('rec.protocolTitle')}</span>
         </div>
-        <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-widest">{recommendations.length} ЗАДАЧ</span>
+        <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-widest">{t('rec.tasks', { count: recommendations.length })}</span>
       </div>
 
       {recommendations.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-8 text-center bg-[#f5f5f7] rounded-2xl border border-black/5">
           <CheckCircle2 className="w-8 h-8 text-green-500 mb-2" />
-          <h3 className="text-[13px] font-bold">Активность в норме</h3>
-          <p className="text-[11px] text-[#6e6e73] mt-0.5">Все показатели поля находятся в оптимальных диапазонах</p>
+          <h3 className="text-[13px] font-bold">{t('rec.allNormal')}</h3>
+          <p className="text-[11px] text-[#6e6e73] mt-0.5">{t('rec.allNormalBody')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -52,7 +54,7 @@ export function RecommendationsPanel({ recommendations, fieldId }: Recommendatio
       <div className="mt-4 p-4 bg-[#f5f5f7] rounded-2xl border border-black/5 flex gap-3">
         <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
         <p className="text-[11px] text-[#6e6e73] leading-relaxed font-medium">
-          Диагностика и рекомендации формируются на основе сенсорных данных поля и ансамбля ML-моделей SoilLink (LightGBM, Random Forest, XGBoost).
+          {t('rec.mlNote')}
         </p>
       </div>
     </div>
@@ -60,6 +62,7 @@ export function RecommendationsPanel({ recommendations, fieldId }: Recommendatio
 }
 
 function DiagnosticCard({ recommendation }: { recommendation: Recommendation }) {
+  const { t, i18n } = useTranslation();
   const [expanded, setExpanded] = useState(recommendation.level === 'critical');
   const theme = LEVEL_THEMES[recommendation.level];
   const Icon = theme.icon;
@@ -75,14 +78,14 @@ function DiagnosticCard({ recommendation }: { recommendation: Recommendation }) 
          </div>
          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1.5">
-               <span className={`text-[9px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-md ${theme.bg} ${theme.color}`}>{theme.label}</span>
+               <span className={`text-[9px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-md ${theme.bg} ${theme.color}`}>{t(theme.labelKey)}</span>
                {recommendation.timeline.length > 0 && (
                   <div className="flex-1 h-1 bg-black/5 rounded-full overflow-hidden max-w-[60px]">
                      <div className={`h-full ${theme.color.replace('text-', 'bg-')}`} style={{ width: `${progress}%` }} />
                   </div>
                )}
             </div>
-            <p className="text-[14px] font-bold text-[#1d1d1f] leading-tight tracking-tight">{recommendation.titleKey}</p>
+            <p className="text-[14px] font-bold text-[#1d1d1f] leading-tight tracking-tight">{t(recommendation.titleKey)}</p>
          </div>
          <ChevronRight className={`w-4 h-4 text-[#86868b] transition-transform mt-3 ${expanded ? 'rotate-90' : ''}`} />
        </button>
@@ -93,30 +96,30 @@ function DiagnosticCard({ recommendation }: { recommendation: Recommendation }) 
              <div className="px-5 pb-6 pt-2 border-t border-black/5 bg-white">
                 <div className="p-4 bg-[#f5f5f7] rounded-xl mb-6">
                    <p className="text-[12px] text-[#1d1d1f] leading-relaxed font-medium italic opacity-80">
-                      "{recommendation.messageKey}"
+                      "{t(recommendation.messageKey)}"
                    </p>
                 </div>
 
                 {recommendation.timeline.length > 0 && (
                   <div className="space-y-4">
-                     <p className="text-[9px] font-bold text-[#86868b] uppercase tracking-widest px-1">Протокол действий</p>
+                     <p className="text-[9px] font-bold text-[#86868b] uppercase tracking-widest px-1">{t('rec.actionProtocol')}</p>
                      {recommendation.timeline.map((step, idx) => (
                        <div key={step.id} className="flex items-center gap-4 group">
                           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${step.completed ? 'bg-green-500 border-green-500 text-white shadow-sm' : 'border-black/10'}`}>
                              {step.completed ? <CheckCircle2 className="w-4 h-4" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
                           </div>
                           <div className="flex-1 min-w-0">
-                             <p className={`text-[12px] font-bold ${step.completed ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]'}`}>{step.labelKey}</p>
+                             <p className={`text-[12px] font-bold ${step.completed ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]'}`}>{t(step.labelKey)}</p>
                              <div className="flex items-center gap-1.5 mt-1 text-[9px] font-bold text-[#86868b] uppercase tracking-wider">
                                 <Clock className="w-3 h-3" />
-                                {new Date(step.dueAt).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                                {new Date(step.dueAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}
                              </div>
                           </div>
                        </div>
                      ))}
                   </div>
                 )}
-                <button className="w-full mt-8 py-3 bg-[#1d1d1f] text-white rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95">Принять в работу</button>
+                <button className="w-full mt-8 py-3 bg-[#1d1d1f] text-white rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95">{t('rec.accept')}</button>
              </div>
            </motion.div>
          )}

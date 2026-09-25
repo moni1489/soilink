@@ -5,7 +5,8 @@ import type { WateringEvent, Field, Sensor, SoilZone, Recommendation, Prediction
 export const fields: Field[] = [
   {
     id: 'f-1',
-    name: 'УКГ — Тишинское поле',
+    nameKey: 'data.fields.f-1.name',
+    shortKey: 'data.fields.f-1.short',
     areaHectares: 124.5,
     // Центр: южнее города, вблизи с. Тишинка
     center: { latitude: 49.9260, longitude: 82.5420 },
@@ -13,7 +14,8 @@ export const fields: Field[] = [
   },
   {
     id: 'f-2',
-    name: 'УКГ — Усть-Тарханское поле',
+    nameKey: 'data.fields.f-2.name',
+    shortKey: 'data.fields.f-2.short',
     areaHectares: 86.2,
     // Юго-восток, вблизи поймы Иртыша
     center: { latitude: 49.8920, longitude: 82.6380 },
@@ -28,17 +30,17 @@ export const weather: Record<string, WeatherData> = {
     humidity: 45,
     windSpeed: 4.2,
     forecast: [
-      { day: 'Пн', temp: 25, icon: '☀️' },
-      { day: 'Вт', temp: 26, icon: '☀️' },
-      { day: 'Ср', temp: 22, icon: '⛅' },
-      { day: 'Чт', temp: 24, icon: '☀️' },
-      { day: 'Пт', temp: 19, icon: '🌧️' },
+      { day: 'day.mon', temp: 25, icon: '☀️' },
+      { day: 'day.tue', temp: 26, icon: '☀️' },
+      { day: 'day.wed', temp: 22, icon: '⛅' },
+      { day: 'day.thu', temp: 24, icon: '☀️' },
+      { day: 'day.fri', temp: 19, icon: '🌧️' },
     ],
   },
 };
 
-const createSensor = (id: string, fieldId: string, name: string, lat: number, lng: number, status: any): Sensor => ({
-  id, fieldId, name,
+const createSensor = (id: string, fieldId: string, lat: number, lng: number, status: any): Sensor => ({
+  id, fieldId, nameKey: `data.sensors.${id}`,
   coordinates: { latitude: lat, longitude: lng },
   status,
   lastUpdated: subHours(new Date(), 1).toISOString(),
@@ -58,26 +60,26 @@ const createSensor = (id: string, fieldId: string, name: string, lat: number, ln
 
 export const sensors: Sensor[] = [
   // Field 1 — Тишинское поле (юг УКГ)
-  createSensor('s-1', 'f-1', 'Датчик 01 (Зона А — Север)', 49.9315, 82.5340, 'healthy'),
-  createSensor('s-2', 'f-1', 'Датчик 02 (Зона А — Центр)', 49.9295, 82.5370, 'warning'),
-  createSensor('s-3', 'f-1', 'Датчик 03 (Зона А — Запад)', 49.9305, 82.5295, 'healthy'),
-  createSensor('s-4', 'f-1', 'Датчик 04 (Зона Б — Юг)', 49.9270, 82.5555, 'critical'),
-  createSensor('s-5', 'f-1', 'Датчик 05 (Зона Б — Восток)', 49.9290, 82.5600, 'healthy'),
-  createSensor('s-11', 'f-1', 'Датчик 06 (Зона В — Центр)', 49.9155, 82.5340, 'healthy'),
-  createSensor('s-12', 'f-1', 'Датчик 07 (Зона В — Юг)', 49.9130, 82.5360, 'warning'),
-  createSensor('s-13', 'f-1', 'Датчик 08 (Зона В — Глубинный)', 49.9145, 82.5310, 'healthy'),
+  createSensor('s-1', 'f-1', 49.9315, 82.5340, 'healthy'),
+  createSensor('s-2', 'f-1', 49.9295, 82.5370, 'warning'),
+  createSensor('s-3', 'f-1', 49.9305, 82.5295, 'healthy'),
+  createSensor('s-4', 'f-1', 49.9270, 82.5555, 'critical'),
+  createSensor('s-5', 'f-1', 49.9290, 82.5600, 'healthy'),
+  createSensor('s-11', 'f-1', 49.9155, 82.5340, 'healthy'),
+  createSensor('s-12', 'f-1', 49.9130, 82.5360, 'warning'),
+  createSensor('s-13', 'f-1', 49.9145, 82.5310, 'healthy'),
 
   // Field 2 — Усть-Тарханское поле
-  createSensor('s-6', 'f-2', 'S-Alpha 01', 49.8940, 82.6320, 'healthy'),
-  createSensor('s-7', 'f-2', 'S-Alpha 02', 49.8910, 82.6400, 'healthy'),
-  createSensor('s-8', 'f-2', 'S-Beta 01', 49.8950, 82.6450, 'warning'),
+  createSensor('s-6', 'f-2', 49.8940, 82.6320, 'healthy'),
+  createSensor('s-7', 'f-2', 49.8910, 82.6400, 'healthy'),
+  createSensor('s-8', 'f-2', 49.8950, 82.6450, 'warning'),
 ];
 
 export const zones: SoilZone[] = [
   {
     // ЗОНА А — трапеция (шире сверху), северная часть поля
     // Расположена: ~49.928-49.935°N, 82.524-82.545°E
-    id: 'z-1', fieldId: 'f-1', name: 'Зона А (Пшеница)', color: 'green',
+    id: 'z-1', fieldId: 'f-1', nameKey: 'data.zones.z-1', color: 'green',
     healthScore: 92,
     coordinates: [
       { lng: 82.524, lat: 49.935 },
@@ -91,7 +93,7 @@ export const zones: SoilZone[] = [
   {
     // ЗОНА Б — неправильный пятиугольник, ~400м восточнее зоны А (ближе к центру экрана)
     // Расположена: ~49.923-49.935°N, 82.548-82.562°E
-    id: 'z-2', fieldId: 'f-1', name: 'Зона Б (Подсолнечник)', color: 'yellow',
+    id: 'z-2', fieldId: 'f-1', nameKey: 'data.zones.z-2', color: 'yellow',
     healthScore: 68,
     coordinates: [
       { lng: 82.549, lat: 49.933 },
@@ -105,7 +107,7 @@ export const zones: SoilZone[] = [
   {
     // ЗОНА В — Г-образная (L-shape), ~900м южнее зоны А
     // Расположена: ~49.910-49.921°N, 82.523-82.545°E
-    id: 'z-3', fieldId: 'f-1', name: 'Зона В (Пар)', color: 'red',
+    id: 'z-3', fieldId: 'f-1', nameKey: 'data.zones.z-3', color: 'red',
     healthScore: 42,
     coordinates: [
       { lng: 82.523, lat: 49.921 },
@@ -122,24 +124,24 @@ export const zones: SoilZone[] = [
 export const recommendations: Recommendation[] = [
   {
     id: 'r-1', fieldId: 'f-1', level: 'critical',
-    titleKey: 'Критический дефицит влаги',
-    messageKey: 'В зоне Юг (датчик 04) уровень влажности опустился ниже 15%. Необходим немедленный полив для предотвращения стресса растений.',
+    titleKey: 'data.recs.r-1.title',
+    messageKey: 'data.recs.r-1.message',
     sensorId: 's-4',
     timeline: [
-      { id: 't-1', labelKey: 'Проверка системы полива', dueAt: new Date().toISOString(), completed: true },
-      { id: 't-2', labelKey: 'Запуск полива сектора Юг', dueAt: addDays(new Date(), 0).toISOString(), completed: false },
+      { id: 't-1', labelKey: 'data.steps.t-1', dueAt: new Date().toISOString(), completed: true },
+      { id: 't-2', labelKey: 'data.steps.t-2', dueAt: addDays(new Date(), 0).toISOString(), completed: false },
     ],
   },
   {
     id: 'r-2', fieldId: 'f-1', level: 'warning',
-    titleKey: 'Повышение температуры почвы',
-    messageKey: 'Наблюдается аномальный рост температуры в центральном секторе. Рекомендуется мульчирование.',
+    titleKey: 'data.recs.r-2.title',
+    messageKey: 'data.recs.r-2.message',
     timeline: [],
   },
   {
     id: 'r-3', level: 'premium',
-    titleKey: 'Оптимизация азотного питания',
-    messageKey: 'AI-анализ виброакустики показывает уплотнение почвы. Рекомендуется аэрация перед следующим внесением удобрений.',
+    titleKey: 'data.recs.r-3.title',
+    messageKey: 'data.recs.r-3.message',
     timeline: [],
   },
 ];
@@ -147,21 +149,21 @@ export const recommendations: Recommendation[] = [
 export const predictions: Prediction[] = [
   {
     id: 'p-1', fieldId: 'f-1',
-    cropRecommendation: 'Озимая пшеница (Сорт "Алмаз")',
+    cropKey: 'data.predictions.p-1.crop',
     cropConfidence: 0.94,
-    fertilizerRecommendation: 'Карбамид (40 кг/га), Суперфосфат (25 кг/га)',
+    fertilizerKey: 'data.predictions.p-1.fertilizer',
     fertilizerSource: 'ml',
-    soilState: 'Оптимальное для посева',
+    soilStateKey: 'data.predictions.p-1.soilState',
     soilStateConfidence: 0.88,
     lastUpdated: new Date().toISOString(),
   },
 ];
 
 export const statistics: StatisticCard[] = [
-  { id: '1', label: 'Здоровье почвы', value: '84%' },
-  { id: '2', label: 'Влажность (ср.)', value: '42%' },
-  { id: '3', label: 'Датчиков', value: '12/12' },
-  { id: '4', label: 'Предупреждений', value: '3' },
+  { id: '1', labelKey: 'data.stats.1', value: '84%' },
+  { id: '2', labelKey: 'data.stats.2', value: '42%' },
+  { id: '3', labelKey: 'data.stats.3', value: '12/12' },
+  { id: '4', labelKey: 'data.stats.4', value: '3' },
 ];
 
 export const mockScannerData: ScannerData = {
@@ -179,7 +181,7 @@ export const getMoistureHistory = (sensorId: string, timeframe: '24h' | '7d' = '
       value: Math.round(30 + Math.sin(i / 3) * 15 + (i > 10 && i < 16 ? -5 : 0)),
     }));
   }
-  const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  const days = ['day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat', 'day.sun'];
   return days.map((day, i) => ({
     label: day,
     value: Math.round(38 + Math.sin(i * 1.3) * 12 + (i % 2 === 0 ? 5 : -3)),
@@ -193,7 +195,7 @@ export const getTemperatureHistory = (sensorId: string, timeframe: '24h' | '7d' 
       value: Number((18 + Math.sin((i - 6) * (Math.PI / 12)) * 5).toFixed(1)),
     }));
   }
-  const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  const days = ['day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat', 'day.sun'];
   return days.map((day, i) => ({
     label: day,
     value: Number((19 + Math.cos(i * 0.9) * 3.5 + (i % 2 === 0 ? 1 : -0.8)).toFixed(1)),
@@ -211,11 +213,11 @@ const task = (
 });
 
 export const generateTasks = (): WateringEvent[] => [
-  task('t-1', 'f-1', subHours(new Date(), 2),  'Зона А', 'Пшеница',     'Дмитрий К.', 'water',      '15 л/м²',  45, 'completed',   'u-contractor', '14 л/м²'),
-  task('t-2', 'f-1', addDays(new Date(), 0),   'Зона Б — Юг', 'Пшеница', 'Дмитрий К.', 'water',      '20 л/м²',  60, 'in_progress', 'u-contractor'),
-  task('t-3', 'f-1', addDays(new Date(), 0),   'Зона В', 'Ячмень',      'Айгерим С.', 'protection', '0.3 л/га', 50, 'scheduled',   'u-contractor2'),
-  task('t-4', 'f-1', addDays(new Date(), 1),   'Зона Б', 'Пшеница',     'Мария К.',   'fertilizer', '5 г/м²',   30, 'scheduled'),
-  task('t-5', 'f-2', addDays(new Date(), 0),   'Сектор Alpha', 'Рапс',  'Дмитрий К.', 'water',      '18 л/м²',  40, 'scheduled',   'u-contractor2'),
-  task('t-6', 'f-2', addDays(new Date(), 2),   'Сектор Beta', 'Рапс',   'Мария К.',   'fertilizer', '120 кг/га', 90, 'scheduled',  'u-contractor'),
-  task('t-7', 'f-2', subHours(new Date(), 26), 'Сектор Alpha', 'Рапс',  'Айгерим С.', 'protection', '0.2 л/га', 35, 'missed'),
+  task('t-1', 'f-1', subHours(new Date(), 2),  'data.sectors.zoneA',      'data.crops.wheat',    'data.managers.dmitry',  'water',      '15|unit.lm2',  45, 'completed',   'u-contractor', '14|unit.lm2'),
+  task('t-2', 'f-1', addDays(new Date(), 0),   'data.sectors.zoneBSouth', 'data.crops.wheat',    'data.managers.dmitry',  'water',      '20|unit.lm2',  60, 'in_progress', 'u-contractor'),
+  task('t-3', 'f-1', addDays(new Date(), 0),   'data.sectors.zoneV',      'data.crops.barley',   'data.managers.aigerim', 'protection', '0.3|unit.lha', 50, 'scheduled',   'u-contractor2'),
+  task('t-4', 'f-1', addDays(new Date(), 1),   'data.sectors.zoneB',      'data.crops.wheat',    'data.managers.maria',   'fertilizer', '5|unit.gm2',   30, 'scheduled'),
+  task('t-5', 'f-2', addDays(new Date(), 0),   'data.sectors.alpha',      'data.crops.rapeseed', 'data.managers.dmitry',  'water',      '18|unit.lm2',  40, 'scheduled',   'u-contractor2'),
+  task('t-6', 'f-2', addDays(new Date(), 2),   'data.sectors.beta',       'data.crops.rapeseed', 'data.managers.maria',   'fertilizer', '120|unit.kgha', 90, 'scheduled',  'u-contractor'),
+  task('t-7', 'f-2', subHours(new Date(), 26), 'data.sectors.alpha',      'data.crops.rapeseed', 'data.managers.aigerim', 'protection', '0.2|unit.lha', 35, 'missed'),
 ];

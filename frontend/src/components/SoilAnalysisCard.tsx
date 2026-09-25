@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Droplets, Thermometer, Wind, Sprout, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface SoilAnalysisProps {
   fieldId: string;
+}
+
+/** Пункт вывода в виде кода — бэкенд отдаёт его рядом с готовой строкой. */
+interface CodedItem {
+  code: string;
+  params?: Record<string, string | number>;
 }
 
 interface AnalysisData {
@@ -14,9 +21,16 @@ interface AnalysisData {
   organic_carbon_status: string;
   limitations: string[];
   recommendations: string[];
+  // Появились вместе с локализацией; у старого бэкенда их нет — тогда берём строки выше
+  texture_code?: string;
+  ph_status_code?: string;
+  organic_carbon_status_code?: string;
+  limitation_codes?: CodedItem[];
+  recommendation_codes?: CodedItem[];
 }
 
 export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
+  const { t } = useTranslation();
   const [data, setData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +42,11 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || '';
         const res = await fetch(`${apiUrl}/api/fields/${fieldId}/analysis`);
-        if (!res.ok) throw new Error('Ошибка загрузки данных');
+        if (!res.ok) throw new Error(t('soilCard.loadError'));
         const json = await res.json();
         setData(json);
       } catch (err) {
-        setError('Не удалось загрузить анализ почвы. Убедитесь, что сервер запущен.');
+        setError(t('soilCard.fetchError'));
       } finally {
         setLoading(false);
       }
@@ -66,11 +80,31 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
     );
   }
 
-  const getPhColor = (status: string) => {
-    if (status.includes('кислая')) return 'text-red-400';
-    if (status.includes('Нейтральная')) return 'text-green-400';
+  // Цвет по коду; на старом бэкенде кода нет — разбираем русский статус, как раньше
+  const phColor = (() => {
+    const code = data.ph_status_code;
+    if (code) {
+      if (code === 'strongly_acidic' || code === 'slightly_acidic') return 'text-red-400';
+      if (code === 'neutral') return 'text-green-400';
+      return 'text-yellow-400';
+    }
+    if (data.ph_status.includes('кислая')) return 'text-red-400';
+    if (data.ph_status.includes('Нейтральная')) return 'text-green-400';
     return 'text-yellow-400';
-  };
+  })();
+
+  const coded = (group: string, item: CodedItem) => t(`soilAnalysis.${group}.${item.code}`, item.params);
+  const texture = data.texture_code ? t(`soilAnalysis.texture.${data.texture_code}`) : data.texture;
+  const phStatus = data.ph_status_code ? t(`soilAnalysis.phStatus.${data.ph_status_code}`) : data.ph_status;
+  const socStatus = data.organic_carbon_status_code
+    ? t(`soilAnalysis.socStatus.${data.organic_carbon_status_code}`)
+    : data.organic_carbon_status;
+  const limitations = data.limitation_codes
+    ? data.limitation_codes.map(i => coded('limitation', i))
+    : data.limitations;
+  const recommendations = data.recommendation_codes
+    ? data.recommendation_codes.map(i => coded('recommendation', i))
+    : data.recommendations;
 
   return (
     <motion.div
@@ -83,37 +117,37 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
           <Sprout className="text-indigo-400" size={24} />
         </div>
         <div>
-          <h2 className="text-xl font-medium text-white">Агрономический Анализ</h2>
-          <p className="text-white/60 text-sm">На основе данных SoilGrids (0-5 см)</p>
+          <h2 className="text-xl font-medium text-white">{t('soilCard.title')}</h2>
+          <p className="text-white/60 text-sm">{t('soilCard.subtitle')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white/5 rounded-2xl p-4">
-          <p className="text-white/50 text-xs mb-1">Тип почвы</p>
-          <p className="text-white font-medium">{data.texture}</p>
+          <p className="text-white/50 text-xs mb-1">{t('soilCard.soilType')}</p>
+          <p className="text-white font-medium">{texture}</p>
         </div>
         <div className="bg-white/5 rounded-2xl p-4">
-          <p className="text-white/50 text-xs mb-1">Кислотность (pH)</p>
-          <p className={`font-medium ${getPhColor(data.ph_status)}`}>
-            {data.ph} <span className="text-xs opacity-70">({data.ph_status})</span>
+          <p className="text-white/50 text-xs mb-1">{t('soilCard.acidity')}</p>
+          <p className={`font-medium ${phColor}`}>
+            {data.ph} <span className="text-xs opacity-70">({phStatus})</span>
           </p>
         </div>
         <div className="bg-white/5 rounded-2xl p-4">
-          <p className="text-white/50 text-xs mb-1">Органический Углерод</p>
+          <p className="text-white/50 text-xs mb-1">{t('soilCard.organicCarbon')}</p>
           <p className="text-white font-medium">
-            {data.organic_carbon_percent}% <span className="text-xs opacity-70">({data.organic_carbon_status})</span>
+            {data.organic_carbon_percent}% <span className="text-xs opacity-70">({socStatus})</span>
           </p>
         </div>
       </div>
 
-      {data.limitations.length > 0 && (
+      {limitations.length > 0 && (
         <div className="mb-6">
           <h3 className="text-white/80 text-sm font-medium mb-3 flex items-center">
-            <AlertTriangle size={16} className="text-yellow-500 mr-2" /> Факторы риска
+            <AlertTriangle size={16} className="text-yellow-500 mr-2" /> {t('soilCard.riskFactors')}
           </h3>
           <ul className="space-y-2">
-            {data.limitations.map((limit, idx) => (
+            {limitations.map((limit, idx) => (
               <li key={idx} className="text-yellow-200/80 text-sm bg-yellow-500/10 p-3 rounded-xl">
                 {limit}
               </li>
@@ -124,10 +158,10 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
 
       <div>
         <h3 className="text-white/80 text-sm font-medium mb-3 flex items-center">
-          <CheckCircle2 size={16} className="text-green-500 mr-2" /> Рекомендации
+          <CheckCircle2 size={16} className="text-green-500 mr-2" /> {t('soilCard.recommendations')}
         </h3>
         <ul className="space-y-2">
-          {data.recommendations.map((rec, idx) => (
+          {recommendations.map((rec, idx) => (
             <li key={idx} className="text-green-200/80 text-sm bg-green-500/10 p-3 rounded-xl border border-green-500/20">
               {rec}
             </li>

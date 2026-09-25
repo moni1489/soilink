@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, FlaskConical, Activity, RefreshCw,
@@ -24,12 +25,16 @@ interface MLAnalysisPanelProps {
   fieldId: string;
 }
 
-const SOIL_STATE_THEMES: Record<string, { color: string; bg: string; label: string; icon: typeof CheckCircle2 }> = {
-  healthy:  { color: 'text-green-600',  bg: 'bg-green-50',  label: 'Здоровая',    icon: CheckCircle2 },
-  moderate: { color: 'text-blue-600',   bg: 'bg-blue-50',   label: 'Умеренная',   icon: Activity },
-  poor:     { color: 'text-orange-600', bg: 'bg-orange-50', label: 'Слабая',       icon: AlertTriangle },
-  critical: { color: 'text-red-600',    bg: 'bg-red-50',    label: 'Критическая', icon: AlertTriangle },
+const SOIL_STATE_THEMES: Record<string, { color: string; bg: string; labelKey: string; icon: typeof CheckCircle2 }> = {
+  healthy:  { color: 'text-green-600',  bg: 'bg-green-50',  labelKey: 'ml.soilState.healthy',  icon: CheckCircle2 },
+  moderate: { color: 'text-blue-600',   bg: 'bg-blue-50',   labelKey: 'ml.soilState.moderate', icon: Activity },
+  poor:     { color: 'text-orange-600', bg: 'bg-orange-50', labelKey: 'ml.soilState.poor',     icon: AlertTriangle },
+  critical: { color: 'text-red-600',    bg: 'bg-red-50',    labelKey: 'ml.soilState.critical', icon: AlertTriangle },
 };
+
+// Модель отдаёт название культуры и удобрения латиницей — переводим известные, остальное как есть.
+const CROP_KEYS = ['wheat', 'barley', 'rice', 'maize', 'chickpea', 'kidneybeans', 'soybean', 'sunflower'];
+const FERTILIZER_KEYS = ['urea', 'dap', '17-17-17', '20-20'];
 
 function ConfidenceBar({ value, color }: { value: number; color: string }) {
   const pct = Math.round(value * 100);
@@ -49,6 +54,7 @@ function ConfidenceBar({ value, color }: { value: number; color: string }) {
 }
 
 function FeatureSnapshot({ snapshot }: { snapshot: Record<string, unknown> }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const crops = snapshot.crop_features as Record<string, number> | undefined;
   if (!crops) return null;
@@ -58,8 +64,8 @@ function FeatureSnapshot({ snapshot }: { snapshot: Record<string, unknown> }) {
     { key: 'phosphorus', label: 'P', unit: '' },
     { key: 'potassium', label: 'K', unit: '' },
     { key: 'ph', label: 'pH', unit: '' },
-    { key: 'humidity', label: 'Влажн.', unit: '%' },
-    { key: 'temperature', label: 'Темп.', unit: '°' },
+    { key: 'humidity', label: t('ml.humidityShort'), unit: '%' },
+    { key: 'temperature', label: t('ml.tempShort'), unit: '°' },
   ].filter(i => crops[i.key] !== undefined);
 
   return (
@@ -69,7 +75,7 @@ function FeatureSnapshot({ snapshot }: { snapshot: Record<string, unknown> }) {
         className="flex items-center gap-1.5 text-[10px] font-black text-[#86868b] uppercase tracking-wider hover:text-[#1d1d1f] transition-colors"
       >
         <Cpu className="w-3 h-3" />
-        Данные для модели
+        {t('ml.modelDataTitle')}
         <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
       </button>
       <AnimatePresence>
@@ -98,6 +104,7 @@ function FeatureSnapshot({ snapshot }: { snapshot: Record<string, unknown> }) {
 }
 
 export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
+  const { t, i18n } = useTranslation();
   const [data, setData] = useState<MLPrediction | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -145,7 +152,7 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
       setLastRefresh(new Date());
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка инференса');
+      setError(err instanceof Error ? err.message : t('ml.inferError'));
     } finally {
       setRunning(false);
     }
@@ -172,9 +179,9 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           <Brain className="w-8 h-8 text-[#86868b]" />
         </div>
         <div>
-          <p className="text-[15px] font-bold text-[#1d1d1f]">ML-анализ ещё не запускался</p>
+          <p className="text-[15px] font-bold text-[#1d1d1f]">{t('ml.notRunTitle')}</p>
           <p className="text-[12px] text-[#6e6e73] mt-1 font-medium leading-relaxed">
-            Нажмите кнопку ниже чтобы запустить предсказание по текущим данным датчиков
+            {t('ml.notRunBody')}
           </p>
         </div>
         <button
@@ -183,7 +190,7 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           className="flex items-center gap-2 px-5 py-2.5 bg-[#f5f5f7] border border-black/10 text-[#1d1d1f] rounded-full text-[12px] font-bold hover:bg-black/5 active:scale-95 transition-all disabled:opacity-50"
         >
           {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4 text-blue-500" />}
-          {running ? 'Запуск анализа...' : 'Запустить ML анализ'}
+          {running ? t('ml.running') : t('ml.runAnalysis')}
         </button>
       </div>
     );
@@ -193,16 +200,20 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-10 gap-4">
         <AlertTriangle className="w-10 h-10 text-orange-400" />
-        <p className="text-[14px] font-bold">Нет связи с сервером</p>
-        <p className="text-[11px] text-[#6e6e73] font-medium">Убедитесь что бэкенд запущен и доступен</p>
+        <p className="text-[14px] font-bold">{t('ml.noServerTitle')}</p>
+        <p className="text-[11px] text-[#6e6e73] font-medium">{t('ml.noServerBody')}</p>
         <button onClick={fetchLatest} className="flex items-center gap-2 px-4 py-2 bg-[#f5f5f7] rounded-full text-[12px] font-bold hover:bg-black/5 transition-all">
-          <RefreshCw className="w-3.5 h-3.5" /> Повторить
+          <RefreshCw className="w-3.5 h-3.5" /> {t('common.retry')}
         </button>
       </div>
     );
   }
 
   const soilKey = data?.soil_state?.toLowerCase() ?? '';
+  const cropCode = data?.crop_recommendation?.toLowerCase() ?? '';
+  const cropLabel = CROP_KEYS.includes(cropCode) ? t(`ml.crops.${cropCode}`) : data?.crop_recommendation;
+  const fertCode = data?.fertilizer_recommendation?.toLowerCase() ?? '';
+  const fertLabel = FERTILIZER_KEYS.includes(fertCode) ? t(`ml.ferts.${fertCode}`) : data?.fertilizer_recommendation;
   const soilTheme = SOIL_STATE_THEMES[soilKey] ?? SOIL_STATE_THEMES.moderate;
   const SoilIcon = soilTheme.icon;
 
@@ -212,18 +223,18 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
       <div className="flex items-center justify-between px-1 mb-1">
         <div className="flex items-center gap-2.5">
           <Brain className="w-4 h-4 text-[#1d1d1f]" />
-          <span className="text-[11px] font-black text-[#1d1d1f] uppercase tracking-wider">ML Анализ почвы</span>
+          <span className="text-[11px] font-black text-[#1d1d1f] uppercase tracking-wider">{t('ml.panelTitle')}</span>
         </div>
         <div className="flex items-center gap-2">
           {lastRefresh && (
             <span className="text-[9px] text-[#86868b] font-bold uppercase tracking-wider hidden sm:block">
-              {lastRefresh.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}
+              {lastRefresh.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
           <button
             onClick={fetchLatest}
             disabled={loading}
-            title="Обновить данные"
+            title={t('ml.refreshTitle')}
             className="p-1.5 hover:bg-black/5 rounded-lg transition-all active:scale-90"
           >
             <RefreshCw className="w-3.5 h-3.5 text-[#86868b]" />
@@ -244,9 +255,9 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
             </div>
             <div className="flex-1 min-w-0">
               <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md bg-white/60 ${soilTheme.color}`}>
-                СОСТОЯНИЕ ПОЧВЫ
+                {t('ml.soilStateCaption')}
               </span>
-              <p className="text-[15px] font-bold text-[#1d1d1f] mt-1.5 capitalize">{soilTheme.label}</p>
+              <p className="text-[15px] font-bold text-[#1d1d1f] mt-1.5 capitalize">{t(soilTheme.labelKey)}</p>
               {data.soil_state_confidence !== null && (
                 <ConfidenceBar
                   value={data.soil_state_confidence}
@@ -276,9 +287,9 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black uppercase tracking-[0.15em] text-green-600 px-2 py-0.5 rounded-md bg-green-50">
-                РЕКОМЕНДУЕМАЯ КУЛЬТУРА
+                {t('ml.recommendedCrop')}
               </span>
-              <p className="text-[15px] font-bold text-[#1d1d1f] mt-1.5">{data.crop_recommendation}</p>
+              <p className="text-[15px] font-bold text-[#1d1d1f] mt-1.5">{cropLabel}</p>
               {data.crop_confidence !== null && (
                 <ConfidenceBar value={data.crop_confidence} color="bg-green-500" />
               )}
@@ -302,17 +313,17 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="text-[9px] font-black uppercase tracking-[0.15em] text-purple-600 px-2 py-0.5 rounded-md bg-purple-50">
-                  УДОБРЕНИЕ
+                  {t('ml.fertilizer')}
                 </span>
                 <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
                   data.fertilizer_source === 'ml'
                     ? 'bg-purple-100 text-purple-600'
                     : 'bg-[#f5f5f7] text-[#86868b]'
                 }`}>
-                  {data.fertilizer_source === 'ml' ? 'ML' : 'Правила'}
+                  {data.fertilizer_source === 'ml' ? 'ML' : t('ml.rules')}
                 </span>
               </div>
-              <p className="text-[14px] font-bold text-[#1d1d1f]">{data.fertilizer_recommendation}</p>
+              <p className="text-[14px] font-bold text-[#1d1d1f]">{fertLabel}</p>
             </div>
           </div>
         </motion.div>
@@ -340,7 +351,7 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
         <div className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-blue-500 flex-shrink-0" />
           <p className="text-[11px] text-[#6e6e73] leading-relaxed font-medium">
-            Обновить прогноз на основе актуальных показаний датчиков
+            {t('ml.recalcHint')}
           </p>
         </div>
         <button
@@ -349,7 +360,7 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#1d1d1f] text-white rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50"
         >
           {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
-          {running ? 'Инференс...' : 'Пересчитать ML'}
+          {running ? t('ml.inference') : t('ml.recalc')}
         </button>
         {error && error !== 'no_data' && error !== 'network' && (
           <p className="text-[11px] text-red-500 font-medium text-center">{error}</p>
@@ -360,12 +371,12 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
       <div className="flex items-center gap-2 px-1">
         <ShieldCheck className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
         <p className="text-[10px] text-[#6e6e73] font-medium">
-          Модели: crop (RF), fertilizer (RF), soil_state — SoilLink v4
+          {t('ml.modelsNote')}
         </p>
       </div>
       {data?.timestamp && (
         <p className="text-[9px] text-[#86868b] font-bold text-center uppercase tracking-wider -mt-2">
-          Последний прогноз: {new Date(data.timestamp).toLocaleString('ru', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          {t('ml.lastForecast', { date: new Date(data.timestamp).toLocaleString(i18n.language, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) })}
         </p>
       )}
     </div>

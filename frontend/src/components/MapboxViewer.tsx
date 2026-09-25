@@ -1,5 +1,6 @@
 import Map, { Source, Layer, Marker, NavigationControl, ScaleControl } from 'react-map-gl/mapbox';
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
@@ -72,6 +73,7 @@ function generateZoneHeatPoints(zone: SoilZone, gridSize = 12) {
 export function MapboxViewer({
   sensors, zones, field, mapMode, onSelectSensor, onSelectZone, activeSensorId, activeZoneId,
 }: MapboxViewerProps) {
+  const { t } = useTranslation();
   const [viewState, setViewState] = useState({
     longitude: field.center.longitude,
     latitude: field.center.latitude,
@@ -251,15 +253,15 @@ export function MapboxViewer({
         {/* ─── HEATMAP LEGEND (only in heatmap mode) ─── */}
         {isHeatmap && (
           <div className="absolute bottom-28 md:bottom-10 left-4 z-10 bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 flex flex-col gap-2">
-            <span className="text-white text-[9px] font-black uppercase tracking-widest mb-1">Здоровье почвы</span>
+            <span className="text-white text-[9px] font-black uppercase tracking-widest mb-1">{t('map.soilHealth')}</span>
             <div className="flex items-center gap-2">
               <div className="w-32 h-2.5 rounded-full" style={{
                 background: 'linear-gradient(to right, #10b981, #84cc16, #f59e0b, #f97316, #ef4444)'
               }} />
             </div>
             <div className="flex justify-between text-[9px] font-bold text-white/70">
-              <span>Оптимально</span>
-              <span>Критично</span>
+              <span>{t('map.optimal')}</span>
+              <span>{t('map.critical')}</span>
             </div>
           </div>
         )}
@@ -308,11 +310,11 @@ export function MapboxViewer({
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                   <div className="bg-[#1d1d1f] text-white p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] border border-white/10">
-                    <span className="text-[10px] font-black uppercase tracking-widest truncate">{sensor.name}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest truncate">{t(sensor.nameKey)}</span>
                     <div className="flex items-center justify-between gap-3 text-[10px] font-bold">
                       <div className="flex items-center gap-1.5">
                         <div className={`w-1.5 h-1.5 rounded-full ${sensor.battery < 20 ? 'bg-red-500' : 'bg-green-500'}`} />
-                        <span className="text-white/80">{sensor.battery}% Заряд</span>
+                        <span className="text-white/80">{sensor.battery}% {t('map.battery')}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="flex gap-0.5 items-end h-2.5">

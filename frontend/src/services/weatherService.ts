@@ -24,7 +24,8 @@ export async function fetchRealWeather(latitude: number, longitude: number): Pro
 
   const { condition } = mapWeatherCode(current.weather_code);
 
-  const daysOfWeek = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  // Ключи переводов — разворачиваются в WeatherWidget через t()
+  const daysOfWeek = ['day.sun', 'day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat'];
 
   // Slice next 3-4 days forecast (starting from tomorrow)
   const forecast = (daily.time as string[]).slice(1, 4).map((dateStr, idx) => {

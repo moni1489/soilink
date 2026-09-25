@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Droplet, Thermometer, FlaskConical, Activity, Zap, Wind,
@@ -15,9 +16,11 @@ interface SensorPanelProps {
 }
 
 export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
+  const { t } = useTranslation();
   const [timeframe, setTimeframe] = useState<'7d' | '24h'>('7d');
-  const moistureHistory = sensor ? getMoistureHistory(sensor.id, timeframe) : [];
-  const tempHistory = sensor ? getTemperatureHistory(sensor.id, timeframe) : [];
+  const range = timeframe === '7d' ? t('sensor.week') : t('sensor.h24');
+  const moistureHistory = sensor ? getMoistureHistory(sensor.id, timeframe).map(d => ({ ...d, label: t(d.label) })) : [];
+  const tempHistory = sensor ? getTemperatureHistory(sensor.id, timeframe).map(d => ({ ...d, label: t(d.label) })) : [];
 
   return (
     <AnimatePresence>
@@ -36,7 +39,7 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
                   <Cpu className="w-5 h-5 text-blue-500" />
                </div>
                <div className="flex flex-col min-w-0">
-                  <h2 className="text-[15px] font-bold truncate leading-tight">{sensor.name}</h2>
+                  <h2 className="text-[15px] font-bold truncate leading-tight">{t(sensor.nameKey)}</h2>
                   <div className="flex items-center gap-2">
                      <span className="text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider">Node ID: {sensor.id.split('-')[1]}</span>
                      <div className="w-1 h-1 rounded-full bg-green-500" />
@@ -51,17 +54,17 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col gap-6 sm:gap-10 scrollbar-hide">
             {/* Real-time Status */}
             <div className="flex items-center gap-4 sm:gap-8 justify-between px-2">
-               <StatusIndicator label="Статус" value="ОНЛАЙН" color="text-green-500" />
-               <StatusIndicator label="Заряд" value={`${sensor.battery}%`} color={sensor.battery < 20 ? 'text-red-500' : 'text-[#1d1d1f]'} />
-               <StatusIndicator label="Сигнал" value={`${sensor.signalStrength}%`} color="text-[#1d1d1f]" />
+               <StatusIndicator label={t('sensor.status')} value={t('sensor.online')} color="text-green-500" />
+               <StatusIndicator label={t('sensor.battery')} value={`${sensor.battery}%`} color={sensor.battery < 20 ? 'text-red-500' : 'text-[#1d1d1f]'} />
+               <StatusIndicator label={t('sensor.signal')} value={`${sensor.signalStrength}%`} color="text-[#1d1d1f]" />
             </div>
 
             {/* Core Metrics Grid */}
             <div className="grid grid-cols-2 gap-4">
-               <MetricCard label="Влажность" value={`${sensor.soilMoisture}%`} icon={Droplet} color="text-blue-500" />
-               <MetricCard label="Температура" value={`${sensor.soilTemperature.toFixed(1)}°C`} icon={Thermometer} color="text-orange-500" />
-               <MetricCard label="pH Уровень" value={sensor.pH.toFixed(2)} icon={FlaskConical} color="text-purple-500" />
-               <MetricCard label="Проводимость" value={sensor.electricalConductivity.toFixed(2)} icon={Zap} color="text-yellow-600" />
+               <MetricCard label={t('sensor.moisture')} value={`${sensor.soilMoisture}%`} icon={Droplet} color="text-blue-500" />
+               <MetricCard label={t('sensor.temperature')} value={`${sensor.soilTemperature.toFixed(1)}°C`} icon={Thermometer} color="text-orange-500" />
+               <MetricCard label={t('sensor.phLevel')} value={sensor.pH.toFixed(2)} icon={FlaskConical} color="text-purple-500" />
+               <MetricCard label={t('sensor.conductivity')} value={sensor.electricalConductivity.toFixed(2)} icon={Zap} color="text-yellow-600" />
             </div>
 
             {/* Chemical Analysis - Farmer Realism */}
@@ -69,14 +72,14 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                      <Beaker className="w-4 h-4 text-blue-500" />
-                     <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">Анализ NPK</span>
+                     <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">{t('sensor.npkAnalysis')}</span>
                   </div>
-                  <span className="text-[9px] font-bold text-[#6e6e73]">ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ: 4Ч НАЗАД</span>
+                  <span className="text-[9px] font-bold text-[#6e6e73]">{t('sensor.lastUpdate')}</span>
                </div>
                <div className="space-y-6">
-                  <NutrientRow label="Азот (N)" value={sensor.nitrogen} max={50} color="bg-blue-500" />
-                  <NutrientRow label="Фосфор (P)" value={sensor.phosphorus} max={50} color="bg-green-500" />
-                  <NutrientRow label="Калий (K)" value={sensor.potassium} max={300} color="bg-purple-500" />
+                  <NutrientRow label={t('sensor.nitrogen')} value={sensor.nitrogen} max={50} color="bg-blue-500" />
+                  <NutrientRow label={t('sensor.phosphorus')} value={sensor.phosphorus} max={50} color="bg-green-500" />
+                  <NutrientRow label={t('sensor.potassium')} value={sensor.potassium} max={300} color="bg-purple-500" />
                </div>
             </div>
 
@@ -86,7 +89,7 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
                   <div className="flex items-center gap-2">
                      <Activity className="w-4 h-4 text-blue-500" />
                      <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">
-                        Динамика показателей
+                        {t('sensor.dynamics')}
                      </span>
                   </div>
                   <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5">
@@ -96,7 +99,7 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
                            timeframe === '7d' ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
                         }`}
                      >
-                        За неделю
+                        {t('sensor.week')}
                      </button>
                      <button
                         onClick={() => setTimeframe('24h')}
@@ -104,21 +107,21 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
                            timeframe === '24h' ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
                         }`}
                      >
-                        24 часа
+                        {t('sensor.day24')}
                      </button>
                   </div>
                </div>
 
                <TrendChart
                   id="moisture"
-                  title={`Тренд влажности (${timeframe === '7d' ? 'За неделю' : '24ч'})`}
+                  title={t('sensor.moistureTrend', { range })}
                   data={moistureHistory}
                   color="#0071e3"
                   unit="%"
                />
                <TrendChart
                   id="temp"
-                  title={`Стабильность температуры (${timeframe === '7d' ? 'За неделю' : '24ч'})`}
+                  title={t('sensor.tempStability', { range })}
                   data={tempHistory}
                   color="#ff9500"
                   unit="°C"
@@ -128,7 +131,7 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
             {/* System Info Footnote */}
             <div className="mt-4 pt-8 border-t border-black/5 flex items-start gap-4 text-[11px] text-[#6e6e73] font-medium leading-relaxed">
                <ShieldCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
-               <p>Калибровка произведена автоматически. Все показатели в пределах нормы по ГОСТ Р 53381-2009 для текущего типа почвы (Чернозем выщелоченный).</p>
+               <p>{t('sensor.calibrationNote')}</p>
             </div>
           </div>
         </motion.div>
@@ -161,12 +164,13 @@ function MetricCard({ label, value, icon: Icon, color }: { label: string; value:
 }
 
 function NutrientRow({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+  const { t } = useTranslation();
   const p = Math.min((value / max) * 100, 100);
   return (
     <div className="flex flex-col gap-2">
        <div className="flex justify-between items-baseline">
           <span className="text-[12px] font-bold">{label}</span>
-          <span className="text-[13px] font-bold font-data text-[#1d1d1f]">{value} <span className="text-[10px] text-[#6e6e73] font-medium">МГ/КГ</span></span>
+          <span className="text-[13px] font-bold font-data text-[#1d1d1f]">{value} <span className="text-[10px] text-[#6e6e73] font-medium">{t('common.mgkg')}</span></span>
        </div>
        <div className="h-1.5 bg-white rounded-full overflow-hidden shadow-inner border border-black/5">
           <motion.div initial={{ width: 0 }} animate={{ width: `${p}%` }} className={`h-full ${color} shadow-sm`} />

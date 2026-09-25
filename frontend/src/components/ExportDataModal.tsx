@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, FileSpreadsheet, FileJson, Radio, Layers, BrainCircuit, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import type { Field } from '@/types';
@@ -17,6 +18,7 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
   fields: Field[];
   exportedBy: string;
 }) {
+  const { t } = useTranslation();
   const [scope, setScope] = useState<'active' | 'all'>('active');
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
@@ -27,12 +29,12 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
     setBusy(`${dataset}-${fmt}`);
     setResult(null);
     try {
-      const count = await exportDataset(dataset, targetFields, fmt, exportedBy);
+      const count = await exportDataset(dataset, targetFields, fmt, exportedBy, t);
       setResult(count > 0
-        ? { ok: true, text: `«${DATASETS[dataset].label}»: выгружено строк — ${count}` }
-        : { ok: false, text: `«${DATASETS[dataset].label}»: по выбранным полям нет данных` });
+        ? { ok: true, text: t('export.done', { dataset: t(DATASETS[dataset].labelKey), count }) }
+        : { ok: false, text: t('export.empty', { dataset: t(DATASETS[dataset].labelKey) }) });
     } catch {
-      setResult({ ok: false, text: 'Не удалось сформировать файл' });
+      setResult({ ok: false, text: t('export.failed') });
     } finally {
       setBusy(null);
     }
@@ -50,15 +52,15 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
           >
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-lg sm:text-xl font-bold">Выгрузка данных</h2>
-                <p className="text-[12px] text-[#6e6e73] font-medium mt-1">CSV открывается в Excel, JSON — для Python и других систем</p>
+                <h2 className="text-lg sm:text-xl font-bold">{t('export.title')}</h2>
+                <p className="text-[12px] text-[#6e6e73] font-medium mt-1">{t('export.subtitle')}</p>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-lg flex-shrink-0" aria-label="Закрыть"><X className="w-5 h-5 text-[#6e6e73]" /></button>
+              <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-lg flex-shrink-0" aria-label={t('common.close')}><X className="w-5 h-5 text-[#6e6e73]" /></button>
             </div>
 
-            <label className="block text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider mb-2">Поля</label>
+            <label className="block text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider mb-2">{t('export.fieldsLabel')}</label>
             <div className="grid grid-cols-2 gap-2 p-1 bg-[#f5f5f7] rounded-xl mb-6">
-              {([['active', activeField.name.split(' — ')[1] ?? activeField.name], ['all', `Все поля (${fields.length})`]] as const).map(([key, label]) => (
+              {([['active', t(activeField.shortKey)], ['all', t('export.allFieldsCount', { count: fields.length })]] as const).map(([key, label]) => (
                 <button key={key} onClick={() => setScope(key)} disabled={key === 'all' && fields.length < 2}
                   className={`py-2 px-3 rounded-lg text-[12px] font-bold truncate transition-all disabled:opacity-40 ${scope === key ? 'bg-white shadow-sm text-[#0071e3]' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
                 >
@@ -67,7 +69,7 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
               ))}
             </div>
 
-            <label className="block text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider mb-2">Набор данных</label>
+            <label className="block text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider mb-2">{t('export.datasetLabel')}</label>
             <div className="space-y-2">
               {(Object.keys(DATASETS) as ExportDataset[]).map(ds => {
                 const Icon = DATASET_ICONS[ds];
@@ -78,8 +80,8 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
                         <Icon className="w-4.5 h-4.5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[13px] font-bold">{DATASETS[ds].label}</p>
-                        <p className="text-[11px] text-[#6e6e73] leading-snug">{DATASETS[ds].description}</p>
+                        <p className="text-[13px] font-bold">{t(DATASETS[ds].labelKey)}</p>
+                        <p className="text-[11px] text-[#6e6e73] leading-snug">{t(DATASETS[ds].descriptionKey)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
@@ -106,7 +108,7 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
 
             <p className="mt-5 text-[11px] text-[#86868b] flex items-center gap-1.5">
               <Download className="w-3.5 h-3.5 flex-shrink-0" />
-              Если сервер недоступен, профиль и предсказания берутся из демо-данных — это указано в колонке «Источник».
+              {t('export.note')}
             </p>
           </motion.div>
         </div>

@@ -16,37 +16,38 @@ export type AccessLevel = 'full' | 'specialist' | 'field' | 'contractor';
 export interface User {
   id: string;
   login: string;
-  name: string;
+  /** Ключ перевода имени — в UI разворачивается через t() */
+  nameKey: string;
   role: Role;
   email: string;
   phone: string;
   /** Поля, за которые отвечает агроном поля / диспетчер */
   assignedFieldIds?: string[];
-  /** Для подрядчика — название организации */
-  company?: string;
+  /** Для подрядчика — ключ перевода названия организации */
+  companyKey?: string;
 }
 
-export const ROLES: Record<Role, { label: string; level: AccessLevel; domains: TaskType[] }> = {
-  director:              { label: 'Руководитель агрокомплекса', level: 'full',       domains: ['water', 'fertilizer', 'protection'] },
-  protection_agronomist: { label: 'Агроном по защите растений', level: 'specialist', domains: ['protection'] },
-  irrigation_specialist: { label: 'Специалист по орошению',     level: 'specialist', domains: ['water'] },
-  agrochemist:           { label: 'Агрохимик',                  level: 'specialist', domains: ['fertilizer'] },
-  field_agronomist:      { label: 'Агроном поля',               level: 'field',      domains: [] },
-  dispatcher:            { label: 'Диспетчер',                  level: 'field',      domains: [] },
-  contractor:            { label: 'Подрядчик',                  level: 'contractor', domains: [] },
+export const ROLES: Record<Role, { labelKey: string; level: AccessLevel; domains: TaskType[] }> = {
+  director:              { labelKey: 'roles.director',              level: 'full',       domains: ['water', 'fertilizer', 'protection'] },
+  protection_agronomist: { labelKey: 'roles.protection_agronomist', level: 'specialist', domains: ['protection'] },
+  irrigation_specialist: { labelKey: 'roles.irrigation_specialist', level: 'specialist', domains: ['water'] },
+  agrochemist:           { labelKey: 'roles.agrochemist',           level: 'specialist', domains: ['fertilizer'] },
+  field_agronomist:      { labelKey: 'roles.field_agronomist',      level: 'field',      domains: [] },
+  dispatcher:            { labelKey: 'roles.dispatcher',            level: 'field',      domains: [] },
+  contractor:            { labelKey: 'roles.contractor',            level: 'contractor', domains: [] },
 };
 
-export const ACCESS_LEVELS: Record<AccessLevel, { label: string; description: string }> = {
-  full:       { label: 'Полный доступ',  description: 'Все поля, данные и операции без ограничений' },
-  specialist: { label: 'Специалисты',    description: 'Видят большинство данных по полям, изменяют только свою область' },
-  field:      { label: 'Управление полем', description: 'Назначенные поля и работы: исполнители, статусы, внесение факта' },
-  contractor: { label: 'Подрядчики',     description: 'Только назначенные задания и необходимые данные поля' },
+export const ACCESS_LEVELS: Record<AccessLevel, { labelKey: string; descriptionKey: string }> = {
+  full:       { labelKey: 'access.full.label',       descriptionKey: 'access.full.description' },
+  specialist: { labelKey: 'access.specialist.label', descriptionKey: 'access.specialist.description' },
+  field:      { labelKey: 'access.field.label',      descriptionKey: 'access.field.description' },
+  contractor: { labelKey: 'access.contractor.label', descriptionKey: 'access.contractor.description' },
 };
 
-export const TASK_TYPE_LABELS: Record<TaskType, string> = {
-  water: 'Полив',
-  fertilizer: 'Удобрение',
-  protection: 'Защита растений',
+export const TASK_TYPE_KEYS: Record<TaskType, string> = {
+  water: 'taskType.water',
+  fertilizer: 'taskType.fertilizer',
+  protection: 'taskType.protection',
 };
 
 export const levelOf = (user: User) => ROLES[user.role].level;

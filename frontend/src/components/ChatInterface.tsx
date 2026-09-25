@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Sparkles, X, User, Bot, Command, ArrowRight, CornerDownLeft } from 'lucide-react';
 
@@ -15,19 +16,20 @@ interface ChatInterfaceProps {
   context?: any;
 }
 
-const SUGGESTIONS = [
-  'Проанализируй влажность в секторе А',
-  'Когда следующий полив?',
-  'Оцени риск дефицита азота',
-  'Дай отчет по полю за неделю'
+const SUGGESTION_KEYS = [
+  'chat.suggestion1',
+  'chat.suggestion2',
+  'chat.suggestion3',
+  'chat.suggestion4',
 ];
 
 export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) {
+  const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: 'Привет! Я агро-ассистент SoiLink. Готов помочь с анализом данных по полю.',
+      content: 'chat.greeting',
       timestamp: new Date()
     }
   ]);
@@ -61,7 +63,7 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
           field_id: context?.field?.id || 'field-1',
           message: input,
           context: context,
-          language: 'ru'
+          language: i18n.language
         })
       });
 
@@ -70,13 +72,13 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
 
       setMessages(prev => prev.map(msg =>
         msg.id === loadingId
-          ? { ...msg, content: data.reply || data.response || 'Ошибка ответа от ИИ.' }
+          ? { ...msg, content: data.reply || data.response || t('chat.aiError') }
           : msg
       ));
     } catch (err) {
       setMessages(prev => prev.map(msg =>
         msg.id === loadingId
-          ? { ...msg, content: 'Извините, возникла ошибка соединения с сервером. Попробуйте позже.' }
+          ? { ...msg, content: t('chat.connError') }
           : msg
       ));
     }
@@ -98,11 +100,11 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
                 {msg.role === 'assistant' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
               </div>
               <div className={`px-4 py-3 rounded-2xl text-[13px] font-medium leading-relaxed ${msg.role === 'user' ? 'bg-[#1d1d1f] text-white shadow-lg' : 'bg-[#f5f5f7] text-[#1d1d1f]'}`}>
-                {msg.content}
+                {t(msg.content)}
               </div>
             </div>
             <span className="text-[9px] font-bold text-[#86868b] mt-2 px-11 uppercase tracking-widest">
-              {msg.timestamp.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}
+              {msg.timestamp.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
             </span>
           </motion.div>
         ))}
@@ -111,10 +113,10 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
       {/* Input Terminal */}
       <div className="p-6 border-t border-black/5 bg-white space-y-4">
         <div className="flex flex-wrap gap-2">
-          {SUGGESTIONS.map(s => (
-            <button key={s} onClick={() => setInput(s)}
+          {SUGGESTION_KEYS.map(s => (
+            <button key={s} onClick={() => setInput(t(s))}
               className="text-[10px] font-bold px-3 py-1.5 bg-[#f5f5f7] hover:bg-black hover:text-white rounded-full transition-all border border-black/5"
-            >{s}</button>
+            >{t(s)}</button>
           ))}
         </div>
 
@@ -127,7 +129,7 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Спросите ассистента..."
+            placeholder={t('chat.placeholder')}
             className="w-full h-12 pl-11 pr-14 bg-[#f5f5f7] border border-transparent rounded-xl text-[13px] font-medium focus:bg-white focus:border-blue-500/30 transition-all outline-none"
           />
           <button
@@ -138,7 +140,7 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
             <CornerDownLeft className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-[9px] text-center font-bold text-[#86868b] uppercase tracking-widest">Shift + Enter для новой строки</p>
+        <p className="text-[9px] text-center font-bold text-[#86868b] uppercase tracking-widest">{t('chat.hint')}</p>
       </div>
     </div>
   );

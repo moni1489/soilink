@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { X, BarChart3, Info } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import type { Sensor, SoilDepth } from '@/types';
@@ -11,13 +12,13 @@ interface ComparisonModalProps {
   onClose: () => void;
 }
 
-const LABELS: { key: string; label: string }[] = [
-  { key: 'phh2o', label: 'Уровень pH' },
-  { key: 'nitrogen', label: 'Азот (N)' },
-  { key: 'soc', label: 'Углерод (SOC)' },
-  { key: 'clay_content', label: 'Глина' },
-  { key: 'sand_content', label: 'Песок' },
-  { key: 'bdod', label: 'Плотность' },
+const PROPS = [
+  'phh2o',
+  'nitrogen',
+  'soc',
+  'clay_content',
+  'sand_content',
+  'bdod',
 ];
 
 const ttStyle = { 
@@ -40,7 +41,10 @@ function getSensorValue(sensor: Sensor, key: string): number {
 }
 
 export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonModalProps) {
+  const { t } = useTranslation();
   const global = mockScannerData[depth];
+  const nodeLabel = t('cmp.nodeData');
+  const LABELS = PROPS.map(key => ({ key, label: t(`cmp.props.${key}`) }));
 
   const barData = LABELS.map(({ key, label }) => ({
     name: label,
@@ -51,7 +55,7 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
   const radarData = LABELS.map(({ key, label }) => ({
     subject: label,
     'SoilGrids': (global as Record<string, number>)[key],
-    'Данные узла': sensor ? getSensorValue(sensor, key) : 0,
+    [nodeLabel]: sensor ? getSensorValue(sensor, key) : 0,
   }));
 
   return (
@@ -72,9 +76,9 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                  <BarChart3 className="w-8 h-8 text-[#0071e3]" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-lg sm:text-4xl font-black tracking-tightest text-[#1d1d1f] truncate">Геопространственное сравнение</h2>
+                <h2 className="text-lg sm:text-4xl font-black tracking-tightest text-[#1d1d1f] truncate">{t('cmp.title')}</h2>
                 <p className="text-[#86868b] font-bold mt-1 sm:mt-2 text-[11px] sm:text-lg leading-tight sm:leading-none truncate">
-                  <span className="text-[#0071e3]">{sensor?.name}</span> vs SoilGrids · <span className="text-[#1d1d1f]">{depth}</span>
+                  <span className="text-[#0071e3]">{sensor ? t(sensor.nameKey) : ""}</span> vs SoilGrids · <span className="text-[#1d1d1f]">{depth}</span>
                 </p>
               </div>
               <button onClick={onClose} className="p-2.5 sm:p-4 bg-[#f5f5f7] rounded-full hover:bg-[#e5e5ea] transition-all active:scale-90 flex-shrink-0">
@@ -87,9 +91,9 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                 {/* Bar Chart Card */}
                 <div className="bg-white rounded-[24px] sm:rounded-[40px] p-4 sm:p-10 border border-[#d2d2d7]/20 shadow-sm">
                   <div className="flex items-center justify-between mb-4 sm:mb-10">
-                    <h3 className="text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em] sm:tracking-[0.3em]">Корреляция метрик</h3>
+                    <h3 className="text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em] sm:tracking-[0.3em]">{t('cmp.correlation')}</h3>
                     <div className="flex gap-3 sm:gap-6">
-                      {[{ color: '#d2d2d7', label: 'SoilGrids' }, { color: '#0071e3', label: 'Датчик' }].map(l => (
+                      {[{ color: '#d2d2d7', label: 'SoilGrids' }, { color: '#0071e3', label: t('cmp.sensorLegend') }].map(l => (
                         <div key={l.label} className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-[#86868b]">
                           <span className="w-3 h-3 rounded-full" style={{ backgroundColor: l.color }} />{l.label}
                         </div>
@@ -104,7 +108,7 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                         <YAxis tick={{ fontSize: 11, fill: '#86868b', fontWeight: 800 }} tickLine={false} axisLine={false} />
                         <Tooltip contentStyle={ttStyle} cursor={{ fill: '#f5f5f7', radius: 10 }} />
                         <Bar dataKey="global" fill="#d2d2d7" name="SoilGrids" radius={[8, 8, 0, 0]} barSize={28} />
-                        <Bar dataKey="sensor" fill="#0071e3" name="Датчик" radius={[8, 8, 0, 0]} barSize={28} />
+                        <Bar dataKey="sensor" fill="#0071e3" name={t('cmp.sensorLegend')} radius={[8, 8, 0, 0]} barSize={28} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -112,14 +116,14 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
 
                 {/* Radar Chart Card */}
                 <div className="bg-white rounded-[24px] sm:rounded-[40px] p-4 sm:p-10 border border-[#d2d2d7]/20 shadow-sm">
-                   <h3 className="text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-4 sm:mb-10">Химический баланс</h3>
+                   <h3 className="text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-4 sm:mb-10">{t('cmp.chemBalance')}</h3>
                    <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart data={radarData}>
                         <PolarGrid stroke="#f5f5f7" />
                         <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#86868b', fontWeight: 800 }} />
                         <Radar name="SoilGrids" dataKey="SoilGrids" stroke="#d2d2d7" fill="#d2d2d7" fillOpacity={0.1} strokeWidth={2} />
-                        <Radar name="Данные узла" dataKey="Данные узла" stroke="#0071e3" fill="#0071e3" fillOpacity={0.15} strokeWidth={4} />
+                        <Radar name={nodeLabel} dataKey={nodeLabel} stroke="#0071e3" fill="#0071e3" fillOpacity={0.15} strokeWidth={4} />
                         <Tooltip contentStyle={ttStyle} />
                       </RadarChart>
                     </ResponsiveContainer>
@@ -132,10 +136,10 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                 <table className="w-full min-w-[500px]">
                   <thead>
                     <tr className="bg-[#f5f5f7]">
-                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-left text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">Свойство почвы</th>
+                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-left text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">{t('cmp.propertyCol')}</th>
                       <th className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">SoilGrids</th>
-                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">Live Узел</th>
-                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">Дельта (Δ)</th>
+                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">{t('cmp.liveNodeCol')}</th>
+                      <th className="px-4 sm:px-10 py-3 sm:py-6 text-right text-[10px] sm:text-[12px] font-black text-[#86868b] uppercase tracking-[0.1em] sm:tracking-[0.2em]">{t('cmp.deltaCol')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f5f5f7]">
@@ -163,8 +167,7 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                     <Info className="w-6 h-6 text-[#0071e3]" />
                  </div>
                  <p className="text-[12px] sm:text-[14px] font-bold text-[#1d1d1f] leading-relaxed max-w-4xl">
-                   Данные с датчиков калибруются каждые 6 часов на основе локальных проб почвы для обеспечения максимальной точности.
-                   Значительные отклонения (Δ) могут указывать на локальное переувлажнение или специфическое минеральное обогащение участка.
+                   {t('cmp.note')}
                  </p>
               </div>
             </div>

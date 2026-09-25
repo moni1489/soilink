@@ -8,7 +8,7 @@ export type MapMode = 'zones' | 'heatmap' | 'satellite';
 export interface Coordinate { latitude: number; longitude: number; }
 
 export interface Sensor {
-  id: string; fieldId: string; name: string;
+  id: string; fieldId: string; nameKey: string;
   coordinates: Coordinate; status: SensorStatus;
   lastUpdated: string; pH: number; nitrogen: number;
   phosphorus: number; potassium: number; magnesium: number;
@@ -27,7 +27,7 @@ export interface WeatherData {
 }
 
 export interface SoilZone {
-  id: string; fieldId: string; name: string;
+  id: string; fieldId: string; nameKey: string;
   color: 'green' | 'yellow' | 'red';
   polygon: Coordinate[];
   healthScore: number;
@@ -35,11 +35,11 @@ export interface SoilZone {
 }
 
 export interface Field {
-  id: string; name: string; areaHectares: number;
+  id: string; nameKey: string; shortKey: string; areaHectares: number;
   center: Coordinate; boundary: Coordinate[];
 }
 
-export interface StatisticCard { id: string; label: string; value: string; }
+export interface StatisticCard { id: string; labelKey: string; value: string; }
 
 export interface RecommendationTimelineStep {
   id: string; labelKey: string; dueAt: string; completed: boolean;
@@ -53,9 +53,9 @@ export interface Recommendation {
 
 export interface Prediction {
   id: string; fieldId: string;
-  cropRecommendation: string; cropConfidence: number;
-  fertilizerRecommendation: string; fertilizerSource: 'ml' | 'rule_based';
-  soilState: string; soilStateConfidence: number;
+  cropKey: string; cropConfidence: number;
+  fertilizerKey: string; fertilizerSource: 'ml' | 'rule_based';
+  soilStateKey: string; soilStateConfidence: number;
   lastUpdated: string; isHistorical?: boolean; historicalDate?: number;
 }
 

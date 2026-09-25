@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Sparkles, RefreshCw, Sprout, FlaskConical, ShieldCheck,
   AlertCircle, ChevronDown, ChevronUp, CheckCircle2,
@@ -43,25 +44,13 @@ const DEFAULT_PREDICTION: PredictionData = {
   }
 };
 
-const CROP_TRANSLATIONS: Record<string, string> = {
-  wheat: 'Пшеница',
-  barley: 'Ячмень',
-  rice: 'Рис',
-  maize: 'Кукуруза',
-  chickpea: 'Нут',
-  kidneybeans: 'Фасоль',
-  soybean: 'Соя',
-  sunflower: 'Подсолнечник',
-};
-
-const FERTILIZER_TRANSLATIONS: Record<string, string> = {
-  urea: 'Мочевина (Карбамид)',
-  dap: 'Диаммофос (DAP)',
-  '17-17-17': 'Нитроаммофоска (NPK 17-17-17)',
-  '20-20': 'Аммофос 20-20',
-};
+// Названия культур и удобрений приходят от модели латиницей — переводим по словарю локали,
+// неизвестное значение показываем как есть.
+const CROP_KEYS = ['wheat', 'barley', 'rice', 'maize', 'chickpea', 'kidneybeans', 'soybean', 'sunflower'];
+const FERTILIZER_KEYS = ['urea', 'dap', '17-17-17', '20-20'];
 
 export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionCardProps) {
+  const { t } = useTranslation();
   const [prediction, setPrediction] = useState<PredictionData>(DEFAULT_PREDICTION);
   const [analyzing, setAnalyzing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,23 +78,25 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
       setPrediction(updated);
       if (onPredictionUpdated) onPredictionUpdated(updated);
     } catch (err: any) {
-      setError(err?.message || 'Ошибка выполнения нейросетевого анализа');
+      setError(err?.message || t('ml.analysisError'));
     } finally {
       setAnalyzing(false);
     }
   };
 
   const cropName = prediction.crop_recommendation || 'Barley';
-  const cropRu = CROP_TRANSLATIONS[cropName.toLowerCase()] || cropName;
+  const cropCode = cropName.toLowerCase();
+  const cropRu = CROP_KEYS.includes(cropCode) ? t(`ml.crops.${cropCode}`) : cropName;
   const cropConf = Math.round((prediction.crop_confidence || 0.85) * 100);
 
   const fertName = prediction.fertilizer_recommendation || 'Urea';
-  const fertRu = FERTILIZER_TRANSLATIONS[fertName.toLowerCase()] || fertName;
-  const fertSource = prediction.fertilizer_source === 'ml' ? 'ML Random Forest' : 'Правило NPK';
+  const fertCode = fertName.toLowerCase();
+  const fertRu = FERTILIZER_KEYS.includes(fertCode) ? t(`ml.ferts.${fertCode}`) : fertName;
+  const fertSource = prediction.fertilizer_source === 'ml' ? 'ML Random Forest' : t('ml.ruleNpk');
 
   const soilState = (prediction.soil_state || 'healthy').toLowerCase();
   const isHealthy = soilState === 'healthy';
-  const soilLabel = isHealthy ? 'Здоровая / Оптимум' : soilState === 'moderate' ? 'Умеренная' : 'Истощенная';
+  const soilLabel = isHealthy ? t('ml.healthyOptimum') : soilState === 'moderate' ? t('ml.moderate') : t('ml.depleted');
   const soilConf = Math.round((prediction.soil_state_confidence || 0.8) * 100);
 
   const snapshot = prediction.feature_snapshot || DEFAULT_PREDICTION.feature_snapshot!;
@@ -121,8 +112,8 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-black tracking-wide uppercase">ML Прогноз моделей</span>
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">5 МОДЕЛЕЙ</span>
+              <span className="text-[13px] font-black tracking-wide uppercase">{t('ml.cardTitle')}</span>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">{t('ml.fiveModels')}</span>
             </div>
             <p className="text-[10px] text-white/60">LightGBM + EGA Random Forest + XGBoost</p>
           </div>
@@ -134,7 +125,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white text-[11px] font-bold rounded-xl transition-all shadow-md cursor-pointer flex-shrink-0"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${analyzing ? 'animate-spin' : ''}`} />
-          <span>{analyzing ? 'Анализ...' : 'Запустить анализ'}</span>
+          <span>{analyzing ? t('ml.analyzing') : t('ml.runShort')}</span>
         </button>
       </div>
 
@@ -152,7 +143,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           <div className="p-3 bg-emerald-50/60 border border-emerald-200/60 rounded-xl">
             <div className="flex items-center justify-between mb-1 text-[#6e6e73]">
               <span className="text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 text-emerald-800">
-                <Sprout className="w-3.5 h-3.5 text-emerald-600" /> Культура
+                <Sprout className="w-3.5 h-3.5 text-emerald-600" /> {t('ml.crop')}
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.2 bg-emerald-200/80 text-emerald-900 rounded">
                 {cropConf}%
@@ -166,7 +157,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           <div className="p-3 bg-purple-50/60 border border-purple-200/60 rounded-xl">
             <div className="flex items-center justify-between mb-1 text-[#6e6e73]">
               <span className="text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 text-purple-800">
-                <FlaskConical className="w-3.5 h-3.5 text-purple-600" /> Удобрение
+                <FlaskConical className="w-3.5 h-3.5 text-purple-600" /> {t('ml.fertilizerShort')}
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.2 bg-purple-200/80 text-purple-900 rounded">
                 ML
@@ -180,7 +171,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           <div className="p-3 bg-blue-50/60 border border-blue-200/60 rounded-xl">
             <div className="flex items-center justify-between mb-1 text-[#6e6e73]">
               <span className="text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 text-blue-800">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" /> Состояние
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" /> {t('ml.state')}
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.2 bg-blue-200/80 text-blue-900 rounded">
                 {soilConf}%
@@ -194,33 +185,33 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
         {/* 4 Class Probabilities */}
         <div className="p-3 bg-[#f5f5f7] rounded-xl border border-black/5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#6e6e73]">Распределение вероятностей (4 класса)</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#6e6e73]">{t('ml.probDistribution')}</span>
             <Activity className="w-3.5 h-3.5 text-emerald-600" />
           </div>
           <div className="grid grid-cols-4 gap-2 text-center text-[10px]">
             <div>
-              <span className="text-[#6e6e73] block text-[9px]">Здоровая</span>
+              <span className="text-[#6e6e73] block text-[9px]">{t('ml.soilState.healthy')}</span>
               <span className="font-bold text-emerald-600">{Math.round((probs.healthy || 0) * 100)}%</span>
               <div className="w-full bg-black/10 h-1.5 rounded-full mt-1 overflow-hidden">
                 <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.round((probs.healthy || 0) * 100)}%` }} />
               </div>
             </div>
             <div>
-              <span className="text-[#6e6e73] block text-[9px]">Умеренная</span>
+              <span className="text-[#6e6e73] block text-[9px]">{t('ml.moderate')}</span>
               <span className="font-bold text-amber-600">{Math.round((probs.moderate || 0) * 100)}%</span>
               <div className="w-full bg-black/10 h-1.5 rounded-full mt-1 overflow-hidden">
                 <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.round((probs.moderate || 0) * 100)}%` }} />
               </div>
             </div>
             <div>
-              <span className="text-[#6e6e73] block text-[9px]">Истощенная</span>
+              <span className="text-[#6e6e73] block text-[9px]">{t('ml.depleted')}</span>
               <span className="font-bold text-orange-600">{Math.round((probs.poor || 0) * 100)}%</span>
               <div className="w-full bg-black/10 h-1.5 rounded-full mt-1 overflow-hidden">
                 <div className="bg-orange-500 h-full rounded-full" style={{ width: `${Math.round((probs.poor || 0) * 100)}%` }} />
               </div>
             </div>
             <div>
-              <span className="text-[#6e6e73] block text-[9px]">Критич.</span>
+              <span className="text-[#6e6e73] block text-[9px]">{t('ml.criticalShort')}</span>
               <span className="font-bold text-red-600">{Math.round((probs.critical || 0) * 100)}%</span>
               <div className="w-full bg-black/10 h-1.5 rounded-full mt-1 overflow-hidden">
                 <div className="bg-red-500 h-full rounded-full" style={{ width: `${Math.round((probs.critical || 0) * 100)}%` }} />
@@ -237,7 +228,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           >
             <span className="flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              Лабораторные ML-оценки (Supplement 2)
+              {t('ml.labEstimates')}
             </span>
             {showLabDetails ? <ChevronUp className="w-4 h-4 text-[#86868b]" /> : <ChevronDown className="w-4 h-4 text-[#86868b]" />}
           </button>
@@ -245,41 +236,41 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           {showLabDetails && (
             <div className="p-3 bg-white grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] border-t border-black/5">
               <div className="p-2 bg-[#f5f5f7] rounded-lg">
-                <span className="text-[9px] text-[#86868b] block uppercase font-bold">Азот (N)</span>
+                <span className="text-[9px] text-[#86868b] block uppercase font-bold">{t('ml.nitrogen')}</span>
                 <span className="font-bold text-[13px] text-[#1d1d1f]">
-                  {snapshot.predicted_nitrogen_g_kg != null ? `${snapshot.predicted_nitrogen_g_kg.toFixed(2)} г/кг` : '2.90 г/кг'}
+                  {`${snapshot.predicted_nitrogen_g_kg != null ? snapshot.predicted_nitrogen_g_kg.toFixed(2) : '2.90'} ${t('ml.gkg')}`}
                 </span>
                 <span className="text-[8px] text-emerald-600 block">EGA R²=0.78</span>
               </div>
               <div className="p-2 bg-[#f5f5f7] rounded-lg">
-                <span className="text-[9px] text-[#86868b] block uppercase font-bold">Углерод (SOC)</span>
+                <span className="text-[9px] text-[#86868b] block uppercase font-bold">{t('ml.carbon')}</span>
                 <span className="font-bold text-[13px] text-[#1d1d1f]">
-                  {snapshot.predicted_carbon_g_kg != null ? `${snapshot.predicted_carbon_g_kg.toFixed(1)} г/кг` : '30.5 г/кг'}
+                  {`${snapshot.predicted_carbon_g_kg != null ? snapshot.predicted_carbon_g_kg.toFixed(1) : '30.5'} ${t('ml.gkg')}`}
                 </span>
                 <span className="text-[8px] text-emerald-600 block">XGBoost R²=0.68</span>
               </div>
               <div className="p-2 bg-[#f5f5f7] rounded-lg">
-                <span className="text-[9px] text-[#86868b] block uppercase font-bold">Влажность</span>
+                <span className="text-[9px] text-[#86868b] block uppercase font-bold">{t('ml.moisture')}</span>
                 <span className="font-bold text-[13px] text-[#1d1d1f]">
                   {snapshot.predicted_moisture_pct != null ? `${snapshot.predicted_moisture_pct.toFixed(1)}%` : '12.8%'}
                 </span>
                 <span className="text-[8px] text-emerald-600 block">Random Forest R²=0.63</span>
               </div>
               <div className="p-2 bg-[#f5f5f7] rounded-lg">
-                <span className="text-[9px] text-[#86868b] block uppercase font-bold">Расчётный pH</span>
+                <span className="text-[9px] text-[#86868b] block uppercase font-bold">{t('ml.calculatedPh')}</span>
                 <span className="font-bold text-[13px] text-[#1d1d1f]">
                   {snapshot.predicted_ph != null ? snapshot.predicted_ph.toFixed(2) : '7.72'}
                 </span>
-                <span className="text-[8px] text-purple-600 block">Контроль электрода</span>
+                <span className="text-[8px] text-purple-600 block">{t('ml.electrodeControl')}</span>
               </div>
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between text-[9px] text-[#86868b] pt-1 px-1">
-          <span>Синхронизировано со спутниками ERA5 и SoilGrids</span>
+          <span>{t('ml.syncedWith')}</span>
           <span className="flex items-center gap-1 text-emerald-600 font-bold">
-            <CheckCircle2 className="w-3 h-3" /> Онлайн
+            <CheckCircle2 className="w-3 h-3" /> {t('common.online')}
           </span>
         </div>
       </div>

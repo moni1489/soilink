@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapboxViewer } from '@/components/MapboxViewer';
 import { SensorPanel } from '@/components/SensorPanel';
 import { ChatInterface } from '@/components/ChatInterface';
@@ -27,6 +28,7 @@ import { ExportDataModal } from '@/components/ExportDataModal';
 type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | 'ml' | null;
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const user = useUser();
   const visibleFields = useMemo(() => fields.filter(f => canViewField(user, f.id)), [user]);
@@ -90,10 +92,10 @@ export function DashboardPage() {
     const avgPh = activeSensors.reduce((s, x) => s + x.pH, 0) / activeSensors.length;
 
     return [
-      { id: 'moisture', label: 'Влажность', value: `${avgMoisture.toFixed(0)}%`, icon: Droplet, color: 'text-blue-500', trend: '+2%', data: [35, 42, 38, 45, 49, avgMoisture] },
-      { id: 'temp', label: 'Температура', value: `${avgTemp.toFixed(1)}°`, icon: Thermometer, color: 'text-orange-500', trend: '-1°', data: [18, 19, 22, 21, 20, avgTemp] },
-      { id: 'ph', label: 'Кислотность', value: `${avgPh.toFixed(1)}`, icon: FlaskConical, color: 'text-purple-500', trend: 'OK', data: [6.1, 6.2, 6.1, 6.3, 6.4, avgPh] },
-      { id: 'health', label: 'NDVI Индекс', value: '0.74', icon: TrendingUp, color: 'text-green-600', trend: '+0.05', data: [0.65, 0.68, 0.70, 0.71, 0.73, 0.74] },
+      { id: 'moisture', label: t('dash.moisture'), value: `${avgMoisture.toFixed(0)}%`, icon: Droplet, color: 'text-blue-500', trend: '+2%', data: [35, 42, 38, 45, 49, avgMoisture] },
+      { id: 'temp', label: t('dash.temperature'), value: `${avgTemp.toFixed(1)}°`, icon: Thermometer, color: 'text-orange-500', trend: '-1°', data: [18, 19, 22, 21, 20, avgTemp] },
+      { id: 'ph', label: t('dash.acidity'), value: `${avgPh.toFixed(1)}`, icon: FlaskConical, color: 'text-purple-500', trend: 'OK', data: [6.1, 6.2, 6.1, 6.3, 6.4, avgPh] },
+      { id: 'health', label: t('dash.ndvi'), value: '0.74', icon: TrendingUp, color: 'text-green-600', trend: '+0.05', data: [0.65, 0.68, 0.70, 0.71, 0.73, 0.74] },
     ];
   }, [activeSensors]);
 
@@ -108,7 +110,7 @@ export function DashboardPage() {
               className="flex items-center gap-2 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold border border-black/5 md:border-transparent"
             >
               <MapIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
-              <span className="truncate max-w-[110px] md:max-w-[140px]">{activeField.name.split(' — ')[0]}</span>
+              <span className="truncate max-w-[110px] md:max-w-[140px]">{t(activeField.shortKey)}</span>
               <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform flex-shrink-0 ${fieldDropdown ? 'rotate-180' : ''}`} />
             </button>
             <AnimatePresence>
@@ -122,7 +124,7 @@ export function DashboardPage() {
                       <button key={f.id} onClick={() => { setActiveFieldId(f.id); setActiveZoneFilter(null); setFieldDropdown(false); }}
                         className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeFieldId === f.id ? 'font-bold bg-black/5' : ''}`}
                       >
-                        <span className="truncate">{f.name}</span>
+                        <span className="truncate">{t(f.nameKey)}</span>
                         {activeFieldId === f.id && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 ml-2" />}
                       </button>
                     ))}
@@ -137,7 +139,7 @@ export function DashboardPage() {
               className="flex items-center gap-2 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold border border-black/5 md:border-transparent"
             >
               <Layers className="w-4 h-4 text-purple-500 flex-shrink-0" />
-              <span className="truncate max-w-[110px] md:max-w-[140px]">{activeZoneFilter ? allFieldZones.find(z => z.id === activeZoneFilter)?.name : 'Все зоны'}</span>
+              <span className="truncate max-w-[110px] md:max-w-[140px]">{activeZoneFilter ? t(allFieldZones.find(z => z.id === activeZoneFilter)?.nameKey ?? '') : t('dash.allZones')}</span>
               <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform flex-shrink-0 ${zoneDropdown ? 'rotate-180' : ''}`} />
             </button>
             <AnimatePresence>
@@ -150,7 +152,7 @@ export function DashboardPage() {
                     <button onClick={() => { setActiveZoneFilter(null); setZoneDropdown(false); }}
                       className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${!activeZoneFilter ? 'font-bold bg-black/5' : ''}`}
                     >
-                      <span>Все зоны</span>
+                      <span>{t('dash.allZones')}</span>
                       {!activeZoneFilter && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
                     </button>
                     {allFieldZones.map(z => (
@@ -159,7 +161,7 @@ export function DashboardPage() {
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: z.color === 'green' ? '#10b981' : z.color === 'yellow' ? '#f59e0b' : '#ef4444' }} />
-                          <span className="truncate">{z.name}</span>
+                          <span className="truncate">{t(z.nameKey)}</span>
                         </div>
                         {activeZoneFilter === z.id && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0 ml-2" />}
                       </button>
@@ -176,7 +178,7 @@ export function DashboardPage() {
           <div className="h-4 w-px bg-black/10 flex-shrink-0" />
 
           <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5 overflow-hidden flex-shrink-0">
-            {([['heatmap', 'Хитмап'], ['zones', 'Зоны'], ['satellite', 'Спутник']] as [MapMode, string][]).map(([m, lbl]) => (
+            {([['heatmap', t('dash.heatmap')], ['zones', t('dash.zones')], ['satellite', t('dash.satellite')]] as [MapMode, string][]).map(([m, lbl]) => (
               <button key={m} onClick={() => setMapMode(m)}
                 className={`px-3 md:px-4 py-1.5 rounded-md text-[11px] font-bold transition-all whitespace-nowrap ${mapMode === m ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
               >{lbl}</button>
@@ -184,17 +186,17 @@ export function DashboardPage() {
           </div>
 
           <button onClick={() => setNdviEnabled(!ndviEnabled)}
-            title="NDVI (Нормализованный относительный индекс растительности) показывает качество и плотность биомассы"
+            title={t('dash.ndviTooltip')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border flex-shrink-0 whitespace-nowrap ${ndviEnabled ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-200' : 'bg-white border-black/10 text-[#6e6e73] hover:border-black/20'}`}
           >
             <Activity className="w-3.5 h-3.5" /> NDVI
           </button>
 
           {canExportData(user) && (
-            <button onClick={() => setExportOpen(true)} title="Выгрузить данные почвы и предсказания файлом"
+            <button onClick={() => setExportOpen(true)} title={t('dash.exportTooltip')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border flex-shrink-0 whitespace-nowrap bg-white border-black/10 text-[#6e6e73] hover:border-[#0071e3] hover:text-[#0071e3]"
             >
-              <Download className="w-3.5 h-3.5" /> Экспорт
+              <Download className="w-3.5 h-3.5" /> {t('dash.export')}
             </button>
           )}
         </div>
@@ -244,11 +246,11 @@ export function DashboardPage() {
       {/* Mobile View Switcher — Карта / Инсайты / Чат / Почва */}
       <div className="md:hidden flex-shrink-0 flex items-center gap-1 px-2 py-2 bg-white border-b border-black/5 z-20 overflow-x-auto scrollbar-hide">
         {([
-          ['map', MapIcon, 'Карта'],
-          ['recommendations', Zap, 'Инсайты'],
+          ['map', MapIcon, t('dash.tabMap')],
+          ['recommendations', Zap, t('dash.tabInsights')],
           ['ml', BarChart3, 'ML'],
-          ['chat', MessageSquare, 'Чат'],
-          ['analysis', Layers, 'Почва'],
+          ['chat', MessageSquare, t('dash.tabChat')],
+          ['analysis', Layers, t('dash.tabSoil')],
         ] as [RightPanel, typeof MapIcon, string][]).map(([key, Icon, label]) => (
           <button key={key} onClick={() => setRightPanel(key)}
             className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-xl transition-all ${rightPanel === key ? 'bg-[#f5f5f7] text-[#1d1d1f]' : 'text-[#86868b]'}`}
@@ -277,7 +279,7 @@ export function DashboardPage() {
 
           {/* Fullscreen Toggle */}
           <button onClick={() => setMapFullscreen(v => !v)}
-            title={mapFullscreen ? 'Выйти из полноэкранного режима' : 'На весь экран'}
+            title={mapFullscreen ? t('dash.fullscreenExit') : t('dash.fullscreenEnter')}
             className="absolute top-4 right-16 md:right-20 z-20 w-9 h-9 md:w-10 md:h-10 bg-white/95 backdrop-blur-xl border border-black/10 rounded-xl shadow-pro flex items-center justify-center hover:bg-black/5 active:scale-95 transition-all pointer-events-auto"
           >
             {mapFullscreen ? <Minimize2 className="w-4 h-4 text-[#1d1d1f]" /> : <Maximize2 className="w-4 h-4 text-[#1d1d1f]" />}
@@ -292,19 +294,19 @@ export function DashboardPage() {
               <div className="flex items-center justify-between mb-4 md:mb-5">
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck className="w-5 h-5 text-green-500" />
-                  <span className="text-[11px] font-black uppercase tracking-wider">Общий статус поля</span>
+                  <span className="text-[11px] font-black uppercase tracking-wider">{t('dash.overallStatus')}</span>
                 </div>
-                <div className="px-2 py-0.5 bg-green-50 text-green-600 text-[9px] font-bold rounded uppercase">Стабильно</div>
+                <div className="px-2 py-0.5 bg-green-50 text-green-600 text-[9px] font-bold rounded uppercase">{t('dash.stable')}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-6 mb-4 md:mb-6">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] font-bold text-[#6e6e73] uppercase">Однородность</span>
+                  <span className="text-[9px] font-bold text-[#6e6e73] uppercase">{t('dash.uniformity')}</span>
                   <span className="text-xl font-bold font-data text-[#1d1d1f]">88%</span>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
-                  <span className="text-[9px] font-bold text-[#6e6e73] uppercase">Индекс роста</span>
-                  <span className="text-xl font-bold font-data text-green-600">Оптимально</span>
+                  <span className="text-[9px] font-bold text-[#6e6e73] uppercase">{t('dash.growthIndex')}</span>
+                  <span className="text-xl font-bold font-data text-green-600">{t('dash.optimal')}</span>
                 </div>
               </div>
 
@@ -313,8 +315,8 @@ export function DashboardPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setSelectedDepth('0-5cm')} className={`py-2 rounded-lg text-[10px] font-bold transition-all border pointer-events-auto ${selectedDepth === '0-5cm' ? 'bg-[#1d1d1f] text-white border-black shadow-md' : 'bg-[#f5f5f7] border-transparent text-[#6e6e73] hover:bg-black/5'}`}>ВЕРХНИЙ СЛОЙ</button>
-                <button onClick={() => setSelectedDepth('60-100cm')} className={`py-2 rounded-lg text-[10px] font-bold transition-all border pointer-events-auto ${selectedDepth === '60-100cm' ? 'bg-[#1d1d1f] text-white border-black shadow-md' : 'bg-[#f5f5f7] border-transparent text-[#6e6e73] hover:bg-black/5'}`}>ГЛУБИННЫЙ СЛОЙ</button>
+                <button onClick={() => setSelectedDepth('0-5cm')} className={`py-2 rounded-lg text-[10px] font-bold transition-all border pointer-events-auto ${selectedDepth === '0-5cm' ? 'bg-[#1d1d1f] text-white border-black shadow-md' : 'bg-[#f5f5f7] border-transparent text-[#6e6e73] hover:bg-black/5'}`}>{t('dash.topLayer')}</button>
+                <button onClick={() => setSelectedDepth('60-100cm')} className={`py-2 rounded-lg text-[10px] font-bold transition-all border pointer-events-auto ${selectedDepth === '60-100cm' ? 'bg-[#1d1d1f] text-white border-black shadow-md' : 'bg-[#f5f5f7] border-transparent text-[#6e6e73] hover:bg-black/5'}`}>{t('dash.deepLayer')}</button>
               </div>
             </motion.div>
           </div>
@@ -322,7 +324,7 @@ export function DashboardPage() {
           {/* Quick Controls Bottom — desktop */}
           <div className="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 z-10 gap-2.5">
             <button onClick={() => setDepthProfileOpen(true)} className="flex items-center gap-2.5 px-6 py-3 bg-[#1d1d1f] text-white rounded-full text-[13px] font-bold shadow-pro-lg hover:bg-black hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
-              <Settings2 className="w-4 h-4" /> ОТКРЫТЬ СКАНЕР ПРОФИЛЯ
+              <Settings2 className="w-4 h-4" /> {t('dash.openScanner')}
             </button>
           </div>
 
@@ -333,16 +335,16 @@ export function DashboardPage() {
             >
               <div className="flex items-center gap-2 min-w-0">
                 <ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span className="text-[10px] font-black uppercase tracking-wider truncate">Статус поля</span>
-                <div className="px-1.5 py-0.5 bg-green-50 text-green-600 text-[8px] font-bold rounded uppercase flex-shrink-0">Стабильно</div>
+                <span className="text-[10px] font-black uppercase tracking-wider truncate">{t('dash.fieldStatus')}</span>
+                <div className="px-1.5 py-0.5 bg-green-50 text-green-600 text-[8px] font-bold rounded uppercase flex-shrink-0">{t('dash.stable')}</div>
               </div>
               <div className="flex items-center gap-2.5 flex-shrink-0 text-[11px] font-bold font-data">
                 <span>88%</span>
-                <span className="text-green-600">Оптимально</span>
+                <span className="text-green-600">{t('dash.optimal')}</span>
               </div>
             </motion.div>
             <button onClick={() => setDepthProfileOpen(true)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1d1d1f] text-white rounded-full text-[11px] font-bold shadow-pro-lg active:scale-95 transition-all whitespace-nowrap pointer-events-auto">
-              <Settings2 className="w-4 h-4" /> СКАНЕР ПРОФИЛЯ
+              <Settings2 className="w-4 h-4" /> {t('dash.profileScanner')}
             </button>
           </div>
 
@@ -352,13 +354,13 @@ export function DashboardPage() {
                 className="absolute top-4 left-4 right-4 md:left-auto md:top-6 md:right-6 md:w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-pro-lg z-30 overflow-hidden border border-black/5"
               >
                 <div className="p-5 border-b border-black/5 flex items-center justify-between">
-                  <h3 className="font-bold text-[14px] truncate">{selectedZone.name}</h3>
+                  <h3 className="font-bold text-[14px] truncate">{t(selectedZone.nameKey)}</h3>
                   <button onClick={() => setSelectedZone(null)} className="p-1 hover:bg-black/5 rounded-md transition-all"><X className="w-4 h-4 text-[#6e6e73]" /></button>
                 </div>
                 <div className="p-5 flex flex-col gap-6">
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider">Индекс здоровья</span>
+                      <span className="text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider">{t('dash.healthIndex')}</span>
                       <span className="text-3xl font-bold font-data leading-none">{selectedZone.healthScore}%</span>
                     </div>
                     <div className="w-14 h-14 rounded-full border-4 border-blue-500/10 flex items-center justify-center">
@@ -366,12 +368,12 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => setComparisonOpen(true)} className="py-2.5 bg-[#0071e3] text-white rounded-xl text-[11px] font-bold shadow-sm hover:bg-[#0077ed] transition-all">Анализ</button>
-                    <button onClick={() => setDepthProfileOpen(true)} className="py-2.5 bg-[#f5f5f7] text-[#1d1d1f] rounded-xl text-[11px] font-bold hover:bg-black/5 transition-all">Отчет</button>
+                    <button onClick={() => setComparisonOpen(true)} className="py-2.5 bg-[#0071e3] text-white rounded-xl text-[11px] font-bold shadow-sm hover:bg-[#0077ed] transition-all">{t('dash.analysis')}</button>
+                    <button onClick={() => setDepthProfileOpen(true)} className="py-2.5 bg-[#f5f5f7] text-[#1d1d1f] rounded-xl text-[11px] font-bold hover:bg-black/5 transition-all">{t('dash.report')}</button>
                   </div>
                   <div className="p-4 bg-blue-50/50 rounded-xl flex gap-3 border border-blue-100/50">
                     <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-blue-900 leading-relaxed font-medium">Критический дефицит минералов в горизонте 30-60см. Рекомендуется внесение удобрений.</p>
+                    <p className="text-[11px] text-blue-900 leading-relaxed font-medium">{t('dash.mineralAlert')}</p>
                   </div>
                 </div>
               </motion.div>
@@ -383,7 +385,7 @@ export function DashboardPage() {
           <div className="hidden md:flex h-14 md:h-16 items-center gap-0.5 px-2 border-b border-black/5 bg-[#fbfbfd] overflow-x-auto scrollbar-hide">
             <button onClick={() => setRightPanel('recommendations')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'recommendations' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
               <Zap className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Инсайты</span>
+              <span className="text-[10px] font-black uppercase tracking-wider">{t('dash.tabInsights')}</span>
             </button>
             <button onClick={() => setRightPanel('ml')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'ml' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
               <BarChart3 className="w-3.5 h-3.5" />
@@ -391,11 +393,11 @@ export function DashboardPage() {
             </button>
             <button onClick={() => setRightPanel('chat')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'chat' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
               <MessageSquare className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Чат</span>
+              <span className="text-[10px] font-black uppercase tracking-wider">{t('dash.tabChat')}</span>
             </button>
             <button onClick={() => setRightPanel('analysis')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'analysis' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
               <Layers className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Почва</span>
+              <span className="text-[10px] font-black uppercase tracking-wider">{t('dash.tabSoil')}</span>
             </button>
           </div>
           <div className="flex-1 overflow-hidden">
@@ -421,7 +423,7 @@ export function DashboardPage() {
       <DepthProfileModal isOpen={depthProfileOpen} onClose={() => setDepthProfileOpen(false)} />
       {canExportData(user) && (
         <ExportDataModal isOpen={exportOpen} onClose={() => setExportOpen(false)}
-          activeField={activeField} fields={visibleFields} exportedBy={user.name}
+          activeField={activeField} fields={visibleFields} exportedBy={t(user.nameKey)}
         />
       )}
     </div>
