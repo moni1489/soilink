@@ -8,6 +8,13 @@ import { initials } from '@/auth/accounts';
 import { ROLES, canViewDashboard } from '@/auth/roles';
 import { LanguageSwitcher, LanguageMenu } from '@/components/LanguageSwitcher';
 
+function avatarGradient(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  return `linear-gradient(135deg, hsl(${hue},70%,55%) 0%, hsl(${(hue + 40) % 360},80%,40%) 100%)`;
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
@@ -63,7 +70,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="p-4 border-t border-black/5">
            <LanguageSwitcher />
            <div className="flex items-center gap-3 p-2 mt-2 rounded-xl">
-              <div className="w-8 h-8 rounded-full bg-[#0071e3] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+              <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0 shadow-sm"
+                style={{ background: avatarGradient(user.id) }}>
                 {initials(userName)}
               </div>
               <div className="flex flex-col min-w-0 flex-1">

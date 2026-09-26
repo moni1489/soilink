@@ -97,7 +97,7 @@ export function DashboardPage() {
       { id: 'ph', label: t('dash.acidity'), value: `${avgPh.toFixed(1)}`, icon: FlaskConical, color: 'text-purple-500', trend: 'OK', data: [6.1, 6.2, 6.1, 6.3, 6.4, avgPh] },
       { id: 'health', label: t('dash.ndvi'), value: '0.74', icon: TrendingUp, color: 'text-green-600', trend: '+0.05', data: [0.65, 0.68, 0.70, 0.71, 0.73, 0.74] },
     ];
-  }, [activeSensors]);
+  }, [activeSensors, t]);
 
   return (
     <div className="h-full flex flex-col bg-[#f5f5f7] overflow-hidden">
