@@ -88,7 +88,14 @@
     "save": "SAVE CHANGES",
     "proTitle": "This section is available in the PRO version",
     "proBody": "Contact your SoiLink manager to unlock more platform features.",
-    "language": "Interface language"
+    "language": "Interface language",
+    "takePhoto": "Take photo",
+    "uploadPhoto": "Upload photo",
+    "removePhoto": "Remove",
+    "capture": "Capture",
+    "cameraError": "No camera access. Allow it in the browser or upload a photo from a file.",
+    "photoSaveError": "Could not save the photo",
+    "photoReadError": "Could not open the image"
   },
   "schedule": {
     "title": "Task calendar",
@@ -510,7 +517,7 @@
       "maria": "Maria K."
     },
     "accounts": {
-      "u-director": "Nurlan Akhmetov",
+      "u-director": "Dvoynyashka",
       "u-protection": "Aigerim Sadykova",
       "u-irrigation": "Dmitry Kovalev",
       "u-agrochem": "Maria Kim",

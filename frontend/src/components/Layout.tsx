@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Leaf, Map as MapIcon, Calendar, Cog, Bell, Search, Command, LogOut } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useAuth, useUser } from '@/auth/useAuth';
-import { initials } from '@/auth/accounts';
+import { Avatar } from '@/components/Avatar';
 import { ROLES, canViewDashboard } from '@/auth/roles';
 import { LanguageSwitcher, LanguageMenu } from '@/components/LanguageSwitcher';
 
@@ -70,10 +70,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="p-4 border-t border-black/5">
            <LanguageSwitcher />
            <div className="flex items-center gap-3 p-2 mt-2 rounded-xl">
-              <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0 shadow-sm"
-                style={{ background: avatarGradient(user.id) }}>
-                {initials(userName)}
-              </div>
+              <Avatar userId={user.id} name={userName} className="w-8 h-8 rounded-full text-white text-[11px] font-bold flex-shrink-0 shadow-sm"
+                style={{ background: avatarGradient(user.id) }} />
               <div className="flex flex-col min-w-0 flex-1">
                 <p className="text-[12px] font-semibold truncate">{userName}</p>
                 <p className="text-[10px] text-[#6e6e73] truncate">{user.companyKey ? t(user.companyKey) : t(ROLES[user.role].labelKey)}</p>

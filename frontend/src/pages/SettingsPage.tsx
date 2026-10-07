@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { User, Bell, Shield, Database, Save } from 'lucide-react';
+import { User, Bell, Shield, Database, Save, Camera, Upload, Trash2 } from 'lucide-react';
 import { useUser } from '@/auth/useAuth';
-import { initials } from '@/auth/accounts';
+import { setAvatar, toAvatarDataUrl, useAvatar } from '@/auth/avatar';
+import { Avatar } from '@/components/Avatar';
+import { CameraCapture } from '@/components/CameraCapture';
 import { ROLES, ACCESS_LEVELS, TASK_TYPE_KEYS } from '@/auth/roles';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { fields } from '@/data/mockData';
@@ -12,6 +14,23 @@ export function SettingsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
   const user = useUser();
+  const photo = useAvatar(user.id);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const savePhoto = (dataUrl: string | null) => {
+    if (!setAvatar(user.id, dataUrl)) alert(t('settings.photoSaveError'));
+  };
+  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const img = await createImageBitmap(file);
+      savePhoto(toAvatarDataUrl(img, img.width, img.height));
+    } catch {
+      alert(t('settings.photoReadError'));
+    }
+  };
   const role = ROLES[user.role];
   const scope = role.level === 'field'
     ? fields.filter(f => user.assignedFieldIds?.includes(f.id)).map(f => t(f.shortKey)).join(', ')
@@ -51,12 +70,29 @@ export function SettingsPage() {
               <div className="space-y-6 sm:space-y-8">
                 <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-black/5 text-center sm:text-left">
                   <div className="relative">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-white shadow-md bg-[#0071e3] text-white flex items-center justify-center text-2xl font-bold">{initials(t(user.nameKey))}</div>
-                    <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full border border-black/10 shadow-sm flex items-center justify-center hover:bg-black/5">📷</button>
+                    <Avatar userId={user.id} name={t(user.nameKey)} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-white shadow-md bg-[#0071e3] text-white text-2xl font-bold" />
+                    <button onClick={() => setCameraOpen(true)} title={t('settings.takePhoto')} aria-label={t('settings.takePhoto')}
+                      className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full border border-black/10 shadow-sm flex items-center justify-center hover:bg-black/5">
+                      <Camera className="w-4 h-4 text-[#1d1d1f]" />
+                    </button>
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-[#1d1d1f]">{t(user.nameKey)}</h2>
                     <p className="text-[#6e6e73] text-[13px] font-medium">{user.companyKey ? t(user.companyKey) : t(role.labelKey)} • SoiLink {t('settings.city')}</p>
+                    <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-3">
+                      <button onClick={() => setCameraOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-black/10 text-[12px] font-semibold">
+                        <Camera className="w-3.5 h-3.5" /> {t('settings.takePhoto')}
+                      </button>
+                      <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-black/10 text-[12px] font-semibold">
+                        <Upload className="w-3.5 h-3.5" /> {t('settings.uploadPhoto')}
+                      </button>
+                      {photo && (
+                        <button onClick={() => savePhoto(null)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-red-500 hover:bg-red-50 text-[12px] font-semibold">
+                          <Trash2 className="w-3.5 h-3.5" /> {t('settings.removePhoto')}
+                        </button>
+                      )}
+                      <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
+                    </div>
                   </div>
                 </div>
 
@@ -118,6 +154,7 @@ export function SettingsPage() {
           </motion.div>
         </div>
       </div>
+      {cameraOpen && <CameraCapture onClose={() => setCameraOpen(false)} onCapture={url => { savePhoto(url); setCameraOpen(false); }} />}
     </div>
   );
 }

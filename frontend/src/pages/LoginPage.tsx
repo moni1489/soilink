@@ -4,7 +4,8 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Leaf, Lock, User as UserIcon, LogIn, AlertCircle, Eye, EyeOff, ShieldCheck, Sprout, Tractor, Briefcase } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
-import { accounts, DEMO_PASSWORD, initials } from '@/auth/accounts';
+import { accounts, DEMO_PASSWORD } from '@/auth/accounts';
+import { Avatar } from '@/components/Avatar';
 import { ACCESS_LEVELS, ROLES, canViewDashboard, type AccessLevel } from '@/auth/roles';
 import { LanguageMenu } from '@/components/LanguageSwitcher';
 
@@ -155,9 +156,7 @@ export function LoginPage() {
                         <button key={a.id} type="button" onClick={() => pickAccount(a.login)}
                           className={`flex items-center gap-3 p-2 rounded-xl text-left transition-all ${loginName === a.login ? 'bg-blue-50 ring-1 ring-blue-500/30' : 'hover:bg-[#f5f5f7]'}`}
                         >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${tint}`}>
-                            {initials(t(a.nameKey))}
-                          </div>
+                          <Avatar userId={a.id} name={t(a.nameKey)} className={`w-8 h-8 rounded-full text-[11px] font-bold flex-shrink-0 ${tint}`} />
                           <div className="min-w-0 flex-1">
                             <p className="text-[12px] font-semibold truncate">{t(a.nameKey)}</p>
                             <p className="text-[10px] text-[#6e6e73] truncate">{a.companyKey ? t(a.companyKey) : t(ROLES[a.role].labelKey)}</p>
