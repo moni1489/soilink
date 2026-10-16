@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNowStrict } from 'date-fns';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
-import { METRICS, STATUS_COLORS, classIndex, idw, metersPerDeg, pointInPolygon, type IdwPoint, type MetricKey } from '@/data/metrics';
+import { METRICS, STATUS_COLORS, classIndex, formatMetric, heatPoints, idw, metersPerDeg, pointInPolygon, type IdwPoint, type MetricKey } from '@/data/metrics';
 import { useDateLocale } from '@/i18n';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
@@ -46,12 +46,6 @@ const hexRgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2),
 
 /** Достоверность оценки падает с расстоянием до ближайшего датчика → прозрачность пикселя */
 const confidenceAlpha = (nearestM: number) => 0.82 - Math.min(Math.max((nearestM - 250) / 600, 0), 1) * 0.5;
-
-export const heatPoints = (sensors: Sensor[], metric: MetricKey): IdwPoint[] =>
-  sensors
-    .filter(s => !s.offline)
-    .map(s => ({ lng: s.coordinates.longitude, lat: s.coordinates.latitude, value: METRICS[metric].read(s) }))
-    .filter(p => Number.isFinite(p.value));
 
 /**
  * Растр интерполяции по показаниям датчиков, обрезанный по контурам зон.
@@ -120,9 +114,6 @@ function insideCoverage(lng: number, lat: number, zones: SoilZone[], points: Idw
   if (zones.length) return zones.some(z => pointInPolygon({ lng, lat }, z.coordinates));
   return idw(points, lng, lat).nearest <= COVERAGE_RADIUS_M;
 }
-
-export const formatMetric = (metric: MetricKey, value: number) =>
-  Number.isFinite(value) ? `${value.toFixed(METRICS[metric].digits)}${METRICS[metric].unit && METRICS[metric].unit !== '%' ? ' ' : ''}${METRICS[metric].unit}` : '—';
 
 export function MapboxViewer({
   sensors, zones, field, mapMode, metric, onMetricChange, onSelectSensor, onSelectZone, activeSensorId, activeZoneId,
@@ -203,7 +194,7 @@ export function MapboxViewer({
 
         {/* ─── INTERPOLATION RASTER (only in heatmap mode) ─── */}
         {raster && (
-          <Source key={raster.url.length + metric} id="interp-src" type="image" url={raster.url} coordinates={raster.coordinates}>
+          <Source id="interp-src" type="image" url={raster.url} coordinates={raster.coordinates}>
             <Layer id="interp-layer" type="raster" paint={{ 'raster-opacity': 1, 'raster-fade-duration': 0, 'raster-resampling': 'nearest' }} />
           </Source>
         )}
@@ -266,9 +257,8 @@ export function MapboxViewer({
         {/* ─── SENSOR MARKERS ─── */}
         {sensors.map(sensor => {
           const isActive = activeSensorId === sensor.id;
-          const color =
-            sensor.status === 'critical' ? '#ff3b30' :
-              sensor.status === 'warning' ? '#ff9500' : '#34c759';
+          const color = sensor.offline ? OFFLINE_COLOR : STATUS_COLORS[sensor.status];
+          const value = def.read(sensor);
 
           return (
             <Marker
@@ -293,35 +283,29 @@ export function MapboxViewer({
                   )}
                 </AnimatePresence>
 
-                <motion.div
-                  className={`w-5 h-5 rounded-full border-[3px] shadow-xl transition-all ${isActive ? 'scale-125' : 'scale-100'}`}
-                  style={{
-                    backgroundColor: 'white',
-                    borderColor: color,
-                    boxShadow: `0 0 15px ${color}33`,
-                  }}
-                >
-                  <div className="absolute inset-[3px] rounded-full" style={{ backgroundColor: color, opacity: isActive ? 1 : 0.3 }} />
-                </motion.div>
+                <div
+                  className={`w-4 h-4 rounded-full border-2 border-white shadow-lg transition-transform ${isActive ? 'scale-125' : 'scale-100'}`}
+                  style={{ backgroundColor: color }}
+                />
+                {/* Реальный датчик подписан кодом с наклейки */}
+                {sensor.registryId && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-1.5 py-0.5 rounded bg-[#1d1d1f] text-white text-[9px] font-black font-data whitespace-nowrap shadow">
+                    {sensor.registryId}
+                  </div>
+                )}
 
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                  <div className="bg-[#1d1d1f] text-white p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] border border-white/10">
-                    <span className="text-[10px] font-black uppercase tracking-widest truncate">{t(sensor.nameKey)}</span>
-                    <div className="flex items-center justify-between gap-3 text-[10px] font-bold">
-                      <div className="flex items-center gap-1.5">
-                        <div className={`w-1.5 h-1.5 rounded-full ${sensor.battery < 20 ? 'bg-red-500' : 'bg-green-500'}`} />
-                        <span className="text-white/80">{sensor.battery}% {t('map.battery')}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="flex gap-0.5 items-end h-2.5">
-                          <div className="w-0.5 h-1.5 bg-white/40" />
-                          <div className="w-0.5 h-2 bg-white/60" />
-                          <div className="w-0.5 h-2.5 bg-white/90" />
-                        </div>
-                        <span className="text-white/80">{sensor.signalStrength}%</span>
-                      </div>
+                  <div className="bg-[#1d1d1f] text-white px-3 py-2.5 rounded-xl shadow-2xl flex flex-col gap-1.5 min-w-[150px] border border-white/10">
+                    <span className="text-[10px] font-black uppercase tracking-widest truncate">{sensor.registryId ? sensor.nameKey : t(sensor.nameKey)}</span>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="text-[10px] font-bold text-white/60">{t(def.labelKey)}</span>
+                      <span className="text-[13px] font-black font-data">{formatMetric(metric, value)}</span>
                     </div>
+                    <span className="text-[9px] font-bold text-white/60">
+                      {sensor.registryId && !Number.isFinite(value) ? t('map.waiting') : formatDistanceToNowStrict(new Date(sensor.lastUpdated), { addSuffix: true, locale: dateLocale })}
+                      {Number.isFinite(sensor.battery) && ` · ${sensor.battery}% ${t('map.battery')}`}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -329,6 +313,45 @@ export function MapboxViewer({
           );
         })}
       </Map>
+
+      {/* ─── Подсказка под курсором: оценка в точке и до ближайшего датчика ─── */}
+      {hover && Number.isFinite(hover.value) && (
+        <div className="absolute z-10 pointer-events-none px-2 py-1 rounded-md bg-[#1d1d1f]/90 text-white text-[10px] font-bold font-data whitespace-nowrap"
+          style={{ left: hover.x + 14, top: hover.y + 14 }}
+        >
+          ≈ {formatMetric(metric, hover.value)} · {t('map.nearest', { m: Math.round(hover.nearest) })}
+        </div>
+      )}
+
+      {/* ─── Слой и легенда (только в режиме карты показателей) ─── */}
+      {isHeatmap && (
+        <div className="absolute bottom-28 md:bottom-6 left-3 md:left-4 z-10 bg-white/95 backdrop-blur-xl border border-black/5 rounded-xl shadow-pro p-2 flex flex-col gap-2 w-[min(280px,calc(100%-24px))]">
+          <div className="flex bg-[#f5f5f7] p-0.5 rounded-lg">
+            {(Object.keys(METRICS) as MetricKey[]).map(k => (
+              <button key={k} onClick={() => onMetricChange(k)}
+                className={`flex-1 px-1 py-1 rounded-md text-[10px] font-bold whitespace-nowrap transition-all ${metric === k ? 'bg-white shadow-sm text-[#1d1d1f]' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+              >{t(`${METRICS[k].labelKey}Short`)}</button>
+            ))}
+          </div>
+          <div className="px-1">
+            <div className="flex gap-[2px] h-2.5">
+              {def.colors.map(c => <div key={c} className="flex-1 first:rounded-l last:rounded-r" style={{ backgroundColor: c }} />)}
+            </div>
+            <div className="relative h-3.5 mt-0.5">
+              {def.breaks.map((b, i) => (
+                <span key={b} className="absolute -translate-x-1/2 text-[9px] font-bold font-data text-[#6e6e73]"
+                  style={{ left: `${(i + 1) / def.colors.length * 100}%` }}
+                >{b}</span>
+              ))}
+            </div>
+            <div className="flex justify-between text-[9px] font-bold text-[#86868b] mt-0.5">
+              <span>{t(def.labelKey)}{def.unit && `, ${def.unit}`}</span>
+              <span>{t('map.paleFar')}</span>
+            </div>
+          </div>
+          {!points.length && <p className="px-1 text-[10px] font-bold text-[#86868b]">{t('map.noData')}</p>}
+        </div>
+      )}
     </div>
   );
 }

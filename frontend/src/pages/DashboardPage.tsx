@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MapboxViewer } from '@/components/MapboxViewer';
 import { SensorPanel } from '@/components/SensorPanel';
@@ -13,17 +14,36 @@ import {
   Map as MapIcon, MessageSquare, Layers, BarChart3,
   TrendingUp, AlertTriangle, ChevronDown, X, Droplet,
   Thermometer, FlaskConical, Settings2, Info,
-  Activity, Zap, ShieldCheck, Maximize2, Minimize2, Download
+  Activity, Zap, Maximize2, Minimize2, Download
 } from 'lucide-react';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import type { Sensor, SoilZone, MapMode, SoilDepth, WeatherData } from '@/types';
+import type { Sensor, SoilZone, MapMode, WeatherData, SensorStatus } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 import { fetchRealWeather } from '@/services/weatherService';
 import { useUser } from '@/auth/useAuth';
 import { canViewField, canExportData } from '@/auth/roles';
 import { ExportDataModal } from '@/components/ExportDataModal';
+import { METRICS, STATUS_COLORS, heatPoints, idw, pointInPolygon, sensorScore, statusFromScore, type MetricKey } from '@/data/metrics';
+import { listSensors, toMapSensor } from '@/services/sensorService';
+import { useDateLocale } from '@/i18n';
+
+const ZONE_COLOR: Record<SensorStatus, SoilZone['color']> = { healthy: 'green', warning: 'yellow', critical: 'red' };
+const REFRESH_MS = 60_000;
+
+/** Индекс зоны — среднее по датчикам внутри неё; без датчиков — интерполяция в центре зоны */
+function zoneFromSensors(zone: SoilZone, sensors: Sensor[]): SoilZone {
+  const inside = sensors.filter(s => !s.offline && pointInPolygon({ lng: s.coordinates.longitude, lat: s.coordinates.latitude }, zone.coordinates));
+  const lng = zone.coordinates.reduce((a, c) => a + c.lng, 0) / zone.coordinates.length;
+  const lat = zone.coordinates.reduce((a, c) => a + c.lat, 0) / zone.coordinates.length;
+  const scores = inside.map(sensorScore);
+  const score = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : idw(heatPoints(sensors, 'index'), lng, lat).value;
+  if (!Number.isFinite(score)) return zone;
+  const healthScore = Math.round(score);
+  return { ...zone, healthScore, color: ZONE_COLOR[statusFromScore(healthScore)] };
+}
 
 type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | 'ml' | null;
 
@@ -35,7 +55,9 @@ export function DashboardPage() {
   const [activeFieldId, setActiveFieldId] = useState((visibleFields[0] ?? fields[0]).id);
   const [activeZoneFilter, setActiveZoneFilter] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<MapMode>('heatmap');
-  const [selectedDepth, setSelectedDepth] = useState<SoilDepth>('0-5cm');
+  const [metric, setMetric] = useState<MetricKey>('index');
+  const navigate = useNavigate();
+  const dateLocale = useDateLocale();
   const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
   const [selectedZone, setSelectedZone] = useState<SoilZone | null>(null);
   const [rightPanel, setRightPanel] = useState<RightPanel>(isMobile ? 'map' : 'recommendations');
@@ -63,8 +85,20 @@ export function DashboardPage() {
   }, [mapFullscreen]);
 
   const activeField = useMemo(() => visibleFields.find(f => f.id === activeFieldId) ?? visibleFields[0] ?? fields[0], [visibleFields, activeFieldId]);
-  const activeSensors = useMemo(() => sensors.filter(s => s.fieldId === activeFieldId), [activeFieldId]);
-  const allFieldZones = useMemo(() => zones.filter(z => z.fieldId === activeFieldId), [activeFieldId]);
+  // Реальные датчики из реестра — поверх демо-сети, обновляются раз в минуту
+  const [liveSensors, setLiveSensors] = useState<Sensor[]>([]);
+  useEffect(() => {
+    let alive = true;
+    const load = () => listSensors(activeFieldId)
+      .then(list => alive && setLiveSensors(list.map(toMapSensor).filter((s): s is Sensor => !!s)))
+      .catch(() => alive && setLiveSensors([]));
+    load();
+    const id = setInterval(load, REFRESH_MS);
+    return () => { alive = false; clearInterval(id); };
+  }, [activeFieldId]);
+  const activeSensors = useMemo(() => [...sensors.filter(s => s.fieldId === activeFieldId), ...liveSensors], [activeFieldId, liveSensors]);
+  const onlineSensors = useMemo(() => activeSensors.filter(s => !s.offline), [activeSensors]);
+  const allFieldZones = useMemo(() => zones.filter(z => z.fieldId === activeFieldId).map(z => zoneFromSensors(z, activeSensors)), [activeFieldId, activeSensors]);
   const activeZones = useMemo(() => activeZoneFilter ? allFieldZones.filter(z => z.id === activeZoneFilter) : allFieldZones, [allFieldZones, activeZoneFilter]);
   const activeRecs = useMemo(() => recommendations.filter(r => !r.fieldId || r.fieldId === activeFieldId), [activeFieldId]);
   const [realWeather, setRealWeather] = useState<WeatherData | null>(null);
@@ -86,10 +120,10 @@ export function DashboardPage() {
   const activeWeather = realWeather || weather[activeFieldId] || weather['f-1'];
 
   const stats = useMemo(() => {
-    if (!activeSensors.length) return [];
-    const avgMoisture = activeSensors.reduce((s, x) => s + x.soilMoisture, 0) / activeSensors.length;
-    const avgTemp = activeSensors.reduce((s, x) => s + x.soilTemperature, 0) / activeSensors.length;
-    const avgPh = activeSensors.reduce((s, x) => s + x.pH, 0) / activeSensors.length;
+    if (!onlineSensors.length) return [];
+    const avgMoisture = onlineSensors.reduce((s, x) => s + x.soilMoisture, 0) / onlineSensors.length;
+    const avgTemp = onlineSensors.reduce((s, x) => s + x.soilTemperature, 0) / onlineSensors.length;
+    const avgPh = onlineSensors.reduce((s, x) => s + x.pH, 0) / onlineSensors.length;
 
     return [
       { id: 'moisture', label: t('dash.moisture'), value: `${avgMoisture.toFixed(0)}%`, icon: Droplet, color: 'text-blue-500', trend: '+2%', data: [35, 42, 38, 45, 49, avgMoisture] },
@@ -97,7 +131,21 @@ export function DashboardPage() {
       { id: 'ph', label: t('dash.acidity'), value: `${avgPh.toFixed(1)}`, icon: FlaskConical, color: 'text-purple-500', trend: 'OK', data: [6.1, 6.2, 6.1, 6.3, 6.4, avgPh] },
       { id: 'health', label: t('dash.ndvi'), value: '0.74', icon: TrendingUp, color: 'text-green-600', trend: '+0.05', data: [0.65, 0.68, 0.70, 0.71, 0.73, 0.74] },
     ];
-  }, [activeSensors, t]);
+  }, [onlineSensors, t]);
+
+  const fieldStatus = useMemo(() => {
+    const scores = onlineSensors.map(sensorScore);
+    const score = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    const count = (st: SensorStatus) => onlineSensors.filter(s => s.status === st).length;
+    const last = onlineSensors.reduce<string | null>((a, s) => !a || s.lastUpdated > a ? s.lastUpdated : a, null);
+    return {
+      score, status: score == null ? null : statusFromScore(score), last,
+      counts: { healthy: count('healthy'), warning: count('warning'), critical: count('critical') } as Record<SensorStatus, number>,
+      offline: activeSensors.length - onlineSensors.length,
+    };
+  }, [activeSensors, onlineSensors]);
+
+  const selectSensor = (s: Sensor) => s.registryId ? navigate(`/sensors/${s.registryId}`) : setSelectedSensor(s);
 
   return (
     <div className="h-full flex flex-col bg-[#f5f5f7] overflow-hidden">
@@ -271,7 +319,9 @@ export function DashboardPage() {
             zones={activeZones}
             field={activeField}
             mapMode={ndviEnabled ? 'heatmap' : mapMode}
-            onSelectSensor={setSelectedSensor}
+            metric={metric}
+            onMetricChange={setMetric}
+            onSelectSensor={selectSensor}
             onSelectZone={setSelectedZone}
             activeSensorId={selectedSensor?.id ?? null}
             activeZoneId={selectedZone?.id ?? null}
@@ -286,39 +336,9 @@ export function DashboardPage() {
           </button>
 
 
-          {/* Convenient Field Health Hub — desktop only; mobile gets a compact bar at the bottom */}
-          <div className="hidden md:flex absolute md:top-6 md:left-6 z-10 flex-col gap-4 pointer-events-none">
-            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
-              className="bg-white/95 backdrop-blur-xl border border-black/5 p-4 md:p-6 rounded-2xl pointer-events-auto shadow-pro w-full md:w-[320px]"
-            >
-              <div className="flex items-center justify-between mb-4 md:mb-5">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-green-500" />
-                  <span className="text-[11px] font-black uppercase tracking-wider">{t('dash.overallStatus')}</span>
-                </div>
-                <div className="px-2 py-0.5 bg-green-50 text-green-600 text-[9px] font-bold rounded uppercase">{t('dash.stable')}</div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6 mb-4 md:mb-6">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[9px] font-bold text-[#6e6e73] uppercase">{t('dash.uniformity')}</span>
-                  <span className="text-xl font-bold font-data text-[#1d1d1f]">88%</span>
-                </div>
-                <div className="flex flex-col gap-1 text-right">
-                  <span className="text-[9px] font-bold text-[#6e6e73] uppercase">{t('dash.growthIndex')}</span>
-                  <span className="text-xl font-bold font-data text-green-600">{t('dash.optimal')}</span>
-                </div>
-              </div>
-
-              <div className="h-1.5 bg-black/5 rounded-full overflow-hidden mb-6">
-                <motion.div initial={{ width: 0 }} animate={{ width: '88%' }} className="h-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setSelectedDepth('0-5cm')} className={`py-2 rounded-lg text-[10px] font-bold transition-all border pointer-events-auto ${selectedDepth === '0-5cm' ? 'bg-[#1d1d1f] text-white border-black shadow-md' : 'bg-[#f5f5f7] border-transparent text-[#6e6e73] hover:bg-black/5'}`}>{t('dash.topLayer')}</button>
-                <button onClick={() => setSelectedDepth('60-100cm')} className={`py-2 rounded-lg text-[10px] font-bold transition-all border pointer-events-auto ${selectedDepth === '60-100cm' ? 'bg-[#1d1d1f] text-white border-black shadow-md' : 'bg-[#f5f5f7] border-transparent text-[#6e6e73] hover:bg-black/5'}`}>{t('dash.deepLayer')}</button>
-              </div>
-            </motion.div>
+          {/* Сводка по полю — компактно, всё считается из показаний датчиков */}
+          <div className="hidden md:block absolute top-4 left-4 z-10 w-[236px]">
+            <FieldStatusCard status={fieldStatus} lastLabel={fieldStatus.last && formatDistanceToNowStrict(new Date(fieldStatus.last), { addSuffix: true, locale: dateLocale })} />
           </div>
 
           {/* Quick Controls Bottom — desktop */}
@@ -330,19 +350,7 @@ export function DashboardPage() {
 
           {/* Compact Field Status + Controls — mobile only */}
           <div className="md:hidden absolute bottom-4 inset-x-4 z-10 flex flex-col items-stretch gap-2">
-            <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-              className="bg-white/95 backdrop-blur-xl border border-black/5 rounded-2xl shadow-pro px-4 py-2.5 flex items-center justify-between gap-3 pointer-events-auto"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span className="text-[10px] font-black uppercase tracking-wider truncate">{t('dash.fieldStatus')}</span>
-                <div className="px-1.5 py-0.5 bg-green-50 text-green-600 text-[8px] font-bold rounded uppercase flex-shrink-0">{t('dash.stable')}</div>
-              </div>
-              <div className="flex items-center gap-2.5 flex-shrink-0 text-[11px] font-bold font-data">
-                <span>88%</span>
-                <span className="text-green-600">{t('dash.optimal')}</span>
-              </div>
-            </motion.div>
+            <FieldStatusCard status={fieldStatus} />
             <button onClick={() => setDepthProfileOpen(true)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1d1d1f] text-white rounded-full text-[11px] font-bold shadow-pro-lg active:scale-95 transition-all whitespace-nowrap pointer-events-auto">
               <Settings2 className="w-4 h-4" /> {t('dash.profileScanner')}
             </button>
@@ -419,13 +427,55 @@ export function DashboardPage() {
       </div>
 
       <SensorPanel isOpen={!!selectedSensor} sensor={selectedSensor} onClose={() => setSelectedSensor(null)} />
-      <ComparisonModal isOpen={comparisonOpen} sensor={selectedSensor} depth={selectedDepth} onClose={() => setComparisonOpen(false)} />
+      <ComparisonModal isOpen={comparisonOpen} sensor={selectedSensor} onClose={() => setComparisonOpen(false)} />
       <DepthProfileModal isOpen={depthProfileOpen} onClose={() => setDepthProfileOpen(false)} />
       {canExportData(user) && (
         <ExportDataModal isOpen={exportOpen} onClose={() => setExportOpen(false)}
           activeField={activeField} fields={visibleFields} exportedBy={t(user.nameKey)}
         />
       )}
+    </div>
+  );
+}
+
+type FieldStatus = {
+  score: number | null; status: SensorStatus | null; last: string | null;
+  counts: Record<SensorStatus, number>; offline: number;
+};
+
+const STATUS_KEYS: Record<SensorStatus, string> = { healthy: 'dash.statusOk', warning: 'dash.statusWarn', critical: 'dash.statusCrit' };
+
+function FieldStatusCard({ status: f, lastLabel }: { status: FieldStatus; lastLabel?: string | null }) {
+  const { t } = useTranslation();
+  const total = f.counts.healthy + f.counts.warning + f.counts.critical + f.offline;
+  const order: SensorStatus[] = ['critical', 'warning', 'healthy'];
+  return (
+    <div className="bg-white/95 backdrop-blur-xl border border-black/5 rounded-xl shadow-pro px-3 py-2.5 flex flex-col gap-2 pointer-events-auto">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: f.status ? STATUS_COLORS[f.status] : '#8e8e93' }} />
+          <span className="text-[10px] font-black uppercase tracking-wider truncate">{t('dash.fieldStatus')}</span>
+          <span className="text-[10px] font-bold text-[#6e6e73] truncate">{f.status ? t(STATUS_KEYS[f.status]) : t('map.noData')}</span>
+        </div>
+        <span className="text-[18px] font-bold font-data leading-none" title={t(METRICS.index.labelKey)}>{f.score ?? '—'}</span>
+      </div>
+      {total > 0 && (
+        <div className="flex gap-[2px] h-1.5">
+          {order.map(st => f.counts[st] > 0 && (
+            <div key={st} className="rounded-full" style={{ flex: f.counts[st], backgroundColor: STATUS_COLORS[st] }} />
+          ))}
+          {f.offline > 0 && <div className="rounded-full bg-[#d2d2d7]" style={{ flex: f.offline }} />}
+        </div>
+      )}
+      <div className="flex items-center gap-2.5 text-[10px] font-bold font-data text-[#6e6e73] whitespace-nowrap">
+        {order.map(st => (
+          <span key={st} className="flex items-center gap-1" title={t(STATUS_KEYS[st])}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[st] }} />{f.counts[st]}
+          </span>
+        ))}
+        {f.offline > 0 && <span title={t('dash.offline')}>○ {f.offline}</span>}
+        {lastLabel && <span className="ml-auto truncate font-sans">{lastLabel}</span>}
+      </div>
     </div>
   );
 }

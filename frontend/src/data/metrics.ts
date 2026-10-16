@@ -121,3 +121,16 @@ export function idw(points: IdwPoint[], lng: number, lat: number, m = metersPerD
   }
   return { value: den ? num / den : NaN, nearest: Math.sqrt(nearest) };
 }
+
+/** Точки для интерполяции: только датчики на связи и с числом по этому показателю */
+export const heatPoints = (sensors: Sensor[], metric: MetricKey): IdwPoint[] =>
+  sensors
+    .filter(s => !s.offline)
+    .map(s => ({ lng: s.coordinates.longitude, lat: s.coordinates.latitude, value: METRICS[metric].read(s) }))
+    .filter(p => Number.isFinite(p.value));
+
+export function formatMetric(metric: MetricKey, value: number) {
+  if (!Number.isFinite(value)) return '—';
+  const { digits, unit } = METRICS[metric];
+  return `${value.toFixed(digits)}${!unit || /^[%°]/.test(unit) ? '' : ' '}${unit}`;
+}

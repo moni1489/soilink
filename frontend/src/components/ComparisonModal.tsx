@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { X, BarChart3, Info } from 'lucide-react';
@@ -8,7 +9,6 @@ import { mockScannerData } from '@/data/mockData';
 interface ComparisonModalProps {
   isOpen: boolean;
   sensor: Sensor | null;
-  depth: SoilDepth;
   onClose: () => void;
 }
 
@@ -40,8 +40,9 @@ function getSensorValue(sensor: Sensor, key: string): number {
   return map[key] ?? 0;
 }
 
-export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonModalProps) {
+export function ComparisonModal({ isOpen, sensor, onClose }: ComparisonModalProps) {
   const { t } = useTranslation();
+  const [depth, setDepth] = useState<SoilDepth>('0-5cm');
   const global = mockScannerData[depth];
   const nodeLabel = t('cmp.nodeData');
   const LABELS = PROPS.map(key => ({ key, label: t(`cmp.props.${key}`) }));
@@ -80,6 +81,13 @@ export function ComparisonModal({ isOpen, sensor, depth, onClose }: ComparisonMo
                 <p className="text-[#86868b] font-bold mt-1 sm:mt-2 text-[11px] sm:text-lg leading-tight sm:leading-none truncate">
                   <span className="text-[#0071e3]">{sensor ? t(sensor.nameKey) : ""}</span> vs SoilGrids · <span className="text-[#1d1d1f]">{depth}</span>
                 </p>
+              </div>
+              <div className="flex bg-[#f5f5f7] p-1 rounded-xl flex-shrink-0">
+                {([['0-5cm', t('dash.topLayer')], ['60-100cm', t('dash.deepLayer')]] as [SoilDepth, string][]).map(([d, label]) => (
+                  <button key={d} onClick={() => setDepth(d)}
+                    className={`px-2.5 sm:px-4 py-1.5 rounded-lg text-[10px] sm:text-[12px] font-bold transition-all ${depth === d ? 'bg-white shadow-sm text-[#1d1d1f]' : 'text-[#6e6e73]'}`}
+                  >{label}</button>
+                ))}
               </div>
               <button onClick={onClose} className="p-2.5 sm:p-4 bg-[#f5f5f7] rounded-full hover:bg-[#e5e5ea] transition-all active:scale-90 flex-shrink-0">
                 <X className="w-5 h-5 sm:w-8 sm:h-8 text-[#1d1d1f]" />
