@@ -45,14 +45,10 @@ export function MapboxViewer({
 }: MapboxViewerProps) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
-  const [viewState, setViewState] = useState({
-    longitude: field.center.longitude,
-    latitude: field.center.latitude,
-    zoom: 13.6,
-  });
   const [hover, setHover] = useState<{ x: number; y: number; value: number; nearest: number } | null>(null);
 
-  const [legendOpen, setLegendOpen] = useState(true);
+  // на телефоне легенда закрывала бы полкарты — открывается по тапу
+  const [legendOpen, setLegendOpen] = useState(() => window.innerWidth >= 768);
   const [sat, setSat] = useState<{ key: string; fn: Greenness } | null>(null);
 
   const isHeatmap = mapMode === 'heatmap';
@@ -117,13 +113,21 @@ export function MapboxViewer({
   }
 
   const def = METRICS[metric];
+  const initialView = zones.length
+    ? {
+        bounds: [
+          [Math.min(...zones.flatMap(z => z.coordinates.map(c => c.lng))), Math.min(...zones.flatMap(z => z.coordinates.map(c => c.lat)))],
+          [Math.max(...zones.flatMap(z => z.coordinates.map(c => c.lng))), Math.max(...zones.flatMap(z => z.coordinates.map(c => c.lat)))],
+        ] as [[number, number], [number, number]],
+        fitBoundsOptions: { padding: 40 },
+      }
+    : { longitude: field.center.longitude, latitude: field.center.latitude, zoom: 14 };
 
   return (
     <div className="w-full h-full relative">
       <Map
-        {...viewState}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onMove={(evt: any) => setViewState(evt.viewState)}
+        // Поле вписывается в экран целиком; без зон — центр поля
+        initialViewState={initialView}
         mapStyle={MAP_STYLES[mapMode]}
         mapboxAccessToken={token}
         style={{ width: '100%', height: '100%' }}
