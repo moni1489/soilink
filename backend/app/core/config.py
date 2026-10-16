@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     MAPBOX_TOKEN: str = ""
     OPENROUTER_MODEL: str = "meta-llama/llama-3.3-70b-instruct"
     OPENMETEO_API_URL: str = "https://api.open-meteo.com/v1/forecast"
+    # Вход: ключ подписи сессий (задать на сервере!) и первый пользователь
+    AUTH_SECRET: str = ""
+    ADMIN_LOGIN: str = ""
+    ADMIN_PASSWORD: str = ""
 
     class Config:
         env_file = ".env"

@@ -734,5 +734,20 @@
       "notes": "Notes"
     },
     "copied": "Copied"
+  },
+  "gate": {
+    "promo": "Want to learn about us and book a demo?",
+    "promoLink": "Visit soilink.land",
+    "title": "Sign in to SoiLink",
+    "subtitle": "Enter the login and password issued to your team.",
+    "login": "Login",
+    "password": "Password",
+    "submit": "Sign in",
+    "checking": "Checking…",
+    "error": "Wrong login or password",
+    "locked": "Too many attempts. Try again in 15 minutes.",
+    "serverError": "Server unavailable. Try again later.",
+    "noAccount": "No access? Learn about us and book a demo at",
+    "signOut": "Sign out of account"
   }
 }

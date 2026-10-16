@@ -3,5 +3,6 @@ from app.models.reading import SensorReading
 from app.models.prediction import Prediction
 from app.models.recommendation import Recommendation
 from app.models.sensor import Sensor
+from app.models.user import User
 
-__all__ = ["Field", "SensorReading", "Prediction", "Recommendation", "Sensor"]
+__all__ = ["Field", "SensorReading", "Prediction", "Recommendation", "Sensor", "User"]

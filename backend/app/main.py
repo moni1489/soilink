@@ -6,9 +6,13 @@ from fastapi.responses import FileResponse
 
 from app.core.db import create_tables
 from app.core.config import settings
-from app.api import readings, fields, predictions, recommendations, chat, sensors
+from app.api import readings, fields, predictions, recommendations, chat, sensors, auth
+from app.core.security import require_session
 
 app = FastAPI(title="SoiLink Backend", version="0.1.0")
+
+# Весь /api — только после входа (кроме самого входа и вебхука хаба)
+app.middleware("http")(require_session)
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,11 +28,13 @@ app.include_router(predictions.router)
 app.include_router(recommendations.router)
 app.include_router(chat.router)
 app.include_router(sensors.router)
+app.include_router(auth.router)
 
 
 @app.on_event("startup")
 def on_startup():
     create_tables()
+    auth.bootstrap_admin()
 
 
 @app.get("/health")

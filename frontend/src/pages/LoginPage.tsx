@@ -8,6 +8,7 @@ import { accounts, DEMO_PASSWORD } from '@/auth/accounts';
 import { Avatar } from '@/components/Avatar';
 import { ACCESS_LEVELS, ROLES, canViewDashboard, type AccessLevel } from '@/auth/roles';
 import { LanguageMenu } from '@/components/LanguageSwitcher';
+import { signOut } from '@/auth/session';
 
 const LEVEL_ORDER: AccessLevel[] = ['full', 'specialist', 'field', 'contractor'];
 
@@ -76,7 +77,8 @@ export function LoginPage() {
               </div>
               <span className="font-bold text-lg tracking-tight">SoiLink</span>
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <button type="button" onClick={signOut} className="px-2.5 py-1.5 rounded-lg text-[12px] font-semibold text-[#6e6e73] hover:bg-black/5 hover:text-[#1d1d1f]">{t('gate.signOut')}</button>
               <LanguageMenu />
             </div>
           </div>

@@ -34,6 +34,10 @@ npm run dev
 | `GOOGLE_API_KEY` | `backend/.env` | Gemini key, required for AI chat |
 | `VITE_MAPBOX_TOKEN` | `frontend/.env` | Mapbox map token |
 | `VITE_API_URL` | `frontend/.env` | Backend URL (if not same origin) |
+| `AUTH_SECRET` | `backend/.env` | Signs login sessions — set a long random string in production (`python -c "import secrets; print(secrets.token_hex(32))"`) |
+| `ADMIN_LOGIN` / `ADMIN_PASSWORD` | `backend/.env` | First user, created on startup if missing (password ≥ 8 chars) |
+
+Login is checked by the backend; every `/api` route except `/api/auth/*` and the hub webhook `/api/readings/linkedge` needs a session. Add or reset users with `python create_user.py <login>`.
 
 ## Run everything in Docker
 

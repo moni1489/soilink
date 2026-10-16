@@ -11,30 +11,33 @@ import { LoginPage } from './pages/LoginPage';
 import { SensorsPage } from './pages/SensorsPage';
 import { SensorDetailPage } from './pages/SensorDetailPage';
 import { AuthProvider, RequireAuth } from './auth/AuthContext';
+import { AccessGate } from './auth/AccessGate';
 import { canViewDashboard } from './auth/roles';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="*" element={
-            <RequireAuth>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<RequireAuth allow={canViewDashboard}><DashboardPage /></RequireAuth>} />
-                  <Route path="/sensors" element={<RequireAuth allow={canViewDashboard}><SensorsPage /></RequireAuth>} />
-                  <Route path="/sensors/:id" element={<RequireAuth allow={canViewDashboard}><SensorDetailPage /></RequireAuth>} />
-                  <Route path="/schedule" element={<SchedulePage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Layout>
-            </RequireAuth>
-          } />
-        </Routes>
-      </AuthProvider>
+      <AccessGate>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="*" element={
+              <RequireAuth>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<RequireAuth allow={canViewDashboard}><DashboardPage /></RequireAuth>} />
+                    <Route path="/sensors" element={<RequireAuth allow={canViewDashboard}><SensorsPage /></RequireAuth>} />
+                    <Route path="/sensors/:id" element={<RequireAuth allow={canViewDashboard}><SensorDetailPage /></RequireAuth>} />
+                    <Route path="/schedule" element={<SchedulePage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Layout>
+              </RequireAuth>
+            } />
+          </Routes>
+        </AuthProvider>
+      </AccessGate>
     </BrowserRouter>
   </StrictMode>
 );
