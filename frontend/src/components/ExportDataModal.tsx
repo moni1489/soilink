@@ -1,15 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, FileSpreadsheet, FileJson, Radio, Layers, BrainCircuit, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import type { Field } from '@/types';
 import { DATASETS, exportDataset, type ExportDataset, type ExportFormat } from '@/services/exportService';
-
-const DATASET_ICONS: Record<ExportDataset, typeof Radio> = {
-  sensors: Radio,
-  profile: Layers,
-  predictions: BrainCircuit,
-};
 
 export function ExportDataModal({ isOpen, onClose, activeField, fields, exportedBy }: {
   isOpen: boolean;
@@ -55,7 +48,7 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
                 <h2 className="text-lg sm:text-xl font-bold">{t('export.title')}</h2>
                 <p className="text-[12px] text-[#6e6e73] font-medium mt-1">{t('export.subtitle')}</p>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-lg flex-shrink-0" aria-label={t('common.close')}><X className="w-5 h-5 text-[#6e6e73]" /></button>
+              <button onClick={onClose} className="px-2.5 py-1 rounded-lg text-[12px] font-semibold text-[#6e6e73] hover:bg-black/5 flex-shrink-0">{t('common.close')}</button>
             </div>
 
             <label className="block text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider mb-2">{t('export.fieldsLabel')}</label>
@@ -72,24 +65,19 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
             <label className="block text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider mb-2">{t('export.datasetLabel')}</label>
             <div className="space-y-2">
               {(Object.keys(DATASETS) as ExportDataset[]).map(ds => {
-                const Icon = DATASET_ICONS[ds];
                 return (
                   <div key={ds} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl border border-black/5 bg-[#fbfbfd]">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0071e3] flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-4.5 h-4.5" />
-                      </div>
                       <div className="min-w-0">
                         <p className="text-[13px] font-bold">{t(DATASETS[ds].labelKey)}</p>
                         <p className="text-[11px] text-[#6e6e73] leading-snug">{t(DATASETS[ds].descriptionKey)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                      {([['csv', FileSpreadsheet, 'CSV'], ['json', FileJson, 'JSON']] as const).map(([fmt, FmtIcon, label]) => (
+                      {([['csv', 'CSV'], ['json', 'JSON']] as const).map(([fmt, label]) => (
                         <button key={fmt} onClick={() => handleExport(ds, fmt)} disabled={busy !== null}
                           className={`${fmtBtn} ${fmt === 'csv' ? 'bg-[#0071e3] text-white border-[#0071e3] hover:bg-[#0077ed]' : 'bg-white text-[#1d1d1f] border-black/10 hover:border-black/20'}`}
                         >
-                          {busy === `${ds}-${fmt}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FmtIcon className="w-3.5 h-3.5" />}
                           {label}
                         </button>
                       ))}
@@ -101,13 +89,11 @@ export function ExportDataModal({ isOpen, onClose, activeField, fields, exported
 
             {result && (
               <div className={`mt-4 flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-semibold ${result.ok ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
-                {result.ok ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
                 {result.text}
               </div>
             )}
 
             <p className="mt-5 text-[11px] text-[#86868b] flex items-center gap-1.5">
-              <Download className="w-3.5 h-3.5 flex-shrink-0" />
               {t('export.note')}
             </p>
           </motion.div>

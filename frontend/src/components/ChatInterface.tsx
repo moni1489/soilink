@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, X, User, Bot, Command, ArrowRight, CornerDownLeft } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -96,9 +95,6 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
             className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
           >
             <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border ${msg.role === 'assistant' ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-[#f5f5f7] border-black/5 text-[#1d1d1f]'}`}>
-                {msg.role === 'assistant' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
-              </div>
               <div className={`px-4 py-3 rounded-2xl text-[13px] font-medium leading-relaxed ${msg.role === 'user' ? 'bg-[#1d1d1f] text-white shadow-lg' : 'bg-[#f5f5f7] text-[#1d1d1f]'}`}>
                 {t(msg.content)}
               </div>
@@ -122,7 +118,6 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
 
         <div className="relative group">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868b] group-focus-within:text-blue-500 transition-colors">
-            <Command className="w-4 h-4" />
           </div>
           <input
             type="text"
@@ -130,14 +125,14 @@ export function ChatInterface({ isOpen, onClose, context }: ChatInterfaceProps) 
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder={t('chat.placeholder')}
-            className="w-full h-12 pl-11 pr-14 bg-[#f5f5f7] border border-transparent rounded-xl text-[13px] font-medium focus:bg-white focus:border-blue-500/30 transition-all outline-none"
+            className="w-full h-12 pl-4 pr-28 bg-[#f5f5f7] border border-transparent rounded-xl text-[13px] font-medium focus:bg-white focus:border-blue-500/30 transition-all outline-none"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="absolute right-2 top-2 h-8 w-8 bg-[#1d1d1f] text-white rounded-lg flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 transition-all"
+            className="absolute right-2 top-2 h-8 px-3 bg-[#1d1d1f] text-white rounded-lg text-[12px] font-semibold hover:bg-black disabled:opacity-30"
           >
-            <CornerDownLeft className="w-4 h-4" />
+            {t('chat.send')}
           </button>
         </div>
         <p className="text-[9px] text-center font-bold text-[#86868b] uppercase tracking-widest">{t('chat.hint')}</p>

@@ -27,7 +27,7 @@ export interface WeatherData {
   condition: 'sunny' | 'cloudy' | 'rain' | 'windy' | 'storm';
   humidity: number;
   windSpeed: number;
-  forecast: { day: string; temp: number; icon: string }[];
+  forecast: { day: string; temp: number }[];
 }
 
 export interface SoilZone {

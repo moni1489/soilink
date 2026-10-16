@@ -30,11 +30,11 @@ export const weather: Record<string, WeatherData> = {
     humidity: 45,
     windSpeed: 4.2,
     forecast: [
-      { day: 'day.mon', temp: 25, icon: '☀️' },
-      { day: 'day.tue', temp: 26, icon: '☀️' },
-      { day: 'day.wed', temp: 22, icon: '⛅' },
-      { day: 'day.thu', temp: 24, icon: '☀️' },
-      { day: 'day.fri', temp: 19, icon: '🌧️' },
+      { day: 'day.mon', temp: 25 },
+      { day: 'day.tue', temp: 26 },
+      { day: 'day.wed', temp: 22 },
+      { day: 'day.thu', temp: 24 },
+      { day: 'day.fri', temp: 19 },
     ],
   },
 };

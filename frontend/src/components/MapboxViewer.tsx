@@ -3,7 +3,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { ChevronDown } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
 import { METRICS, STATUS_COLORS, classLabels, formatMetric, heatPoints, pointInPolygon, type MetricKey } from '@/data/metrics';
@@ -101,9 +100,6 @@ export function MapboxViewer({
     }
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-[#f5f5f7]">
-        <div className="w-20 h-20 bg-white rounded-[32px] shadow-xl flex items-center justify-center mb-8">
-          <span className="text-4xl">🗺️</span>
-        </div>
         <h3 className="text-2xl font-black tracking-tight text-[#1d1d1f] mb-3">Map Infrastructure Offline</h3>
         <p className="text-sm text-[#86868b] max-w-sm leading-relaxed font-medium">
           Configure <code className="bg-[#e5e5ea] px-1.5 py-0.5 rounded text-[#0071e3]">MAPBOX_TOKEN</code> in your Fly.io secrets or environment to enable geospatial visualization.
@@ -119,7 +115,8 @@ export function MapboxViewer({
           [Math.min(...zones.flatMap(z => z.coordinates.map(c => c.lng))), Math.min(...zones.flatMap(z => z.coordinates.map(c => c.lat)))],
           [Math.max(...zones.flatMap(z => z.coordinates.map(c => c.lng))), Math.max(...zones.flatMap(z => z.coordinates.map(c => c.lat)))],
         ] as [[number, number], [number, number]],
-        fitBoundsOptions: { padding: 40 },
+        // снизу место под панель слоя, чтобы она не закрывала поле
+        fitBoundsOptions: { padding: { top: 40, left: 40, right: 40, bottom: 190 } },
       }
     : { longitude: field.center.longitude, latitude: field.center.latitude, zoom: 14 };
 
@@ -277,7 +274,7 @@ export function MapboxViewer({
         <div className="absolute z-10 bottom-8 left-3 right-3 md:left-auto md:right-4 md:w-[300px] bg-white/95 backdrop-blur-xl border border-black/5 rounded-xl shadow-pro">
           <button onClick={() => setLegendOpen(v => !v)} className="w-full flex items-center justify-between px-3 pt-2.5 pb-1.5">
             <span className="text-[11px] font-bold text-[#1d1d1f]">{t('map.layer')}</span>
-            <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform ${legendOpen ? '' : 'rotate-180'}`} />
+            <span className="text-[10px] font-semibold text-[#0071e3]">{legendOpen ? t('map.legendHide') : t('map.legendShow')}</span>
           </button>
           <div className="px-3 pb-3 flex flex-col gap-2.5">
             <label className="flex flex-col gap-1">

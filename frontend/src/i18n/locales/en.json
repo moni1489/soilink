@@ -67,7 +67,9 @@
     "submit": "SIGN IN",
     "error": "Wrong login or password",
     "demoAccounts": "Demo accounts",
-    "passwordForAll": "password for all:"
+    "passwordForAll": "password for all:",
+    "show": "Show",
+    "hide": "Hide"
   },
   "roles": {
     "director": "Farm director",
@@ -135,7 +137,8 @@
     "capture": "Capture",
     "cameraError": "No camera access. Allow it in the browser or upload a photo from a file.",
     "photoSaveError": "Could not save the photo",
-    "photoReadError": "Could not open the image"
+    "photoReadError": "Could not open the image",
+    "photo": "Photo"
   },
   "schedule": {
     "title": "Task calendar",
@@ -177,7 +180,9 @@
     "hintContractor": "{{company}} — only the jobs assigned to you are shown",
     "hintField": "{{role}}: fields {{fields}} — assigning contractors, statuses, actuals",
     "hintSpecialist": "{{role}}: view all work, planning limited to \"{{types}}\"",
-    "hintFull": "Full access to all fields and operations"
+    "hintFull": "Full access to all fields and operations",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week"
   },
   "dash": {
     "moisture": "Moisture",
@@ -227,7 +232,12 @@
     "lastReading": "Last packet",
     "zonesTitle": "Field zones",
     "offlineHint": "A sensor with no packets for over {{min}} min counts as offline and is excluded.",
-    "profile": "Soil profile"
+    "profile": "Soil profile",
+    "tabAnalysis": "Analysis",
+    "expand": "Full screen",
+    "collapse": "Exit",
+    "panelHide": "Collapse",
+    "panelShow": "Show panel"
   },
   "sensor": {
     "status": "Status",
@@ -264,7 +274,9 @@
     "measurement": "Measurement",
     "legendShare": "Legend · share of area",
     "detailSat": "detail from satellite imagery",
-    "detailSensors": "interpolated from sensors"
+    "detailSensors": "interpolated from sensors",
+    "legendHide": "hide legend",
+    "legendShow": "show legend"
   },
   "rec": {
     "priority": "PRIORITY",
@@ -379,7 +391,8 @@
     "placeholder": "Ask the assistant...",
     "aiError": "AI response error.",
     "connError": "Sorry, a server connection error occurred. Please try again later.",
-    "hint": "Shift + Enter for a new line"
+    "hint": "Shift + Enter for a new line",
+    "send": "Send"
   },
   "weather": {
     "sunny": "Clear",
@@ -719,6 +732,7 @@
       "here": "Here",
       "depth": "Depth, cm",
       "notes": "Notes"
-    }
+    },
+    "copied": "Copied"
   }
 }

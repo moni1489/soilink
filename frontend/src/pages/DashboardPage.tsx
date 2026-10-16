@@ -10,7 +10,6 @@ import { RecommendationsPanel } from '@/components/RecommendationsPanel';
 import { MLAnalysisPanel } from '@/components/MLAnalysisPanel';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, X, Info, Maximize2, Minimize2 } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -27,6 +26,7 @@ import { useDateLocale } from '@/i18n';
 
 const ZONE_COLOR: Record<SensorStatus, SoilZone['color']> = { healthy: 'green', warning: 'yellow', critical: 'red' };
 const REFRESH_MS = 60_000;
+const SELECT = 'max-w-[150px] md:max-w-[200px] truncate px-2 py-1 rounded-lg border border-black/10 bg-white text-[12px] font-semibold outline-none focus:ring-2 focus:ring-[#0071e3]/20';
 const TOOLBAR_BTN = 'flex-shrink-0 whitespace-nowrap px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-black/10 hover:bg-[#f5f5f7]';
 
 /** Индекс зоны — среднее по датчикам внутри неё; без датчиков — интерполяция в центре зоны */
@@ -61,10 +61,9 @@ export function DashboardPage() {
   const tab: Panel = !isMobile && panel === 'map' ? 'recommendations' : panel;
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [depthProfileOpen, setDepthProfileOpen] = useState(false);
-  const [fieldDropdown, setFieldDropdown] = useState(false);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
 
-  const [zoneDropdown, setZoneDropdown] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
 
   useEffect(() => {
@@ -79,7 +78,7 @@ export function DashboardPage() {
   useEffect(() => {
     const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
     return () => clearTimeout(t);
-  }, [mapFullscreen]);
+  }, [mapFullscreen, panelCollapsed]);
 
   const activeField = useMemo(() => visibleFields.find(f => f.id === activeFieldId) ?? visibleFields[0] ?? fields[0], [visibleFields, activeFieldId]);
   // Реальные датчики из реестра — поверх демо-сети, обновляются раз в минуту
@@ -134,7 +133,7 @@ export function DashboardPage() {
   const TABS: [Panel, string][] = [
     ...(isMobile ? [['map', t('dash.tabMap')] as [Panel, string]] : []),
     ['recommendations', t('dash.tabInsights')],
-    ['ml', 'ML'],
+    ['ml', t('dash.tabAnalysis')],
     ['analysis', t('dash.tabSoil')],
     ['chat', t('dash.tabChat')],
   ];
@@ -144,25 +143,14 @@ export function DashboardPage() {
     <div className="h-full flex flex-col bg-[#f5f5f7] overflow-hidden">
       {/* Панель инструментов */}
       <div className="flex-shrink-0 bg-white border-b border-black/5 px-3 md:px-5 h-12 flex items-center gap-2 md:gap-3 z-30 relative">
-        <div className="flex items-center gap-1 flex-shrink-0 relative z-40">
-          <Dropdown open={fieldDropdown} onToggle={() => setFieldDropdown(v => !v)} label={t(activeField.shortKey)}>
-            {visibleFields.map(f => (
-              <DropdownItem key={f.id} active={activeFieldId === f.id}
-                onClick={() => { setActiveFieldId(f.id); setActiveZoneFilter(null); setFieldDropdown(false); }}
-              >{t(f.nameKey)}</DropdownItem>
-            ))}
-          </Dropdown>
-          <span className="text-[#c7c7cc] text-[13px]">/</span>
-          <Dropdown open={zoneDropdown} onToggle={() => setZoneDropdown(v => !v)}
-            label={activeZoneFilter ? t(allFieldZones.find(z => z.id === activeZoneFilter)?.nameKey ?? '') : t('dash.allZones')}
-          >
-            <DropdownItem active={!activeZoneFilter} onClick={() => { setActiveZoneFilter(null); setZoneDropdown(false); }}>{t('dash.allZones')}</DropdownItem>
-            {allFieldZones.map(z => (
-              <DropdownItem key={z.id} active={activeZoneFilter === z.id} onClick={() => { setActiveZoneFilter(z.id); setZoneDropdown(false); }}>
-                <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: STATUS_COLORS[statusFromScore(z.healthScore)] }} />{t(z.nameKey)}
-              </DropdownItem>
-            ))}
-          </Dropdown>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <select value={activeFieldId} onChange={e => { setActiveFieldId(e.target.value); setActiveZoneFilter(null); }} className={SELECT}>
+            {visibleFields.map(f => <option key={f.id} value={f.id}>{t(f.shortKey)}</option>)}
+          </select>
+          <select value={activeZoneFilter ?? ''} onChange={e => setActiveZoneFilter(e.target.value || null)} className={`${SELECT} hidden sm:block`}>
+            <option value="">{t('dash.allZones')}</option>
+            {allFieldZones.map(z => <option key={z.id} value={z.id}>{t(z.nameKey)}</option>)}
+          </select>
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide ml-auto md:ml-2">
@@ -191,9 +179,10 @@ export function DashboardPage() {
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Левая панель: сводка поля + вкладки */}
-        <aside className={`w-full md:w-[400px] ${isMobile && tab === 'map' ? 'hidden' : 'flex-1 md:flex-none'} min-h-0 flex flex-col md:border-r border-black/5 bg-[#fbfbfd]`}>
-          <div className="hidden md:flex flex-shrink-0 bg-white border-b border-black/5 px-2">
+        <aside className={`w-full md:w-[400px] ${isMobile && tab === 'map' ? 'hidden' : !isMobile && panelCollapsed ? 'hidden' : 'flex-1 md:flex-none'} min-h-0 flex flex-col md:border-r border-black/5 bg-[#fbfbfd]`}>
+          <div className="hidden md:flex items-center flex-shrink-0 bg-white border-b border-black/5 px-2">
             {TABS.map(([key, label]) => <TabButton key={key} active={tab === key} onClick={() => setPanel(key)}>{label}</TabButton>)}
+            <button onClick={() => setPanelCollapsed(true)} className="ml-auto px-2 py-1 rounded-md text-[11px] font-semibold text-[#6e6e73] hover:bg-black/5 hover:text-[#1d1d1f]">{t('dash.panelHide')}</button>
           </div>
           <div className={`flex-1 min-h-0 ${tab === 'chat' ? 'flex flex-col p-4' : 'overflow-y-auto p-4 flex flex-col gap-4'}`}>
             {tab !== 'chat' && <FieldInsightsCard status={fieldStatus} field={activeField} zones={allFieldZones} lastLabel={lastLabel} />}
@@ -227,11 +216,17 @@ export function DashboardPage() {
             activeZoneId={selectedZone?.id ?? null}
           />
 
+          {!isMobile && panelCollapsed && !mapFullscreen && (
+            <button onClick={() => setPanelCollapsed(false)}
+              className="absolute top-2.5 left-2.5 z-20 h-[29px] px-2.5 bg-white rounded-md shadow-[0_0_0_2px_rgba(0,0,0,0.1)] text-[11px] font-semibold hover:bg-[#f5f5f7]"
+            >{t('dash.panelShow')}</button>
+          )}
+
           <button onClick={() => setMapFullscreen(v => !v)}
             title={mapFullscreen ? t('dash.fullscreenExit') : t('dash.fullscreenEnter')}
-            className="absolute top-2.5 right-12 z-20 w-[29px] h-[29px] bg-white rounded-md shadow-[0_0_0_2px_rgba(0,0,0,0.1)] flex items-center justify-center hover:bg-[#f5f5f7]"
+            className="absolute top-2.5 right-12 z-20 h-[29px] px-2.5 bg-white rounded-md shadow-[0_0_0_2px_rgba(0,0,0,0.1)] text-[11px] font-semibold hover:bg-[#f5f5f7]"
           >
-            {mapFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-[#1d1d1f]" /> : <Maximize2 className="w-3.5 h-3.5 text-[#1d1d1f]" />}
+            {mapFullscreen ? t('dash.collapse') : t('dash.expand')}
           </button>
 
           <AnimatePresence>
@@ -241,7 +236,7 @@ export function DashboardPage() {
               >
                 <div className="px-4 py-3 border-b border-black/5 flex items-center justify-between">
                   <h3 className="font-semibold text-[13px] truncate">{t(selectedZone.nameKey)}</h3>
-                  <button onClick={() => setSelectedZone(null)} className="p-1 hover:bg-black/5 rounded-md"><X className="w-4 h-4 text-[#6e6e73]" /></button>
+                  <button onClick={() => setSelectedZone(null)} className="px-2.5 py-1 rounded-lg text-[12px] font-semibold text-[#6e6e73] hover:bg-black/5 flex-shrink-0">{t('common.close')}</button>
                 </div>
                 <div className="p-4 flex flex-col gap-3">
                   <div className="flex items-baseline justify-between">
@@ -253,7 +248,6 @@ export function DashboardPage() {
                     <button onClick={() => setDepthProfileOpen(true)} className="py-2 bg-[#f5f5f7] rounded-lg text-[11px] font-semibold hover:bg-black/5">{t('dash.report')}</button>
                   </div>
                   <div className="p-3 bg-blue-50/60 rounded-lg flex gap-2.5">
-                    <Info className="w-3.5 h-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <p className="text-[11px] text-blue-900 leading-relaxed">{t('dash.mineralAlert')}</p>
                   </div>
                 </div>
@@ -287,7 +281,11 @@ const BADGE: Record<SensorStatus, { key: string; cls: string }> = {
 };
 
 /** Шкала влажности: сухо → оптимум → избыток, с отметкой средней по полю */
-const MOISTURE_SCALE = { min: 5, max: 50, bands: [[5, 12, '#e0301e'], [12, 18, '#f4802a'], [18, 24, '#f3d33c'], [24, 38, '#2fa84f'], [38, 50, '#3987e5']] as const };
+const MOISTURE_SCALE = { min: 5, max: 50 };
+/** Плавный переход: сухо (красный) → оптимум 24–38% (зелёный) → переувлажнение (синий) */
+const MOISTURE_GRADIENT = `linear-gradient(to right, ${(
+  [[5, '#e0301e'], [13, '#f4802a'], [19, '#f3d33c'], [25, '#2fa84f'], [37, '#2fa84f'], [44, '#3987e5'], [50, '#1c5cab']] as const
+).map(([v, c]) => `${c} ${(v - MOISTURE_SCALE.min) / (MOISTURE_SCALE.max - MOISTURE_SCALE.min) * 100}%`).join(', ')})`;
 
 /** Карточка «Сводка поля» — всё считается из показаний датчиков */
 function FieldInsightsCard({ status: f, field, zones, lastLabel }: { status: FieldStatus; field: Field; zones: SoilZone[]; lastLabel: string | null }) {
@@ -308,9 +306,7 @@ function FieldInsightsCard({ status: f, field, zones, lastLabel }: { status: Fie
           <span className="text-[12px] font-semibold font-data">{f.moisture != null ? `${f.moisture.toFixed(0)}%` : '—'}</span>
         </div>
         <div className="relative">
-          <div className="flex gap-[2px] h-1.5">
-            {MOISTURE_SCALE.bands.map(([lo, hi, c]) => <div key={lo} className="first:rounded-l-full last:rounded-r-full" style={{ flex: hi - lo, backgroundColor: c }} />)}
-          </div>
+          <div className="h-2 rounded-full" style={{ background: MOISTURE_GRADIENT }} />
           {f.moisture != null && (
             <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white border-2 border-[#1d1d1f] shadow" style={{ left: `${pos(f.moisture)}%` }} />
           )}
@@ -365,28 +361,5 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
     <button onClick={onClick}
       className={`flex-shrink-0 px-3.5 py-3 text-[12px] font-semibold border-b-2 transition-colors whitespace-nowrap ${active ? 'border-[#0071e3] text-[#1d1d1f]' : 'border-transparent text-[#6e6e73] hover:text-[#1d1d1f]'}`}
     >{children}</button>
-  );
-}
-
-function Dropdown({ open, onToggle, label, children }: { open: boolean; onToggle: () => void; label: string; children: ReactNode }) {
-  return (
-    <div className="relative flex-shrink-0">
-      <button onClick={onToggle} className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-black/5 rounded-lg text-[13px] font-semibold">
-        <span className="truncate max-w-[120px] md:max-w-[180px]">{label}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={onToggle} />
-          <div className="absolute top-full left-0 mt-1.5 w-64 max-w-[calc(100vw-32px)] bg-white border border-black/10 rounded-xl shadow-2xl z-50 p-1">{children}</div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function DropdownItem({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button onClick={onClick} className={`w-full text-left px-3 py-2 rounded-lg text-[13px] hover:bg-black/5 flex items-center ${active ? 'font-semibold bg-black/5' : ''}`}>{children}</button>
   );
 }

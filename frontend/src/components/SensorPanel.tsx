@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  X, Droplet, Thermometer, FlaskConical, Activity, Zap, Wind,
-  Battery, Signal, Beaker, Leaf, Cpu, Info, ShieldCheck
-} from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Sensor } from '@/types';
 import { getMoistureHistory, getTemperatureHistory } from '@/data/mockData';
@@ -35,9 +31,6 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
           {/* Diagnostic Header */}
           <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-black/5 flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-               <div className="w-10 h-10 bg-[#f5f5f7] rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Cpu className="w-5 h-5 text-blue-500" />
-               </div>
                <div className="flex flex-col min-w-0">
                   <h2 className="text-[15px] font-bold truncate leading-tight">{t(sensor.nameKey)}</h2>
                   <div className="flex items-center gap-2">
@@ -46,9 +39,7 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
                   </div>
                </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-[#f5f5f7] rounded-lg transition-all">
-              <X className="w-5 h-5 text-[#6e6e73]" />
-            </button>
+            <button onClick={onClose} className="px-2.5 py-1 rounded-lg text-[12px] font-semibold text-[#6e6e73] hover:bg-black/5 flex-shrink-0">{t('common.close')}</button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col gap-6 sm:gap-10 scrollbar-hide">
@@ -61,17 +52,16 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
 
             {/* Core Metrics Grid */}
             <div className="grid grid-cols-2 gap-4">
-               <MetricCard label={t('sensor.moisture')} value={`${sensor.soilMoisture}%`} icon={Droplet} color="text-blue-500" />
-               <MetricCard label={t('sensor.temperature')} value={`${sensor.soilTemperature.toFixed(1)}°C`} icon={Thermometer} color="text-orange-500" />
-               <MetricCard label={t('sensor.phLevel')} value={sensor.pH.toFixed(2)} icon={FlaskConical} color="text-purple-500" />
-               <MetricCard label={t('sensor.conductivity')} value={sensor.electricalConductivity.toFixed(2)} icon={Zap} color="text-yellow-600" />
+               <MetricCard label={t('sensor.moisture')} value={`${sensor.soilMoisture}%`} />
+               <MetricCard label={t('sensor.temperature')} value={`${sensor.soilTemperature.toFixed(1)}°C`} />
+               <MetricCard label={t('sensor.phLevel')} value={sensor.pH.toFixed(2)} />
+               <MetricCard label={t('sensor.conductivity')} value={sensor.electricalConductivity.toFixed(2)} />
             </div>
 
             {/* Chemical Analysis - Farmer Realism */}
             <div className="p-6 bg-[#f5f5f7] rounded-2xl border border-black/5">
                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
-                     <Beaker className="w-4 h-4 text-blue-500" />
                      <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">{t('sensor.npkAnalysis')}</span>
                   </div>
                   <span className="text-[9px] font-bold text-[#6e6e73]">{t('sensor.lastUpdate')}</span>
@@ -87,7 +77,6 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
             <div className="space-y-6">
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                     <Activity className="w-4 h-4 text-blue-500" />
                      <span className="text-[11px] font-bold text-[#1d1d1f] uppercase tracking-wider">
                         {t('sensor.dynamics')}
                      </span>
@@ -130,7 +119,6 @@ export function SensorPanel({ isOpen, sensor, onClose }: SensorPanelProps) {
 
             {/* System Info Footnote */}
             <div className="mt-4 pt-8 border-t border-black/5 flex items-start gap-4 text-[11px] text-[#6e6e73] font-medium leading-relaxed">
-               <ShieldCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
                <p>{t('sensor.calibrationNote')}</p>
             </div>
           </div>
@@ -149,12 +137,9 @@ function StatusIndicator({ label, value, color }: { label: string; value: string
   );
 }
 
-function MetricCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
+function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="p-5 bg-white border border-black/5 rounded-2xl shadow-pro hover:border-black/10 transition-all flex items-center gap-4 group">
-       <div className={`w-10 h-10 rounded-lg bg-[#f5f5f7] flex items-center justify-center transition-transform group-hover:scale-110 ${color}`}>
-          <Icon className="w-5 h-5" />
-       </div>
        <div className="flex flex-col min-w-0">
           <span className="text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider truncate">{label}</span>
           <span className="text-[18px] font-bold font-data">{value}</span>

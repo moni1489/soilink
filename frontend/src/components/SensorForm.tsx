@@ -1,6 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LocateFixed, Loader2 } from 'lucide-react';
 import type { Field } from '@/types';
 import type { RegistrySensor, SensorInput } from '@/services/sensorService';
 
@@ -89,8 +88,7 @@ export function SensorForm({ fields, initial, submitLabel, onSubmit, onCancel }:
           <button type="button" onClick={locate} title={t('sensors.form.here')}
             className="flex-shrink-0 flex items-center gap-1.5 px-3 rounded-lg bg-[#f5f5f7] border border-black/5 text-[12px] font-bold hover:bg-black/5"
           >
-            {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <LocateFixed className="w-4 h-4 text-[#0071e3]" />}
-            <span className="hidden sm:inline">{t('sensors.form.here')}</span>
+            {locating ? '…' : t('sensors.form.here')}
           </button>
         </div>
       </Labeled>
@@ -106,7 +104,7 @@ export function SensorForm({ fields, initial, submitLabel, onSubmit, onCancel }:
       <div className="sm:col-span-2 flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg text-[12px] font-bold text-[#6e6e73] hover:bg-black/5">{t('sensors.cancel')}</button>
         <button disabled={busy} className="px-4 py-2 rounded-lg bg-[#0071e3] text-white text-[12px] font-bold hover:bg-[#0077ed] disabled:opacity-50 flex items-center gap-2">
-          {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}{submitLabel}
+          {submitLabel}
         </button>
       </div>
     </form>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Droplets, Thermometer, Wind, Sprout, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface SoilAnalysisProps {
   fieldId: string;
@@ -73,7 +72,6 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
     return (
       <div className="bg-black/40 backdrop-blur-md rounded-3xl p-6 border border-red-500/30">
         <div className="flex items-center space-x-3 text-red-400">
-          <AlertTriangle size={20} />
           <p>{error}</p>
         </div>
       </div>
@@ -114,7 +112,6 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
     >
       <div className="flex items-center space-x-3 mb-6">
         <div className="p-3 bg-indigo-500/20 rounded-2xl">
-          <Sprout className="text-indigo-400" size={24} />
         </div>
         <div>
           <h2 className="text-xl font-medium text-white">{t('soilCard.title')}</h2>
@@ -144,7 +141,7 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
       {limitations.length > 0 && (
         <div className="mb-6">
           <h3 className="text-white/80 text-sm font-medium mb-3 flex items-center">
-            <AlertTriangle size={16} className="text-yellow-500 mr-2" /> {t('soilCard.riskFactors')}
+            {t('soilCard.riskFactors')}
           </h3>
           <ul className="space-y-2">
             {limitations.map((limit, idx) => (
@@ -158,7 +155,7 @@ export function SoilAnalysisCard({ fieldId }: SoilAnalysisProps) {
 
       <div>
         <h3 className="text-white/80 text-sm font-medium mb-3 flex items-center">
-          <CheckCircle2 size={16} className="text-green-500 mr-2" /> {t('soilCard.recommendations')}
+          {t('soilCard.recommendations')}
         </h3>
         <ul className="space-y-2">
           {recommendations.map((rec, idx) => (

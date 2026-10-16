@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ShieldCheck, AlertTriangle, TrendingUp, FlaskConical, 
-  ChevronRight, Clock, FileText, CheckCircle2 
-} from 'lucide-react';
 import { MLPredictionCard } from './MLPredictionCard';
 import type { Recommendation } from '@/types';
 
@@ -14,10 +10,10 @@ interface RecommendationsPanelProps {
 }
 
 const LEVEL_THEMES = {
-  critical: { icon: ShieldCheck, labelKey: 'rec.priority', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
-  warning: { icon: AlertTriangle, labelKey: 'rec.monitoring', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
-  plan: { icon: TrendingUp, labelKey: 'rec.optimization', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-  premium: { icon: FlaskConical, labelKey: 'rec.analytics', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+  critical: { labelKey: 'rec.priority', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
+  warning: { labelKey: 'rec.monitoring', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+  plan: { labelKey: 'rec.optimization', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+  premium: { labelKey: 'rec.analytics', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
 };
 
 export function RecommendationsPanel({ recommendations, fieldId }: RecommendationsPanelProps) {
@@ -34,7 +30,6 @@ export function RecommendationsPanel({ recommendations, fieldId }: Recommendatio
 
       {recommendations.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-8 text-center bg-[#f5f5f7] rounded-2xl border border-black/5">
-          <CheckCircle2 className="w-8 h-8 text-green-500 mb-2" />
           <h3 className="text-[13px] font-bold">{t('rec.allNormal')}</h3>
           <p className="text-[11px] text-[#6e6e73] mt-0.5">{t('rec.allNormalBody')}</p>
         </div>
@@ -49,7 +44,6 @@ export function RecommendationsPanel({ recommendations, fieldId }: Recommendatio
       )}
 
       <div className="p-3 rounded-xl border border-black/5 bg-white flex gap-2.5">
-        <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
         <p className="text-[11px] text-[#6e6e73] leading-relaxed">
           {t('rec.mlNote')}
         </p>
@@ -62,7 +56,6 @@ function DiagnosticCard({ recommendation }: { recommendation: Recommendation }) 
   const { t, i18n } = useTranslation();
   const [expanded, setExpanded] = useState(recommendation.level === 'critical');
   const theme = LEVEL_THEMES[recommendation.level];
-  const Icon = theme.icon;
   const progress = recommendation.timeline.length ? (recommendation.timeline.filter(s => s.completed).length / recommendation.timeline.length) * 100 : 0;
 
   return (
@@ -70,9 +63,6 @@ function DiagnosticCard({ recommendation }: { recommendation: Recommendation }) 
        <button onClick={() => setExpanded(!expanded)}
          className="w-full text-left p-4 flex items-start gap-3"
        >
-         <div className={`w-8 h-8 rounded-lg ${theme.bg} ${theme.color} flex items-center justify-center flex-shrink-0`}>
-            <Icon className="w-4 h-4" />
-         </div>
          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1.5">
                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${theme.bg} ${theme.color}`}>{t(theme.labelKey)}</span>
@@ -84,7 +74,6 @@ function DiagnosticCard({ recommendation }: { recommendation: Recommendation }) 
             </div>
             <p className="text-[13px] font-semibold text-[#1d1d1f] leading-snug">{t(recommendation.titleKey)}</p>
          </div>
-         <ChevronRight className={`w-4 h-4 text-[#86868b] transition-transform mt-2 ${expanded ? 'rotate-90' : ''}`} />
        </button>
 
        <AnimatePresence>
@@ -103,12 +92,11 @@ function DiagnosticCard({ recommendation }: { recommendation: Recommendation }) 
                      {recommendation.timeline.map((step, idx) => (
                        <div key={step.id} className="flex items-center gap-3">
                           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${step.completed ? 'bg-green-500 border-green-500 text-white shadow-sm' : 'border-black/10'}`}>
-                             {step.completed ? <CheckCircle2 className="w-4 h-4" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                             <span className="text-[10px] font-bold">{idx + 1}</span>
                           </div>
                           <div className="flex-1 min-w-0">
                              <p className={`text-[12px] font-medium ${step.completed ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]'}`}>{t(step.labelKey)}</p>
                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-[#86868b]">
-                                <Clock className="w-3 h-3" />
                                 {new Date(step.dueAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}
                              </div>
                           </div>

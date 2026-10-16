@@ -1,11 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Brain, FlaskConical, Activity, RefreshCw,
-  ChevronRight, AlertTriangle, CheckCircle2, Loader2,
-  Cpu, TrendingUp, Leaf, ShieldCheck,
-} from 'lucide-react';
 
 interface MLPrediction {
   id: number;
@@ -25,11 +20,11 @@ interface MLAnalysisPanelProps {
   fieldId: string;
 }
 
-const SOIL_STATE_THEMES: Record<string, { color: string; bg: string; labelKey: string; icon: typeof CheckCircle2 }> = {
-  healthy:  { color: 'text-green-600',  bg: 'bg-green-50',  labelKey: 'ml.soilState.healthy',  icon: CheckCircle2 },
-  moderate: { color: 'text-blue-600',   bg: 'bg-blue-50',   labelKey: 'ml.soilState.moderate', icon: Activity },
-  poor:     { color: 'text-orange-600', bg: 'bg-orange-50', labelKey: 'ml.soilState.poor',     icon: AlertTriangle },
-  critical: { color: 'text-red-600',    bg: 'bg-red-50',    labelKey: 'ml.soilState.critical', icon: AlertTriangle },
+const SOIL_STATE_THEMES: Record<string, { color: string; bg: string; labelKey: string}> = {
+  healthy:  { color: 'text-green-600',  bg: 'bg-green-50',  labelKey: 'ml.soilState.healthy' },
+  moderate: { color: 'text-blue-600',   bg: 'bg-blue-50',   labelKey: 'ml.soilState.moderate' },
+  poor:     { color: 'text-orange-600', bg: 'bg-orange-50', labelKey: 'ml.soilState.poor' },
+  critical: { color: 'text-red-600',    bg: 'bg-red-50',    labelKey: 'ml.soilState.critical' },
 };
 
 // Модель отдаёт название культуры и удобрения латиницей — переводим известные, остальное как есть.
@@ -74,9 +69,7 @@ function FeatureSnapshot({ snapshot }: { snapshot: Record<string, unknown> }) {
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-1.5 text-[10px] font-black text-[#86868b] uppercase tracking-wider hover:text-[#1d1d1f] transition-colors"
       >
-        <Cpu className="w-3 h-3" />
         {t('ml.modelDataTitle')}
-        <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
       </button>
       <AnimatePresence>
         {open && (
@@ -175,9 +168,6 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
   if (error === 'no_data') {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-10 gap-5">
-        <div className="w-16 h-16 rounded-2xl bg-[#f5f5f7] flex items-center justify-center">
-          <Brain className="w-8 h-8 text-[#86868b]" />
-        </div>
         <div>
           <p className="text-[15px] font-bold text-[#1d1d1f]">{t('ml.notRunTitle')}</p>
           <p className="text-[12px] text-[#6e6e73] mt-1 font-medium leading-relaxed">
@@ -189,7 +179,6 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           disabled={running}
           className="flex items-center gap-2 px-5 py-2.5 bg-[#f5f5f7] border border-black/10 text-[#1d1d1f] rounded-full text-[12px] font-bold hover:bg-black/5 active:scale-95 transition-all disabled:opacity-50"
         >
-          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4 text-blue-500" />}
           {running ? t('ml.running') : t('ml.runAnalysis')}
         </button>
       </div>
@@ -199,11 +188,10 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
   if (error === 'network') {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-10 gap-4">
-        <AlertTriangle className="w-10 h-10 text-orange-400" />
         <p className="text-[14px] font-bold">{t('ml.noServerTitle')}</p>
         <p className="text-[11px] text-[#6e6e73] font-medium">{t('ml.noServerBody')}</p>
         <button onClick={fetchLatest} className="flex items-center gap-2 px-4 py-2 bg-[#f5f5f7] rounded-full text-[12px] font-bold hover:bg-black/5 transition-all">
-          <RefreshCw className="w-3.5 h-3.5" /> {t('common.retry')}
+          {t('common.retry')}
         </button>
       </div>
     );
@@ -215,14 +203,12 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
   const fertCode = data?.fertilizer_recommendation?.toLowerCase() ?? '';
   const fertLabel = FERTILIZER_KEYS.includes(fertCode) ? t(`ml.ferts.${fertCode}`) : data?.fertilizer_recommendation;
   const soilTheme = SOIL_STATE_THEMES[soilKey] ?? SOIL_STATE_THEMES.moderate;
-  const SoilIcon = soilTheme.icon;
 
   return (
     <div className="flex flex-col gap-4 p-5 pb-8 overflow-y-auto h-full scrollbar-hide">
       {/* Header */}
       <div className="flex items-center justify-between px-1 mb-1">
         <div className="flex items-center gap-2.5">
-          <Brain className="w-4 h-4 text-[#1d1d1f]" />
           <span className="text-[11px] font-black text-[#1d1d1f] uppercase tracking-wider">{t('ml.panelTitle')}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -235,9 +221,9 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
             onClick={fetchLatest}
             disabled={loading}
             title={t('ml.refreshTitle')}
-            className="p-1.5 hover:bg-black/5 rounded-lg transition-all active:scale-90"
+            className="px-2.5 py-1 hover:bg-black/5 rounded-lg text-[11px] font-semibold text-[#0071e3]"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#86868b]" />
+            {t('common.refresh')}
           </button>
         </div>
       </div>
@@ -250,9 +236,6 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           className={`rounded-2xl border p-5 ${soilTheme.bg} border-black/5`}
         >
           <div className="flex items-start gap-4">
-            <div className={`w-11 h-11 rounded-xl bg-white/60 ${soilTheme.color} flex items-center justify-center flex-shrink-0 border border-black/5 shadow-sm`}>
-              <SoilIcon className="w-5 h-5" />
-            </div>
             <div className="flex-1 min-w-0">
               <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md bg-white/60 ${soilTheme.color}`}>
                 {t('ml.soilStateCaption')}
@@ -282,9 +265,6 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm"
         >
           <div className="flex items-start gap-4">
-            <div className="w-11 h-11 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <Leaf className="w-5 h-5" />
-            </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black uppercase tracking-[0.15em] text-green-600 px-2 py-0.5 rounded-md bg-green-50">
                 {t('ml.recommendedCrop')}
@@ -307,9 +287,6 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm"
         >
           <div className="flex items-start gap-4">
-            <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <FlaskConical className="w-5 h-5" />
-            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="text-[9px] font-black uppercase tracking-[0.15em] text-purple-600 px-2 py-0.5 rounded-md bg-purple-50">
@@ -349,7 +326,6 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
         className="rounded-2xl border border-black/5 bg-[#f5f5f7] p-5 flex flex-col gap-3"
       >
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-blue-500 flex-shrink-0" />
           <p className="text-[11px] text-[#6e6e73] leading-relaxed font-medium">
             {t('ml.recalcHint')}
           </p>
@@ -359,7 +335,6 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
           disabled={running}
           className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#1d1d1f] text-white rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50"
         >
-          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
           {running ? t('ml.inference') : t('ml.recalc')}
         </button>
         {error && error !== 'no_data' && error !== 'network' && (
@@ -369,7 +344,6 @@ export function MLAnalysisPanel({ fieldId }: MLAnalysisPanelProps) {
 
       {/* Footer */}
       <div className="flex items-center gap-2 px-1">
-        <ShieldCheck className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
         <p className="text-[10px] text-[#6e6e73] font-medium">
           {t('ml.modelsNote')}
         </p>

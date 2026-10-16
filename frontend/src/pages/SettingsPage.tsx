@@ -1,7 +1,6 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { User, Bell, Shield, Database, Save, Camera, Upload, Trash2 } from 'lucide-react';
 import { useUser } from '@/auth/useAuth';
 import { setAvatar, toAvatarDataUrl, useAvatar } from '@/auth/avatar';
 import { Avatar } from '@/components/Avatar';
@@ -37,10 +36,10 @@ export function SettingsPage() {
     : role.level === 'contractor' ? t('settings.scopeAssigned') : t('settings.scopeAll');
 
   const tabs = [
-    { id: 'profile', icon: User, label: t('settings.tabs.profile') },
-    { id: 'notifications', icon: Bell, label: t('settings.tabs.notifications') },
-    { id: 'security', icon: Shield, label: t('settings.tabs.security') },
-    { id: 'integrations', icon: Database, label: t('settings.tabs.integrations') },
+    { id: 'profile', label: t('settings.tabs.profile') },
+    { id: 'notifications', label: t('settings.tabs.notifications') },
+    { id: 'security', label: t('settings.tabs.security') },
+    { id: 'integrations', label: t('settings.tabs.integrations') },
   ];
 
   return (
@@ -58,7 +57,6 @@ export function SettingsPage() {
                 activeTab === t.id ? 'bg-[#0071e3] text-white shadow-md shadow-blue-500/20' : 'text-[#6e6e73] hover:bg-black/5'
               }`}
             >
-              <t.icon className="w-4.5 h-4.5" />
               {t.label}
             </button>
           ))}
@@ -72,23 +70,21 @@ export function SettingsPage() {
                   <div className="relative">
                     <Avatar userId={user.id} name={t(user.nameKey)} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-white shadow-md bg-[#0071e3] text-white text-2xl font-bold" />
                     <button onClick={() => setCameraOpen(true)} title={t('settings.takePhoto')} aria-label={t('settings.takePhoto')}
-                      className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full border border-black/10 shadow-sm flex items-center justify-center hover:bg-black/5">
-                      <Camera className="w-4 h-4 text-[#1d1d1f]" />
-                    </button>
+                      className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 h-6 bg-white rounded-full border border-black/10 shadow-sm text-[10px] font-semibold whitespace-nowrap hover:bg-[#f5f5f7]">{t('settings.photo')}</button>
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-[#1d1d1f]">{t(user.nameKey)}</h2>
                     <p className="text-[#6e6e73] text-[13px] font-medium">{user.companyKey ? t(user.companyKey) : t(role.labelKey)} • SoiLink {t('settings.city')}</p>
                     <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-3">
                       <button onClick={() => setCameraOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-black/10 text-[12px] font-semibold">
-                        <Camera className="w-3.5 h-3.5" /> {t('settings.takePhoto')}
+                        {t('settings.takePhoto')}
                       </button>
                       <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f5f5f7] hover:bg-black/10 text-[12px] font-semibold">
-                        <Upload className="w-3.5 h-3.5" /> {t('settings.uploadPhoto')}
+                        {t('settings.uploadPhoto')}
                       </button>
                       {photo && (
                         <button onClick={() => savePhoto(null)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-red-500 hover:bg-red-50 text-[12px] font-semibold">
-                          <Trash2 className="w-3.5 h-3.5" /> {t('settings.removePhoto')}
+                          {t('settings.removePhoto')}
                         </button>
                       )}
                       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
@@ -116,7 +112,7 @@ export function SettingsPage() {
                 </div>
 
                 <div className="rounded-2xl bg-[#f5f5f7] p-4 sm:p-5 space-y-2">
-                  <p className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider flex items-center gap-2"><Shield className="w-3.5 h-3.5" /> {t('settings.accessLevel')}</p>
+                  <p className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider flex items-center gap-2">{t('settings.accessLevel')}</p>
                   <p className="text-[14px] font-bold">{t(ACCESS_LEVELS[role.level].labelKey)}</p>
                   <p className="text-[12px] text-[#6e6e73]">{t(ACCESS_LEVELS[role.level].descriptionKey)}</p>
                   <p className="text-[12px] text-[#6e6e73]">{t('settings.scopeLabel')} <b className="text-[#1d1d1f]">{scope}</b></p>
@@ -134,7 +130,7 @@ export function SettingsPage() {
 
                 <div className="pt-6 border-t border-black/5 flex justify-end">
                   <button className="flex items-center gap-2 px-6 py-3 bg-[#0071e3] text-white rounded-xl text-[14px] font-bold shadow-md shadow-blue-500/20 hover:bg-[#0077ed] transition-all">
-                    <Save className="w-4 h-4" /> {t('settings.save')}
+                    {t('settings.save')}
                   </button>
                 </div>
               </div>
@@ -142,9 +138,6 @@ export function SettingsPage() {
 
             {activeTab !== 'profile' && (
               <div className="py-20 text-center flex flex-col items-center gap-4">
-                <div className="w-16 h-16 bg-[#f5f5f7] rounded-full flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-[#d2d2d7]" />
-                </div>
                 <div>
                   <h3 className="text-[15px] font-bold text-[#1d1d1f]">{t('settings.proTitle')}</h3>
                   <p className="text-[13px] text-[#6e6e73] max-w-sm mx-auto mt-2">{t('settings.proBody')}</p>

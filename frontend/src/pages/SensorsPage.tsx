@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Plus, Cpu, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { fields } from '@/data/mockData';
 import { useUser } from '@/auth/useAuth';
 import { canManageSensors, canViewField } from '@/auth/roles';
@@ -59,10 +58,10 @@ export function SensorsPage() {
             <p className="text-[13px] text-[#6e6e73] mt-1">{t('sensors.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={load} title={t('common.refresh')} className="p-2 rounded-lg hover:bg-black/5 text-[#6e6e73]"><RefreshCw className="w-4 h-4" /></button>
+            <button onClick={load} title={t('common.refresh')} className="p-2 rounded-lg hover:bg-black/5 text-[#6e6e73]"></button>
             {canManageSensors(user) && !adding && (
               <button onClick={() => setAdding(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0071e3] text-white text-[12px] font-bold hover:bg-[#0077ed]">
-                <Plus className="w-4 h-4" /><span className="hidden sm:inline">{t('sensors.add')}</span>
+                <span className="hidden sm:inline">{t('sensors.add')}</span>
               </button>
             )}
           </div>
@@ -89,7 +88,7 @@ export function SensorsPage() {
 
         {error && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-[12px] font-bold">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />{t('sensors.loadError')}
+            {t('sensors.loadError')}
           </div>
         )}
 
@@ -103,7 +102,7 @@ export function SensorsPage() {
               const r = s.last_reading;
               return (
                 <Link key={s.id} to={`/sensors/${s.id}`} className="flex items-center gap-3 md:gap-4 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
-                  <div className="w-9 h-9 rounded-lg bg-[#f5f5f7] flex items-center justify-center flex-shrink-0"><Cpu className="w-4.5 h-4.5 text-[#0071e3]" /></div>
+                  <div className="w-9 h-9 rounded-lg bg-[#f5f5f7] flex items-center justify-center flex-shrink-0"></div>
                   <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1.6fr_auto] md:items-center gap-x-4 gap-y-1">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 min-w-0">
@@ -118,15 +117,14 @@ export function SensorsPage() {
                     </div>
                     <div className="text-[11px] font-bold font-data text-[#1d1d1f] flex gap-3 flex-wrap">
                       {r ? <>
-                        <span>💧 {formatMetric('moisture', r.soil_moisture)}</span>
-                        <span>🌡 {formatMetric('temperature', r.soil_temperature)}</span>
+                        <span>{formatMetric('moisture', r.soil_moisture)}</span>
+                        <span>{formatMetric('temperature', r.soil_temperature)}</span>
                         <span>pH {formatMetric('ph', r.ph)}</span>
                         <span>EC {formatMetric('ec', r.electrical_conductivity)}</span>
                       </> : <span className="text-[#86868b] font-sans">{s.dev_eui ? t('sensors.noPackets') : t('sensors.noDevEui')}</span>}
                     </div>
                     <span className="hidden md:block text-[10px] font-data text-[#86868b] uppercase">{s.dev_eui ?? '—'}</span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[#c7c7cc] flex-shrink-0" />
                 </Link>
               );
             })}

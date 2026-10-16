@@ -5,10 +5,6 @@ import {
   isSameDay, isToday as isDateToday, startOfDay
 } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import {
-  Droplet, FlaskConical, Bug, Clock, CheckCircle2, Calendar as CalendarIcon,
-  Plus, X, ChevronLeft, ChevronRight, MapPin, Pencil, Trash2, UserRound, Lock, Check
-} from 'lucide-react';
 import type { TaskStatus, TaskType, WateringEvent } from '@/types';
 import { generateTasks, fields } from '@/data/mockData';
 import { useUser } from '@/auth/useAuth';
@@ -20,10 +16,11 @@ import {
   canOperateTask, canConfirmTask, levelOf,
 } from '@/auth/roles';
 
-const TYPE_STYLE: Record<TaskType, { icon: typeof Droplet; tint: string }> = {
-  water:      { icon: Droplet,      tint: 'bg-blue-50 text-blue-600' },
-  fertilizer: { icon: FlaskConical, tint: 'bg-green-50 text-green-600' },
-  protection: { icon: Bug,          tint: 'bg-amber-50 text-amber-600' },
+// Цвет типа работ — полоской слева в карточке задачи
+const TYPE_STYLE: Record<TaskType, { bar: string }> = {
+  water:      { bar: 'bg-blue-500' },
+  fertilizer: { bar: 'bg-green-500' },
+  protection: { bar: 'bg-amber-500' },
 };
 
 const STATUS_TINT: Record<TaskStatus, string> = {
@@ -96,11 +93,10 @@ export function SchedulePage() {
         <div className="flex flex-col gap-1 min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1d1d1f]">{isContractor ? t('schedule.titleContractor') : t('schedule.title')}</h1>
           <p className="text-[12px] sm:text-[13px] text-[#6e6e73] font-medium flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4 flex-shrink-0" />
             {t('schedule.todayIs', { date: format(new Date(), 'd MMMM yyyy', { locale: dateLocale }) })}
           </p>
           <p className="text-[11px] text-[#86868b] font-medium flex items-center gap-1.5 mt-1">
-            <Lock className="w-3 h-3 flex-shrink-0" /> {accessNote}
+            {accessNote}
           </p>
         </div>
 
@@ -108,7 +104,7 @@ export function SchedulePage() {
           <button onClick={() => setShowAddModal(true)}
             className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0071e3] text-white rounded-xl text-[13px] font-bold shadow-sm hover:bg-[#0077ed] transition-all w-full sm:w-auto flex-shrink-0"
           >
-            <Plus className="w-4 h-4" /> {t('schedule.createTask')}
+            {t('schedule.createTask')}
           </button>
         )}
       </div>
@@ -121,8 +117,8 @@ export function SchedulePage() {
                   {format(selectedDate, 'LLLL yyyy', { locale: dateLocale })}
                </h2>
                <div className="flex gap-1">
-                  <button onClick={() => setSelectedDate(addDays(selectedDate, -7))} className="p-1.5 hover:bg-black/5 rounded-lg transition-all"><ChevronLeft className="w-4 h-4 text-[#6e6e73]" /></button>
-                  <button onClick={() => setSelectedDate(addDays(selectedDate, 7))} className="p-1.5 hover:bg-black/5 rounded-lg transition-all"><ChevronRight className="w-4 h-4 text-[#6e6e73]" /></button>
+                  <button onClick={() => setSelectedDate(addDays(selectedDate, -7))} aria-label={t('schedule.prevWeek')} className="px-2.5 py-1 hover:bg-black/5 rounded-lg text-[14px] font-semibold">‹</button>
+                  <button onClick={() => setSelectedDate(addDays(selectedDate, 7))} aria-label={t('schedule.nextWeek')} className="px-2.5 py-1 hover:bg-black/5 rounded-lg text-[14px] font-semibold">›</button>
                </div>
             </div>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -181,9 +177,6 @@ export function SchedulePage() {
                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="py-20 text-center bg-white/50 border-2 border-dashed border-black/5 rounded-3xl"
                  >
-                    <div className="w-16 h-16 bg-[#f5f5f7] rounded-full flex items-center justify-center mx-auto mb-4">
-                       <Clock className="w-6 h-6 text-[#d2d2d7]" />
-                    </div>
                     <p className="text-[14px] font-medium text-[#6e6e73]">
                       {isContractor ? t('schedule.noTasksContractor') : t('schedule.noTasks')}
                     </p>
@@ -225,7 +218,7 @@ function TaskCard({ task, index, onUpdate, onDelete }: {
   const [editing, setEditing] = useState<'fact' | 'plan' | null>(null);
   const [draft, setDraft] = useState('');
 
-  const { icon: Icon, tint } = TYPE_STYLE[task.type];
+  const { bar } = TYPE_STYLE[task.type];
   const field = fields.find(f => f.id === task.fieldId);
   const assignee = findAccount(task.assigneeId);
   const done = task.status === 'completed';
@@ -247,11 +240,8 @@ function TaskCard({ task, index, onUpdate, onDelete }: {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
       className="p-3 sm:p-5 bg-white border border-black/5 rounded-2xl shadow-sm transition-all hover:shadow-md"
     >
-      <div className={`flex items-start gap-3 sm:gap-5 ${done ? 'opacity-70' : ''}`}>
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${tint}`}>
-          <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
-        </div>
-
+      <div className={`flex items-stretch gap-3 sm:gap-4 ${done ? 'opacity-70' : ''}`}>
+        <span className={`w-1 rounded-full flex-shrink-0 ${bar}`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className={`text-[13px] sm:text-[15px] font-bold ${done ? 'line-through text-[#6e6e73]' : ''}`}>
@@ -261,13 +251,13 @@ function TaskCard({ task, index, onUpdate, onDelete }: {
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${STATUS_TINT[task.status]}`}>{t(`taskStatus.${task.status}`)}</span>
           </div>
           <div className="flex items-center gap-x-4 gap-y-1 text-[11px] sm:text-[12px] font-medium text-[#6e6e73] flex-wrap">
-            <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {format(task.date, 'HH:mm')} • {task.duration} {t('common.min')}</span>
-            <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {field ? t(field.shortKey) : ''} · {field?.areaHectares} {t('common.ha')}</span>
+            <span className="flex items-center gap-1.5">{format(task.date, 'HH:mm')} • {task.duration} {t('common.min')}</span>
+            <span className="flex items-center gap-1.5">{field ? t(field.shortKey) : ''} · {field?.areaHectares} {t('common.ha')}</span>
             <span>{t('schedule.norm')} <b className="text-[#1d1d1f]">{formatAmount(t, task.volume)}</b></span>
             {task.factVolume && <span>{t('schedule.fact')} <b className="text-green-600">{formatAmount(t, task.factVolume)}</b></span>}
           </div>
           <div className="flex items-center gap-x-4 gap-y-1 text-[11px] font-medium text-[#86868b] mt-1 flex-wrap">
-            <span className="flex items-center gap-1.5"><UserRound className="w-3.5 h-3.5" /> {t('schedule.assignee')} {assignee?.companyKey ? t(assignee.companyKey) : t('schedule.notAssigned')}</span>
+            <span className="flex items-center gap-1.5">{t('schedule.assignee')} {assignee?.companyKey ? t(assignee.companyKey) : t('schedule.notAssigned')}</span>
             <span>{t('schedule.planner')} {t(task.managerName)}</span>
             {field && <span className="font-data">{field.center.latitude.toFixed(4)}, {field.center.longitude.toFixed(4)}</span>}
           </div>
@@ -286,8 +276,8 @@ function TaskCard({ task, index, onUpdate, onDelete }: {
                 onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditing(null); }}
                 className={`${selectCls} flex-1 min-w-0`}
               />
-              <button onClick={saveEdit} className={`${actionBtn} bg-[#0071e3] text-white`}><Check className="w-3.5 h-3.5" /></button>
-              <button onClick={() => setEditing(null)} className={`${actionBtn} bg-[#f5f5f7] text-[#6e6e73]`}><X className="w-3.5 h-3.5" /></button>
+              <button onClick={saveEdit} className={`${actionBtn} bg-[#0071e3] text-white`}>{t('sensors.save')}</button>
+              <button onClick={() => setEditing(null)} className={`${actionBtn} bg-[#f5f5f7] text-[#6e6e73]`}>{t('sensors.cancel')}</button>
             </div>
           ) : (
             <>
@@ -305,29 +295,27 @@ function TaskCard({ task, index, onUpdate, onDelete }: {
                     {STATUS_ORDER.map(s => <option key={s} value={s}>{t(`taskStatus.${s}`)}</option>)}
                   </select>
                   <button onClick={() => startEdit('fact')} className={`${actionBtn} bg-[#f5f5f7] text-[#1d1d1f] hover:bg-black/10`}>
-                    <Pencil className="w-3.5 h-3.5" /> {t('schedule.enterFact')}
+                    {t('schedule.enterFact')}
                   </button>
                 </>
               )}
               {canPlan && (
                 <>
                   <button onClick={() => startEdit('plan')} className={`${actionBtn} bg-[#f5f5f7] text-[#1d1d1f] hover:bg-black/10`}>
-                    <Pencil className="w-3.5 h-3.5" /> {t('schedule.changeNorm')}
+                    {t('schedule.changeNorm')}
                   </button>
-                  <button onClick={onDelete} className={`${actionBtn} text-red-500 hover:bg-red-50`} aria-label={t('schedule.deleteTask')}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <button onClick={onDelete} className={`${actionBtn} text-red-500 hover:bg-red-50`}>{t('schedule.deleteTask')}</button>
                 </>
               )}
               {canConfirm && (
                 <>
                   <button onClick={() => startEdit('fact')} className={`${actionBtn} bg-[#f5f5f7] text-[#1d1d1f] hover:bg-black/10`}>
-                    <Pencil className="w-3.5 h-3.5" /> {t('schedule.setFact')}
+                    {t('schedule.setFact')}
                   </button>
                   <button onClick={() => onUpdate({ status: 'completed', confirmedAt: new Date() })}
                     className={`${actionBtn} bg-green-500 text-white shadow-md shadow-green-500/20 hover:bg-green-600 ml-auto`}
                   >
-                    <CheckCircle2 className="w-4 h-4" /> {t('schedule.confirmDone')}
+                    {t('schedule.confirmDone')}
                   </button>
                 </>
               )}
@@ -337,7 +325,7 @@ function TaskCard({ task, index, onUpdate, onDelete }: {
       )}
       {task.confirmedAt && (
         <p className="mt-2 text-[11px] font-semibold text-green-600 flex items-center gap-1.5">
-          <CheckCircle2 className="w-3.5 h-3.5" /> {t('schedule.confirmedAt', { date: format(task.confirmedAt, 'd MMM, HH:mm', { locale: dateLocale }) })}
+          {t('schedule.confirmedAt', { date: format(task.confirmedAt, 'd MMM, HH:mm', { locale: dateLocale }) })}
         </p>
       )}
     </motion.div>
@@ -387,7 +375,7 @@ function AddTaskModal({ isOpen, types, fieldOptions, defaultFieldId, managerName
           >
             <div className="flex items-center justify-between mb-6 sm:mb-8">
               <h2 className="text-lg sm:text-xl font-bold">{t('schedule.newOperation')}</h2>
-              <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-lg"><X className="w-5 h-5 text-[#6e6e73]" /></button>
+              <button onClick={onClose} className="px-2.5 py-1 rounded-lg text-[12px] font-semibold text-[#6e6e73] hover:bg-black/5 flex-shrink-0">{t('common.close')}</button>
             </div>
 
             <div className="space-y-6">
@@ -395,12 +383,11 @@ function AddTaskModal({ isOpen, types, fieldOptions, defaultFieldId, managerName
                   <label className={`${labelCls} mb-2`}>{t('schedule.impactType')}</label>
                   <div className={`grid gap-3 ${types.length > 1 ? 'grid-cols-3' : 'grid-cols-1'}`}>
                      {types.map(kind => {
-                       const { icon: Icon } = TYPE_STYLE[kind];
                        return (
                          <button key={kind} onClick={() => setForm(f => ({ ...f, type: kind }))}
                            className={`flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold border transition-all ${type === kind ? 'bg-[#0071e3] text-white border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-white border-black/10 text-[#6e6e73]'}`}
                          >
-                           <Icon className="w-4 h-4" /> {t(TASK_TYPE_KEYS[kind])}
+                           {t(TASK_TYPE_KEYS[kind])}
                          </button>
                        );
                      })}

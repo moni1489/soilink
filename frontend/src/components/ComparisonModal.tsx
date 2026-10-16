@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { X, BarChart3, Info } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import type { Sensor, SoilDepth } from '@/types';
 import { mockScannerData } from '@/data/mockData';
@@ -74,7 +73,6 @@ export function ComparisonModal({ isOpen, sensor, onClose }: ComparisonModalProp
             {/* Header */}
             <div className="flex items-center gap-4 sm:gap-8 p-5 sm:p-12 border-b border-[#d2d2d7]/20">
               <div className="hidden sm:flex w-16 h-16 bg-[#f5f5f7] rounded-[22px] items-center justify-center shadow-sm flex-shrink-0">
-                 <BarChart3 className="w-8 h-8 text-[#0071e3]" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg sm:text-4xl font-black tracking-tightest text-[#1d1d1f] truncate">{t('cmp.title')}</h2>
@@ -89,9 +87,7 @@ export function ComparisonModal({ isOpen, sensor, onClose }: ComparisonModalProp
                   >{label}</button>
                 ))}
               </div>
-              <button onClick={onClose} className="p-2.5 sm:p-4 bg-[#f5f5f7] rounded-full hover:bg-[#e5e5ea] transition-all active:scale-90 flex-shrink-0">
-                <X className="w-5 h-5 sm:w-8 sm:h-8 text-[#1d1d1f]" />
-              </button>
+              <button onClick={onClose} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-[#f5f5f7] rounded-full text-[12px] sm:text-[14px] font-semibold hover:bg-[#e5e5ea] flex-shrink-0">{t('common.close')}</button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-12 flex flex-col gap-6 sm:gap-12 scrollbar-hide">
@@ -172,7 +168,6 @@ export function ComparisonModal({ isOpen, sensor, onClose }: ComparisonModalProp
 
               <div className="p-4 sm:p-8 bg-[#f0f5ff] rounded-[20px] sm:rounded-[32px] flex items-center gap-4 sm:gap-6 border border-[#adc6ff]/30">
                  <div className="hidden sm:flex w-12 h-12 bg-white rounded-2xl items-center justify-center shadow-sm flex-shrink-0">
-                    <Info className="w-6 h-6 text-[#0071e3]" />
                  </div>
                  <p className="text-[12px] sm:text-[14px] font-bold text-[#1d1d1f] leading-relaxed max-w-4xl">
                    {t('cmp.note')}

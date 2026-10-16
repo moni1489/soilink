@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Sparkles, RefreshCw, Sprout, FlaskConical, ShieldCheck,
-  AlertCircle, ChevronDown, ChevronUp, CheckCircle2,
-  Cpu, Activity
-} from 'lucide-react';
-import {
   fetchLatestPrediction,
   runPrediction,
   type PredictionData
@@ -108,7 +103,6 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
       <div className="bg-[#1d1d1f] text-white p-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
-            <Cpu className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -124,14 +118,12 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           disabled={analyzing}
           className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white text-[11px] font-bold rounded-xl transition-all shadow-md cursor-pointer flex-shrink-0"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${analyzing ? 'animate-spin' : ''}`} />
           <span>{analyzing ? t('ml.analyzing') : t('ml.runShort')}</span>
         </button>
       </div>
 
       {error && (
         <div className="m-3 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -143,7 +135,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           <div className="p-3 bg-emerald-50/60 border border-emerald-200/60 rounded-xl">
             <div className="flex items-center justify-between mb-1 text-[#6e6e73]">
               <span className="text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 text-emerald-800">
-                <Sprout className="w-3.5 h-3.5 text-emerald-600" /> {t('ml.crop')}
+                {t('ml.crop')}
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.2 bg-emerald-200/80 text-emerald-900 rounded">
                 {cropConf}%
@@ -157,7 +149,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           <div className="p-3 bg-purple-50/60 border border-purple-200/60 rounded-xl">
             <div className="flex items-center justify-between mb-1 text-[#6e6e73]">
               <span className="text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 text-purple-800">
-                <FlaskConical className="w-3.5 h-3.5 text-purple-600" /> {t('ml.fertilizerShort')}
+                {t('ml.fertilizerShort')}
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.2 bg-purple-200/80 text-purple-900 rounded">
                 ML
@@ -171,7 +163,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
           <div className="p-3 bg-blue-50/60 border border-blue-200/60 rounded-xl">
             <div className="flex items-center justify-between mb-1 text-[#6e6e73]">
               <span className="text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 text-blue-800">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" /> {t('ml.state')}
+                {t('ml.state')}
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.2 bg-blue-200/80 text-blue-900 rounded">
                 {soilConf}%
@@ -186,7 +178,6 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
         <div className="p-3 bg-[#f5f5f7] rounded-xl border border-black/5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#6e6e73]">{t('ml.probDistribution')}</span>
-            <Activity className="w-3.5 h-3.5 text-emerald-600" />
           </div>
           <div className="grid grid-cols-4 gap-2 text-center text-[10px]">
             <div>
@@ -227,10 +218,9 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
             className="w-full p-2.5 bg-[#fbfbfd] hover:bg-[#f5f5f7] flex items-center justify-between text-[11px] font-bold text-[#1d1d1f] transition-all cursor-pointer"
           >
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
               {t('ml.labEstimates')}
             </span>
-            {showLabDetails ? <ChevronUp className="w-4 h-4 text-[#86868b]" /> : <ChevronDown className="w-4 h-4 text-[#86868b]" />}
+            <span className="font-data">{showLabDetails ? '−' : '+'}</span>
           </button>
 
           {showLabDetails && (
@@ -270,7 +260,7 @@ export function MLPredictionCard({ fieldId, onPredictionUpdated }: MLPredictionC
         <div className="flex items-center justify-between text-[9px] text-[#86868b] pt-1 px-1">
           <span>{t('ml.syncedWith')}</span>
           <span className="flex items-center gap-1 text-emerald-600 font-bold">
-            <CheckCircle2 className="w-3 h-3" /> {t('common.online')}
+            {t('common.online')}
           </span>
         </div>
       </div>

@@ -1,15 +1,15 @@
 import type { WeatherData } from '@/types';
 
 // Map WMO Weather Interpretation Codes (WW)
-function mapWeatherCode(code: number): { condition: 'sunny' | 'cloudy' | 'rain' | 'windy' | 'storm'; icon: string } {
-  if (code === 0) return { condition: 'sunny', icon: '☀️' };
-  if (code === 1 || code === 2) return { condition: 'cloudy', icon: '🌤️' };
-  if (code === 3) return { condition: 'cloudy', icon: '☁️' };
-  if (code >= 45 && code <= 48) return { condition: 'cloudy', icon: '🌫️' };
-  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return { condition: 'rain', icon: '🌧️' };
-  if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return { condition: 'rain', icon: '🌨️' };
-  if (code >= 95 && code <= 99) return { condition: 'storm', icon: '⛈️' };
-  return { condition: 'sunny', icon: '☀️' };
+function mapWeatherCode(code: number): { condition: 'sunny' | 'cloudy' | 'rain' | 'windy' | 'storm' } {
+  if (code === 0) return { condition: 'sunny' };
+  if (code === 1 || code === 2) return { condition: 'cloudy' };
+  if (code === 3) return { condition: 'cloudy' };
+  if (code >= 45 && code <= 48) return { condition: 'cloudy' };
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return { condition: 'rain' };
+  if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return { condition: 'rain' };
+  if (code >= 95 && code <= 99) return { condition: 'storm' };
+  return { condition: 'sunny' };
 }
 
 export async function fetchRealWeather(latitude: number, longitude: number): Promise<WeatherData> {
@@ -31,13 +31,10 @@ export async function fetchRealWeather(latitude: number, longitude: number): Pro
   const forecast = (daily.time as string[]).slice(1, 4).map((dateStr, idx) => {
     const date = new Date(dateStr);
     const dayName = daysOfWeek[date.getDay()];
-    const code = daily.weather_code[idx + 1] ?? 0;
-    const { icon } = mapWeatherCode(code);
     const maxTemp = Math.round(daily.temperature_2m_max[idx + 1] ?? 20);
     return {
       day: dayName,
       temp: maxTemp,
-      icon,
     };
   });
 

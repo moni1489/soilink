@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Leaf, Lock, User as UserIcon, LogIn, AlertCircle, Eye, EyeOff, ShieldCheck, Sprout, Tractor, Briefcase } from 'lucide-react';
+import { Leaf } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { accounts, DEMO_PASSWORD } from '@/auth/accounts';
 import { Avatar } from '@/components/Avatar';
@@ -11,11 +11,11 @@ import { LanguageMenu } from '@/components/LanguageSwitcher';
 
 const LEVEL_ORDER: AccessLevel[] = ['full', 'specialist', 'field', 'contractor'];
 
-const LEVEL_STYLE: Record<AccessLevel, { icon: typeof ShieldCheck; tint: string }> = {
-  full:       { icon: ShieldCheck, tint: 'bg-blue-50 text-[#0071e3]' },
-  specialist: { icon: Sprout,      tint: 'bg-green-50 text-green-600' },
-  field:      { icon: Briefcase,   tint: 'bg-amber-50 text-amber-600' },
-  contractor: { icon: Tractor,     tint: 'bg-purple-50 text-purple-600' },
+const LEVEL_STYLE: Record<AccessLevel, { tint: string }> = {
+  full:       { tint: 'bg-blue-50 text-[#0071e3]' },
+  specialist: { tint: 'bg-green-50 text-green-600' },
+  field:      { tint: 'bg-amber-50 text-amber-600' },
+  contractor: { tint: 'bg-purple-50 text-purple-600' },
 };
 
 export function LoginPage() {
@@ -91,7 +91,6 @@ export function LoginPage() {
               <label className="block space-y-2">
                 <span className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider">{t('login.loginLabel')}</span>
                 <div className="flex items-center gap-3 h-11 px-4 rounded-xl bg-[#f5f5f7] focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 border border-transparent focus-within:border-blue-500 transition-all">
-                  <UserIcon className="w-4 h-4 text-[#86868b]" />
                   <input value={loginName} onChange={e => { setLoginName(e.target.value); setError(''); }}
                     autoComplete="username" autoFocus placeholder={t('login.loginPlaceholder')}
                     className="flex-1 bg-transparent outline-none text-[14px] font-semibold placeholder-[#86868b] placeholder:font-medium"
@@ -101,7 +100,6 @@ export function LoginPage() {
               <label className="block space-y-2">
                 <span className="text-[11px] font-bold text-[#6e6e73] uppercase tracking-wider">{t('login.passwordLabel')}</span>
                 <div className="flex items-center gap-3 h-11 px-4 rounded-xl bg-[#f5f5f7] focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 border border-transparent focus-within:border-blue-500 transition-all">
-                  <Lock className="w-4 h-4 text-[#86868b]" />
                   <input type={showPassword ? 'text' : 'password'} value={password}
                     onChange={e => { setPassword(e.target.value); setError(''); }}
                     autoComplete="current-password"
@@ -110,21 +108,21 @@ export function LoginPage() {
                   <button type="button" onClick={() => setShowPassword(v => !v)} className="text-[#86868b] hover:text-[#1d1d1f]"
                     aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <span className="text-[11px] font-semibold">{showPassword ? t('login.hide') : t('login.show')}</span>
                   </button>
                 </div>
               </label>
 
               {error && (
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 text-red-600 text-[12px] font-semibold">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                  {error}
                 </div>
               )}
 
               <button type="submit" disabled={!loginName || !password}
                 className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#0071e3] text-white rounded-xl text-[14px] font-bold shadow-md shadow-blue-500/20 hover:bg-[#0077ed] disabled:opacity-40 disabled:shadow-none transition-all"
               >
-                <LogIn className="w-4 h-4" /> {t('login.submit')}
+                {t('login.submit')}
               </button>
             </div>
           </motion.form>
@@ -138,14 +136,11 @@ export function LoginPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {LEVEL_ORDER.map(level => {
-                const { icon: Icon, tint } = LEVEL_STYLE[level];
+                const { tint } = LEVEL_STYLE[level];
                 const levelAccounts = accounts.filter(a => ROLES[a.role].level === level);
                 return (
                   <div key={level} className={`bg-white rounded-2xl border border-black/5 p-4 ${level === 'specialist' ? 'sm:row-span-2' : ''}`}>
                     <div className="flex items-start gap-3 mb-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${tint}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
                       <div className="min-w-0">
                         <p className="text-[13px] font-bold">{t(ACCESS_LEVELS[level].labelKey)}</p>
                         <p className="text-[11px] text-[#6e6e73] leading-snug">{t(ACCESS_LEVELS[level].descriptionKey)}</p>

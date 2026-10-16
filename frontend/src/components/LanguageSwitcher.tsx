@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Languages, Check } from 'lucide-react';
 import { LANGUAGES, setLanguage, type Language } from '@/i18n';
 
 const SHORT: Record<Language, string> = { ru: 'РУС', kk: 'ҚАЗ', en: 'ENG' };
@@ -19,7 +18,6 @@ export function LanguageSwitcher() {
   return (
     <div className="px-2 pb-1">
       <div className="flex items-center gap-1.5 px-2 pb-1.5">
-        <Languages className="w-3 h-3 text-[#86868b]" />
         <span className="text-[9px] font-bold text-[#86868b] uppercase tracking-wider">{t('lang.label')}</span>
       </div>
       <div className="flex items-stretch gap-1 p-1 bg-[#f5f5f7] rounded-xl">
@@ -51,7 +49,6 @@ export function LanguageMenu({ align = 'right' }: { align?: 'left' | 'right' }) 
       <button onClick={() => setOpen(v => !v)} title={t('lang.label')} aria-label={t('lang.label')}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-[#6e6e73] hover:text-[#1d1d1f] hover:bg-black/5 transition-all"
       >
-        <Languages className="w-4 h-4" />
         <span>{SHORT[current]}</span>
       </button>
       {open && (
@@ -65,7 +62,6 @@ export function LanguageMenu({ align = 'right' }: { align?: 'left' | 'right' }) 
                 }`}
               >
                 <span>{t(`lang.${lng}`)}</span>
-                {current === lng && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
               </button>
             ))}
           </div>

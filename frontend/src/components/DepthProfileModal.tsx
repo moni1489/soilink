@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { X, Layers, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { SoilDepth } from '@/types';
 import { mockScannerData } from '@/data/mockData';
@@ -52,12 +51,9 @@ export function DepthProfileModal({ isOpen, onClose }: DepthProfileModalProps) {
             {/* Minimalist Header */}
             <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-black/5 flex items-center justify-between flex-shrink-0 bg-[#fbfbfd]">
               <div className="flex items-center gap-3 min-w-0">
-                <Layers className="w-5 h-5 text-blue-500 flex-shrink-0" />
                 <h2 className="text-[13px] sm:text-[15px] font-bold tracking-tight text-[#1d1d1f] truncate">{t('depth.title')}</h2>
               </div>
-              <button onClick={onClose} className="p-1.5 hover:bg-black/5 rounded-lg transition-all text-[#86868b] flex-shrink-0">
-                <X className="w-5 h-5" />
-              </button>
+              <button onClick={onClose} className="px-2.5 py-1 rounded-lg text-[12px] font-semibold text-[#6e6e73] hover:bg-black/5 flex-shrink-0">{t('common.close')}</button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col gap-6 sm:gap-10 scrollbar-hide">
