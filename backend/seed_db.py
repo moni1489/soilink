@@ -10,6 +10,7 @@ from app.models.field import Field
 from app.models.reading import SensorReading
 from app.models.prediction import Prediction
 from app.models.recommendation import Recommendation
+from app.models.sensor import Sensor
 
 def seed():
     # Create tables if they don't exist
@@ -83,6 +84,16 @@ def seed():
         db.add(rec)
     db.commit()
     print("Added predictions and recommendations for fields")
+
+    # 4. Реальный датчик — DevEUI вписывается на его странице при подключении к хабу
+    if not db.get(Sensor, "SL-0001"):
+        db.add(Sensor(
+            id="SL-0001", name="Датчик почвы №1", field_id="f-1",
+            model="Soil 4-in-1 (T · VWC · EC · pH), LoRaWAN", depth_cm=20,
+            latitude=49.9300, longitude=82.5530,
+        ))
+        db.commit()
+        print("Registered real sensor SL-0001")
 
     db.close()
     print("Database seeded successfully and verified!")

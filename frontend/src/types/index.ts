@@ -16,6 +16,10 @@ export interface Sensor {
   electricalConductivity: number; gasComposition: string;
   battery: number; signalStrength: number;
   premiumFeatures?: { vibroacousticSoilStructureAnalysis?: string; };
+  /** Код реального датчика из реестра (бэкенд) — клик ведёт на его страницу */
+  registryId?: string;
+  /** Нет свежих показаний — не участвует в карте и средних */
+  offline?: boolean;
 }
 
 export interface WeatherData {

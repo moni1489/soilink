@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.models.reading import SensorReading
+from app.models.sensor import Sensor
+from app.api.sensors import _normalize_eui
 from app.schemas.reading import SensorReadingIn, SensorReadingOut
 
 router = APIRouter(prefix="/api/readings", tags=["readings"])
@@ -59,16 +61,20 @@ def ingest_batch(payloads: list[SensorReadingIn], db: Session = Depends(get_db))
 
 
 @router.post("/linkedge")
-def ingest_linkedge(payload: dict, field_id: str, db: Session = Depends(get_db)):
-    # Webhook LinkEdge-хаба (target url: .../api/readings/linkedge?field_id=...).
+def ingest_linkedge(payload: dict, field_id: str = "unassigned", db: Session = Depends(get_db)):
+    # Webhook LinkEdge-хаба (target url: .../api/readings/linkedge).
     # Невалидные и тестовые пакеты подтверждаем без записи, иначе хаб будет слать их вечно
     d = payload.get("decoded_data")
     if not d or not payload.get("is_valid"):
         return {"stored": False}
 
+    # Датчик из реестра — пишем под его кодом и полем. Незарегистрированный — под DevEUI,
+    # такие пакеты заберёт себе датчик, когда ему пропишут этот DevEUI
+    dev_eui = _normalize_eui(payload["dev_eui"])
+    sensor = db.query(Sensor).filter(Sensor.dev_eui == dev_eui).first()
     reading = SensorReading(
-        sensor_id=payload["dev_eui"],
-        field_id=field_id,
+        sensor_id=sensor.id if sensor else dev_eui,
+        field_id=sensor.field_id if sensor else field_id,
         timestamp=datetime.fromisoformat(payload["time"]),
         ph=d["ph"],
         soil_temperature=d["temperature_c"],

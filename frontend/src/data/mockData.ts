@@ -1,4 +1,5 @@
 import { addDays, subHours, format } from 'date-fns';
+import { sensorScore, statusFromScore } from './metrics';
 import type { WateringEvent, Field, Sensor, SoilZone, Recommendation, Prediction, StatisticCard, ScannerData, WeatherData } from '@/types';
 
 // Реальные сельхозугодья южнее Усть-Каменогорска (Ertis / Tishinka area)
@@ -39,40 +40,44 @@ export const weather: Record<string, WeatherData> = {
   },
 };
 
-const createSensor = (id: string, fieldId: string, lat: number, lng: number, status: any): Sensor => ({
-  id, fieldId, nameKey: `data.sensors.${id}`,
-  coordinates: { latitude: lat, longitude: lng },
-  status,
-  lastUpdated: subHours(new Date(), 1).toISOString(),
-  pH: 6.2 + Math.random() * 0.8,
-  nitrogen: 15 + Math.floor(Math.random() * 10),
-  phosphorus: 20 + Math.floor(Math.random() * 15),
-  potassium: 150 + Math.floor(Math.random() * 50),
-  magnesium: 40 + Math.floor(Math.random() * 20),
-  soc: 2.1 + Math.random() * 1.5,
-  soilTemperature: 18 + Math.random() * 5,
-  soilMoisture: 35 + Math.floor(Math.random() * 40),
-  electricalConductivity: 1.2 + Math.random() * 0.5,
-  gasComposition: 'CO2: 450ppm, O2: 20.5%',
-  battery: 75 + Math.floor(Math.random() * 25),
-  signalStrength: 80 + Math.floor(Math.random() * 20),
-});
+// Демо-датчики: [влажность VWC %, t почвы °C, pH, EC mS/cm]. Статус не задаётся руками —
+// он считается из значений, как и у реальных датчиков (см. data/metrics.ts)
+const createSensor = (id: string, fieldId: string, lat: number, lng: number,
+  [soilMoisture, soilTemperature, pH, electricalConductivity]: [number, number, number, number]): Sensor => {
+  const sensor: Sensor = {
+    id, fieldId, nameKey: `data.sensors.${id}`,
+    coordinates: { latitude: lat, longitude: lng },
+    status: 'healthy',
+    lastUpdated: subHours(new Date(), 1).toISOString(),
+    pH, soilTemperature, soilMoisture, electricalConductivity,
+    nitrogen: 15 + (id.length * 7) % 10,
+    phosphorus: 20 + (id.length * 11) % 15,
+    potassium: 150 + (id.length * 13) % 50,
+    magnesium: 45,
+    soc: 2.6,
+    gasComposition: 'CO2: 450ppm, O2: 20.5%',
+    battery: 86,
+    signalStrength: 91,
+  };
+  sensor.status = statusFromScore(sensorScore(sensor));
+  return sensor;
+};
 
 export const sensors: Sensor[] = [
-  // Field 1 — Тишинское поле (юг УКГ)
-  createSensor('s-1', 'f-1', 49.9315, 82.5340, 'healthy'),
-  createSensor('s-2', 'f-1', 49.9295, 82.5370, 'warning'),
-  createSensor('s-3', 'f-1', 49.9305, 82.5295, 'healthy'),
-  createSensor('s-4', 'f-1', 49.9270, 82.5555, 'critical'),
-  createSensor('s-5', 'f-1', 49.9290, 82.5600, 'healthy'),
-  createSensor('s-11', 'f-1', 49.9155, 82.5340, 'healthy'),
-  createSensor('s-12', 'f-1', 49.9130, 82.5360, 'warning'),
-  createSensor('s-13', 'f-1', 49.9145, 82.5310, 'healthy'),
+  // Field 1 — Тишинское поле (юг УКГ). Зона А в норме, Б пересыхает, В — сухо и засоление
+  createSensor('s-1', 'f-1', 49.9315, 82.5340, [31, 13.8, 6.9, 0.55]),
+  createSensor('s-2', 'f-1', 49.9295, 82.5370, [22, 13.1, 7.3, 0.70]),
+  createSensor('s-3', 'f-1', 49.9305, 82.5295, [29, 14.0, 7.0, 0.60]),
+  createSensor('s-4', 'f-1', 49.9270, 82.5555, [13.5, 15.2, 7.9, 1.90]),
+  createSensor('s-5', 'f-1', 49.9290, 82.5600, [21, 14.6, 7.4, 1.10]),
+  createSensor('s-11', 'f-1', 49.9155, 82.5340, [18, 15.5, 8.1, 2.60]),
+  createSensor('s-12', 'f-1', 49.9130, 82.5360, [15, 16.0, 8.3, 3.20]),
+  createSensor('s-13', 'f-1', 49.9145, 82.5310, [20, 15.1, 7.8, 2.10]),
 
   // Field 2 — Усть-Тарханское поле
-  createSensor('s-6', 'f-2', 49.8940, 82.6320, 'healthy'),
-  createSensor('s-7', 'f-2', 49.8910, 82.6400, 'healthy'),
-  createSensor('s-8', 'f-2', 49.8950, 82.6450, 'warning'),
+  createSensor('s-6', 'f-2', 49.8940, 82.6320, [33, 12.9, 6.6, 0.50]),
+  createSensor('s-7', 'f-2', 49.8910, 82.6400, [30, 13.3, 6.4, 0.48]),
+  createSensor('s-8', 'f-2', 49.8950, 82.6450, [19, 13.9, 5.6, 0.80]),
 ];
 
 export const zones: SoilZone[] = [

@@ -2,8 +2,11 @@ import Map, { Source, Layer, Marker, NavigationControl, ScaleControl } from 'rea
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDistanceToNowStrict } from 'date-fns';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
+import { METRICS, STATUS_COLORS, classIndex, idw, metersPerDeg, pointInPolygon, type IdwPoint, type MetricKey } from '@/data/metrics';
+import { useDateLocale } from '@/i18n';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -19,87 +22,123 @@ const ZONE_COLORS: Record<string, string> = {
   red: '#ef4444',
 };
 
+const OFFLINE_COLOR = '#8e8e93';
+/** Поле без контуров зон — закрашиваем круги этого радиуса вокруг датчиков */
+const COVERAGE_RADIUS_M = 450;
+/** Разрешение растра: метров на пиксель (не крупнее MAX_PX по стороне) */
+const RASTER_M_PER_PX = 4;
+const MAX_PX = 1200;
+
 interface MapboxViewerProps {
   sensors: Sensor[];
   zones: SoilZone[];
   field: Field;
   mapMode: MapMode;
+  metric: MetricKey;
+  onMetricChange: (metric: MetricKey) => void;
   onSelectSensor: (sensor: Sensor) => void;
   onSelectZone: (zone: SoilZone) => void;
   activeSensorId?: string | null;
   activeZoneId?: string | null;
 }
 
-/** Simple point-in-polygon check using ray-casting algorithm */
-function pointInPolygon(point: { lng: number, lat: number }, vs: { lng: number, lat: number }[]) {
-  const x = point.lng, y = point.lat;
-  let inside = false;
-  for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-    const xi = vs[i].lng, yi = vs[i].lat;
-    const xj = vs[j].lng, yj = vs[j].lat;
-    const intersect = ((yi > y) !== (yj > y))
-      && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
+const hexRgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
 
-/** Generate a grid of points strictly within a polygon for heatmap coverage */
-function generateZoneHeatPoints(zone: SoilZone, gridSize = 12) {
-  const lngs = zone.coordinates.map(c => c.lng);
-  const lats = zone.coordinates.map(c => c.lat);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
+/** Достоверность оценки падает с расстоянием до ближайшего датчика → прозрачность пикселя */
+const confidenceAlpha = (nearestM: number) => 0.82 - Math.min(Math.max((nearestM - 250) / 600, 0), 1) * 0.5;
 
-  // weight: 0 = perfectly healthy, 1 = critical
-  const weight = parseFloat((1 - zone.healthScore / 100).toFixed(3));
+export const heatPoints = (sensors: Sensor[], metric: MetricKey): IdwPoint[] =>
+  sensors
+    .filter(s => !s.offline)
+    .map(s => ({ lng: s.coordinates.longitude, lat: s.coordinates.latitude, value: METRICS[metric].read(s) }))
+    .filter(p => Number.isFinite(p.value));
 
-  const points = [];
-  for (let i = 0; i < gridSize; i++) {
-    for (let j = 0; j < gridSize; j++) {
-      const lng = minLng + (maxLng - minLng) * (i + 0.5) / gridSize;
-      const lat = minLat + (maxLat - minLat) * (j + 0.5) / gridSize;
+/**
+ * Растр интерполяции по показаниям датчиков, обрезанный по контурам зон.
+ * Каждый пиксель — отдельная IDW-оценка, раскрашенная по классу (без размытия heatmap-слоя).
+ */
+function buildRaster(points: IdwPoint[], zones: SoilZone[], metric: MetricKey) {
+  if (!points.length) return null;
+  const rings = zones.map(z => z.coordinates);
+  const lat0 = points[0].lat;
+  const m = metersPerDeg(lat0);
+  const pad = { lng: COVERAGE_RADIUS_M / m.x, lat: COVERAGE_RADIUS_M / m.y };
+  const all = rings.length ? rings.flat() : points.flatMap(p => [
+    { lng: p.lng - pad.lng, lat: p.lat - pad.lat }, { lng: p.lng + pad.lng, lat: p.lat + pad.lat },
+  ]);
+  const minLng = Math.min(...all.map(c => c.lng)), maxLng = Math.max(...all.map(c => c.lng));
+  const minLat = Math.min(...all.map(c => c.lat)), maxLat = Math.max(...all.map(c => c.lat));
+  const scale = Math.max((maxLng - minLng) * m.x, (maxLat - minLat) * m.y) / MAX_PX;
+  const mPerPx = Math.max(RASTER_M_PER_PX, scale);
+  const W = Math.max(1, Math.round((maxLng - minLng) * m.x / mPerPx));
+  const H = Math.max(1, Math.round((maxLat - minLat) * m.y / mPerPx));
 
-      if (pointInPolygon({ lng, lat }, zone.coordinates)) {
-        points.push({ lng, lat, weight: weight * 0.75 });
-      }
+  const src = document.createElement('canvas');
+  src.width = W; src.height = H;
+  const img = src.getContext('2d')!.createImageData(W, H);
+  const palette = METRICS[metric].colors.map(hexRgb);
+  for (let y = 0; y < H; y++) {
+    const lat = maxLat - (y + 0.5) / H * (maxLat - minLat);
+    for (let x = 0; x < W; x++) {
+      const lng = minLng + (x + 0.5) / W * (maxLng - minLng);
+      const { value, nearest } = idw(points, lng, lat, m);
+      const [r, g, b] = palette[classIndex(metric, value)];
+      const i = (y * W + x) * 4;
+      img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b;
+      img.data[i + 3] = Math.round(confidenceAlpha(nearest) * 255);
     }
   }
-  return points;
+  src.getContext('2d')!.putImageData(img, 0, 0);
+
+  // Обрезка по контурам через clip — край сглажен, внутри классы остаются чёткими
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const ctx = out.getContext('2d')!;
+  const px = (c: { lng: number; lat: number }) =>
+    [(c.lng - minLng) / (maxLng - minLng) * W, (maxLat - c.lat) / (maxLat - minLat) * H] as const;
+  ctx.beginPath();
+  if (rings.length) {
+    for (const ring of rings) ring.forEach((c, i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, ...px(c)));
+  } else {
+    for (const p of points) {
+      const [cx, cy] = px(p);
+      ctx.moveTo(cx + COVERAGE_RADIUS_M / mPerPx, cy);
+      ctx.arc(cx, cy, COVERAGE_RADIUS_M / mPerPx, 0, Math.PI * 2);
+    }
+  }
+  ctx.clip();
+  ctx.drawImage(src, 0, 0);
+
+  return {
+    url: out.toDataURL(),
+    coordinates: [[minLng, maxLat], [maxLng, maxLat], [maxLng, minLat], [minLng, minLat]] as [number, number][],
+  };
 }
 
+/** Внутри закрашенной области (зоны или круги покрытия)? — для подсказки под курсором */
+function insideCoverage(lng: number, lat: number, zones: SoilZone[], points: IdwPoint[]) {
+  if (zones.length) return zones.some(z => pointInPolygon({ lng, lat }, z.coordinates));
+  return idw(points, lng, lat).nearest <= COVERAGE_RADIUS_M;
+}
+
+export const formatMetric = (metric: MetricKey, value: number) =>
+  Number.isFinite(value) ? `${value.toFixed(METRICS[metric].digits)}${METRICS[metric].unit && METRICS[metric].unit !== '%' ? ' ' : ''}${METRICS[metric].unit}` : '—';
+
 export function MapboxViewer({
-  sensors, zones, field, mapMode, onSelectSensor, onSelectZone, activeSensorId, activeZoneId,
+  sensors, zones, field, mapMode, metric, onMetricChange, onSelectSensor, onSelectZone, activeSensorId, activeZoneId,
 }: MapboxViewerProps) {
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const [viewState, setViewState] = useState({
     longitude: field.center.longitude,
     latitude: field.center.latitude,
     zoom: 13.5,
   });
+  const [hover, setHover] = useState<{ x: number; y: number; value: number; nearest: number } | null>(null);
 
-  /** Build the GeoJSON for the heatmap (zone grid points + sensor hotspots) */
-  const heatmapGeoJSON = useMemo(() => {
-    const zonePoints = zones.flatMap(zone => generateZoneHeatPoints(zone, 12));
-    const sensorPoints = sensors.map(s => ({
-      lng: s.coordinates.longitude,
-      lat: s.coordinates.latitude,
-      weight:
-        s.status === 'critical' ? 1.0 :
-          s.status === 'warning' ? 0.62 : 0.08,
-    }));
-
-    return {
-      type: 'FeatureCollection' as const,
-      features: [...zonePoints, ...sensorPoints].map(p => ({
-        type: 'Feature' as const,
-        geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] },
-        properties: { weight: p.weight },
-      })),
-    };
-  }, [zones, sensors]);
+  const isHeatmap = mapMode === 'heatmap';
+  const points = useMemo(() => heatPoints(sensors, metric), [sensors, metric]);
+  const raster = useMemo(() => isHeatmap ? buildRaster(points, zones, metric) : null, [isHeatmap, points, zones, metric]);
 
   const [token, setToken] = useState(() => MAPBOX_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('mapbox_token') || '' : ''));
   const [loadingConfig, setLoadingConfig] = useState(!MAPBOX_TOKEN);
@@ -140,7 +179,7 @@ export function MapboxViewer({
     );
   }
 
-  const isHeatmap = mapMode === 'heatmap';
+  const def = METRICS[metric];
 
   return (
     <div className="w-full h-full relative">
@@ -151,45 +190,21 @@ export function MapboxViewer({
         mapStyle={MAP_STYLES[mapMode]}
         mapboxAccessToken={token}
         style={{ width: '100%', height: '100%' }}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onMouseMove={(e: any) => {
+          const { lng, lat } = e.lngLat;
+          if (!raster || !insideCoverage(lng, lat, zones, points)) return setHover(null);
+          setHover({ x: e.point.x, y: e.point.y, ...idw(points, lng, lat) });
+        }}
+        onMouseOut={() => setHover(null)}
       >
         <NavigationControl position="top-right" />
         <ScaleControl position="bottom-right" />
 
-        {/* ─── HEATMAP LAYER (only in heatmap mode) ─── */}
-        {isHeatmap && (
-          <Source id="heatmap-src" type="geojson" data={heatmapGeoJSON}>
-            <Layer
-              id="soil-heatmap"
-              type="heatmap"
-              paint={{
-                // Weight each point by its health property
-                'heatmap-weight': ['get', 'weight'],
-                // Increase intensity with zoom
-                'heatmap-intensity': [
-                  'interpolate', ['linear'], ['zoom'],
-                  12, 1.2,
-                  15, 2.8,
-                ],
-                // Color ramp: green (healthy/cool) → amber (warning) → red (critical/hot)
-                'heatmap-color': [
-                  'interpolate', ['linear'], ['heatmap-density'],
-                  0, 'rgba(16,185,129,0)',      // transparent
-                  0.10, 'rgba(16,185,129,0.55)',   // green — optimal
-                  0.35, 'rgba(132,204,22,0.65)',   // lime
-                  0.55, 'rgba(245,158,11,0.75)',   // amber — warning
-                  0.75, 'rgba(249,115,22,0.85)',   // orange
-                  1.0, 'rgba(239,68,68,0.92)',    // red — critical
-                ],
-                // Smaller radius so heatmap stays mostly inside the polygon
-                'heatmap-radius': [
-                  'interpolate', ['linear'], ['zoom'],
-                  12, 30,
-                  14, 50,
-                  16, 90,
-                ],
-                'heatmap-opacity': 0.85,
-              }}
-            />
+        {/* ─── INTERPOLATION RASTER (only in heatmap mode) ─── */}
+        {raster && (
+          <Source key={raster.url.length + metric} id="interp-src" type="image" url={raster.url} coordinates={raster.coordinates}>
+            <Layer id="interp-layer" type="raster" paint={{ 'raster-opacity': 1, 'raster-fade-duration': 0, 'raster-resampling': 'nearest' }} />
           </Source>
         )}
 
@@ -213,14 +228,12 @@ export function MapboxViewer({
               {/* Fill: show always in zones mode; in heatmap mode show just a subtle overlay */}
               <Layer id={`fill-${zone.id}`} type="fill" paint={{
                 'fill-color': color,
-                'fill-opacity': isHeatmap
-                  ? (isActive ? 0.12 : 0.06)
-                  : (isActive ? 0.35 : 0.15),
+                'fill-opacity': isHeatmap ? 0 : (isActive ? 0.35 : 0.15),
               }} />
               {/* Border outline — always visible */}
               <Layer id={`line-${zone.id}`} type="line" paint={{
-                'line-color': color,
-                'line-width': isActive ? 4 : isHeatmap ? 2.5 : 2,
+                'line-color': isHeatmap ? '#ffffff' : color,
+                'line-width': isActive ? 3.5 : isHeatmap ? 1.5 : 2,
                 'line-opacity': isHeatmap ? 1 : 0.8,
                 'line-dasharray': isHeatmap ? [2, 0] : [1],
               }} />
@@ -249,22 +262,6 @@ export function MapboxViewer({
             </Marker>
           );
         })}
-
-        {/* ─── HEATMAP LEGEND (only in heatmap mode) ─── */}
-        {isHeatmap && (
-          <div className="absolute bottom-28 md:bottom-10 left-4 z-10 bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 flex flex-col gap-2">
-            <span className="text-white text-[9px] font-black uppercase tracking-widest mb-1">{t('map.soilHealth')}</span>
-            <div className="flex items-center gap-2">
-              <div className="w-32 h-2.5 rounded-full" style={{
-                background: 'linear-gradient(to right, #10b981, #84cc16, #f59e0b, #f97316, #ef4444)'
-              }} />
-            </div>
-            <div className="flex justify-between text-[9px] font-bold text-white/70">
-              <span>{t('map.optimal')}</span>
-              <span>{t('map.critical')}</span>
-            </div>
-          </div>
-        )}
 
         {/* ─── SENSOR MARKERS ─── */}
         {sensors.map(sensor => {

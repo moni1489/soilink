@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 
 from app.core.db import create_tables
 from app.core.config import settings
-from app.api import readings, fields, predictions, recommendations, chat
+from app.api import readings, fields, predictions, recommendations, chat, sensors
 
 app = FastAPI(title="SoiLink Backend", version="0.1.0")
 
@@ -23,6 +23,7 @@ app.include_router(fields.router)
 app.include_router(predictions.router)
 app.include_router(recommendations.router)
 app.include_router(chat.router)
+app.include_router(sensors.router)
 
 
 @app.on_event("startup")
