@@ -28,5 +28,10 @@ assert r["readings_count"] == 2 and r["last_reading"]["field_id"] == "f-1" and a
 assert c.patch("/api/sensors/SL-0002", json={"dev_eui": "24e124aabbcc0001"}).status_code == 409
 assert len(c.get("/api/sensors/SL-0001/readings?hours=100000").json()) == 2
 assert len(c.get("/api/sensors?field_id=f-1").json()) == 2
+# время с Z и наносекундами (Python 3.10 fromisoformat на этом падает), канал pH отсутствует
+p = pkt(); p["time"] = "2026-10-16T11:00:00.123456789Z"; del p["decoded_data"]["ph"]
+assert c.post("/api/readings/linkedge", json=p).json()["stored"]
+r = c.get("/api/sensors/SL-0001").json()["last_reading"]
+assert r["timestamp"].startswith("2026-10-16T11:00:00") and r["timestamp"].endswith(("Z", "+00:00")) and r["ph"] is None, r
 assert c.delete("/api/sensors/SL-0002").json()["deleted"] and c.get("/api/sensors/SL-0002").status_code == 404
 print("ok")

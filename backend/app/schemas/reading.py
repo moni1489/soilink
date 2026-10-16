@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class PremiumFeatures(BaseModel):
@@ -27,11 +27,17 @@ class SensorReadingOut(BaseModel):
     sensor_id: str
     field_id: str
     timestamp: datetime
-    ph: float
-    soil_temperature: float
-    soil_moisture: float
-    electrical_conductivity: float
-    gas_composition: str
+    ph: Optional[float] = None
+    soil_temperature: Optional[float] = None
+    soil_moisture: Optional[float] = None
+    electrical_conductivity: Optional[float] = None
+    gas_composition: Optional[str] = None
     vibroacoustic: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+    @field_validator("timestamp")
+    @classmethod
+    def _utc(cls, v: datetime) -> datetime:
+        # SQLite теряет часовой пояс — без него браузер прочтёт время как локальное
+        return v if v.tzinfo else v.replace(tzinfo=timezone.utc)

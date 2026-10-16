@@ -1,4 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
+
+from pydantic import TypeAdapter, ValidationError
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -60,6 +62,15 @@ def ingest_batch(payloads: list[SensorReadingIn], db: Session = Depends(get_db))
     return results
 
 
+def _packet_time(raw) -> datetime:
+    # Python 3.10 (Docker) не парсит «…Z» и наносекунды через fromisoformat — берём парсер pydantic
+    try:
+        ts = TypeAdapter(datetime).validate_python(raw)
+    except ValidationError:
+        return datetime.now(timezone.utc)  # нет/нестандартное время — время приёма
+    return ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
+
+
 @router.post("/linkedge")
 def ingest_linkedge(payload: dict, field_id: str = "unassigned", db: Session = Depends(get_db)):
     # Webhook LinkEdge-хаба (target url: .../api/readings/linkedge).
@@ -75,11 +86,12 @@ def ingest_linkedge(payload: dict, field_id: str = "unassigned", db: Session = D
     reading = SensorReading(
         sensor_id=sensor.id if sensor else dev_eui,
         field_id=sensor.field_id if sensor else field_id,
-        timestamp=datetime.fromisoformat(payload["time"]),
-        ph=d["ph"],
-        soil_temperature=d["temperature_c"],
-        soil_moisture=d["moisture_pct"],
-        electrical_conductivity=d["ec_us_cm"] / 1000,  # у нас mS/cm
+        timestamp=_packet_time(payload.get("time")),
+        # .get — датчик без одного из каналов не должен ронять приём (хаб ретраит 500 бесконечно)
+        ph=d.get("ph"),
+        soil_temperature=d.get("temperature_c"),
+        soil_moisture=d.get("moisture_pct"),
+        electrical_conductivity=d["ec_us_cm"] / 1000 if d.get("ec_us_cm") is not None else None,  # у нас mS/cm
         gas_composition=d.get("gas_composition", "n/a"),  # газового датчика пока нет
     )
     db.add(reading)
