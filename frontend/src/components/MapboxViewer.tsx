@@ -1,5 +1,5 @@
 import Map, { Source, Layer, Marker, NavigationControl, ScaleControl } from 'react-map-gl/mapbox';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -40,6 +40,8 @@ interface MapboxViewerProps {
   onSelectZone: (zone: SoilZone) => void;
   activeSensorId?: string | null;
   activeZoneId?: string | null;
+  /** Карточка над легендой в левом верхнем углу (сводка по полю) */
+  topLeft?: ReactNode;
 }
 
 const hexRgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
@@ -116,7 +118,7 @@ function insideCoverage(lng: number, lat: number, zones: SoilZone[], points: Idw
 }
 
 export function MapboxViewer({
-  sensors, zones, field, mapMode, metric, onMetricChange, onSelectSensor, onSelectZone, activeSensorId, activeZoneId,
+  sensors, zones, field, mapMode, metric, onMetricChange, onSelectSensor, onSelectZone, activeSensorId, activeZoneId, topLeft,
 }: MapboxViewerProps) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
@@ -323,9 +325,11 @@ export function MapboxViewer({
         </div>
       )}
 
-      {/* ─── Слой и легенда (только в режиме карты показателей) ─── */}
+      {/* ─── Сводка + слой и легенда (легенда только в режиме карты показателей) ─── */}
+      <div className="absolute top-3 left-3 md:top-4 md:left-4 z-10 flex flex-col gap-2 w-[min(260px,calc(100%-120px))] md:w-[260px]">
+      {topLeft}
       {isHeatmap && (
-        <div className="absolute bottom-28 md:bottom-6 left-3 md:left-4 z-10 bg-white/95 backdrop-blur-xl border border-black/5 rounded-xl shadow-pro p-2 flex flex-col gap-2 w-[min(280px,calc(100%-24px))]">
+        <div className="bg-white/95 backdrop-blur-xl border border-black/5 rounded-xl shadow-pro p-2 flex flex-col gap-2">
           <div className="flex bg-[#f5f5f7] p-0.5 rounded-lg">
             {(Object.keys(METRICS) as MetricKey[]).map(k => (
               <button key={k} onClick={() => onMetricChange(k)}
@@ -344,14 +348,14 @@ export function MapboxViewer({
                 >{b}</span>
               ))}
             </div>
-            <div className="flex justify-between text-[9px] font-bold text-[#86868b] mt-0.5">
-              <span>{t(def.labelKey)}{def.unit && `, ${def.unit}`}</span>
-              <span>{t('map.paleFar')}</span>
+            <div className="text-[9px] font-bold text-[#86868b] mt-0.5 leading-snug">
+              <span className="text-[#1d1d1f]">{t(def.labelKey)}{def.unit && `, ${def.unit}`}</span> · {t('map.paleFar')}
             </div>
           </div>
           {!points.length && <p className="px-1 text-[10px] font-bold text-[#86868b]">{t('map.noData')}</p>}
         </div>
       )}
+      </div>
     </div>
   );
 }

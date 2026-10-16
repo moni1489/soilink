@@ -247,10 +247,10 @@ function MetricChart({ metric, pick, color, readings, hours }: (typeof SERIES)[n
 
   return (
     <div className="flex flex-col gap-2 p-3 rounded-xl bg-[#fbfbfd] border border-black/5 min-w-0">
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex items-baseline justify-between gap-x-3 flex-wrap">
         <span className="text-[11px] font-bold">{t(METRICS[metric].labelKey)}</span>
         {stats && (
-          <span className="text-[10px] font-data text-[#6e6e73] whitespace-nowrap">
+          <span className="text-[10px] font-data text-[#6e6e73]">
             {t('sensors.min')} <b className="text-[#1d1d1f]">{formatMetric(metric, stats.min)}</b> · {t('sensors.avg')} <b className="text-[#1d1d1f]">{formatMetric(metric, stats.avg)}</b> · {t('sensors.max')} <b className="text-[#1d1d1f]">{formatMetric(metric, stats.max)}</b>
           </span>
         )}

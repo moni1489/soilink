@@ -323,6 +323,9 @@ export function DashboardPage() {
             onMetricChange={setMetric}
             onSelectSensor={selectSensor}
             onSelectZone={setSelectedZone}
+            topLeft={!isMobile && (
+              <FieldStatusCard status={fieldStatus} lastLabel={fieldStatus.last && formatDistanceToNowStrict(new Date(fieldStatus.last), { addSuffix: true, locale: dateLocale })} />
+            )}
             activeSensorId={selectedSensor?.id ?? null}
             activeZoneId={selectedZone?.id ?? null}
           />
@@ -335,11 +338,6 @@ export function DashboardPage() {
             {mapFullscreen ? <Minimize2 className="w-4 h-4 text-[#1d1d1f]" /> : <Maximize2 className="w-4 h-4 text-[#1d1d1f]" />}
           </button>
 
-
-          {/* Сводка по полю — компактно, всё считается из показаний датчиков */}
-          <div className="hidden md:block absolute top-4 left-4 z-10 w-[236px]">
-            <FieldStatusCard status={fieldStatus} lastLabel={fieldStatus.last && formatDistanceToNowStrict(new Date(fieldStatus.last), { addSuffix: true, locale: dateLocale })} />
-          </div>
 
           {/* Quick Controls Bottom — desktop */}
           <div className="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 z-10 gap-2.5">
