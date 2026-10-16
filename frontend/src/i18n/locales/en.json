@@ -1,5 +1,10 @@
 {
-  "lang": { "label": "Language", "ru": "Русский", "kk": "Қазақша", "en": "English" },
+  "lang": {
+    "label": "Language",
+    "ru": "Русский",
+    "kk": "Қазақша",
+    "en": "English"
+  },
   "common": {
     "logout": "Sign out",
     "close": "Close",
@@ -12,14 +17,28 @@
     "ms": "m/s",
     "allFields": "All fields"
   },
-  "unit": { "lm2": "l/m²", "lha": "l/ha", "kgha": "kg/ha", "gm2": "g/m²" },
-  "day": { "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun" },
+  "unit": {
+    "lm2": "l/m²",
+    "lha": "l/ha",
+    "kgha": "kg/ha",
+    "gm2": "g/m²"
+  },
+  "day": {
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
+  },
   "nav": {
     "overview": "Field overview",
     "myTasks": "My assignments",
     "taskCalendar": "Task calendar",
     "profile": "Profile",
-    "management": "Management"
+    "management": "Management",
+    "sensors": "Sensors"
   },
   "header": {
     "monitoring": "Monitoring",
@@ -60,12 +79,28 @@
     "contractor": "Contractor"
   },
   "access": {
-    "full": { "label": "Full access", "description": "All fields, data and operations without restrictions" },
-    "specialist": { "label": "Specialists", "description": "See most field data, can change only their own domain" },
-    "field": { "label": "Field management", "description": "Assigned fields and jobs: assignees, statuses, recording actuals" },
-    "contractor": { "label": "Contractors", "description": "Only assigned jobs and the field data needed for them" }
+    "full": {
+      "label": "Full access",
+      "description": "All fields, data and operations without restrictions"
+    },
+    "specialist": {
+      "label": "Specialists",
+      "description": "See most field data, can change only their own domain"
+    },
+    "field": {
+      "label": "Field management",
+      "description": "Assigned fields and jobs: assignees, statuses, recording actuals"
+    },
+    "contractor": {
+      "label": "Contractors",
+      "description": "Only assigned jobs and the field data needed for them"
+    }
   },
-  "taskType": { "water": "Irrigation", "fertilizer": "Fertilizer", "protection": "Crop protection" },
+  "taskType": {
+    "water": "Irrigation",
+    "fertilizer": "Fertilizer",
+    "protection": "Crop protection"
+  },
   "taskStatus": {
     "scheduled": "Scheduled",
     "in_progress": "In progress",
@@ -75,7 +110,12 @@
   "settings": {
     "title": "System management",
     "subtitle": "Profile, access and equipment settings",
-    "tabs": { "profile": "Profile", "notifications": "Notifications", "security": "Security", "integrations": "Integrations" },
+    "tabs": {
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "security": "Security",
+      "integrations": "Integrations"
+    },
     "city": "Oskemen",
     "nameLabel": "User name",
     "roleLabel": "Role",
@@ -170,7 +210,11 @@
     "healthIndex": "Health index",
     "analysis": "Analysis",
     "report": "Report",
-    "mineralAlert": "Critical mineral deficit in the 30-60 cm horizon. Fertilizer application recommended."
+    "mineralAlert": "Critical mineral deficit in the 30-60 cm horizon. Fertilizer application recommended.",
+    "statusOk": "normal",
+    "statusWarn": "attention",
+    "statusCrit": "critical",
+    "offline": "offline"
   },
   "sensor": {
     "status": "Status",
@@ -194,7 +238,16 @@
     "tempStability": "Temperature stability ({{range}})",
     "calibrationNote": "Calibration was performed automatically. All readings are within GOST R 53381-2009 limits for the current soil type (leached chernozem)."
   },
-  "map": { "soilHealth": "Soil health", "optimal": "Optimal", "critical": "Critical", "battery": "Battery" },
+  "map": {
+    "soilHealth": "Soil health",
+    "optimal": "Optimal",
+    "critical": "Critical",
+    "battery": "Battery",
+    "waiting": "awaiting data",
+    "nearest": "{{m}} m to sensor",
+    "paleFar": "paler = farther from sensors",
+    "noData": "No data"
+  },
   "rec": {
     "priority": "PRIORITY",
     "monitoring": "MONITORING",
@@ -278,7 +331,11 @@
       "neutral": "Neutral",
       "alkaline": "Alkaline"
     },
-    "socStatus": { "low": "Low", "medium": "Medium", "high": "High" },
+    "socStatus": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
     "limitation": {
       "clay_drainage": "High soil density, drainage problems are possible.",
       "sand_leaching": "Low water-holding capacity, nutrients leach out quickly.",
@@ -306,9 +363,20 @@
     "connError": "Sorry, a server connection error occurred. Please try again later.",
     "hint": "Shift + Enter for a new line"
   },
-  "weather": { "sunny": "Clear", "cloudy": "Cloudy", "rain": "Rain", "windy": "Windy", "storm": "Storm" },
+  "weather": {
+    "sunny": "Clear",
+    "cloudy": "Cloudy",
+    "rain": "Rain",
+    "windy": "Windy",
+    "storm": "Storm"
+  },
   "ml": {
-    "soilState": { "healthy": "Healthy", "moderate": "Moderate", "poor": "Weak", "critical": "Critical" },
+    "soilState": {
+      "healthy": "Healthy",
+      "moderate": "Moderate",
+      "poor": "Weak",
+      "critical": "Critical"
+    },
     "modelDataTitle": "Model input data",
     "humidityShort": "Moist.",
     "tempShort": "Temp.",
@@ -380,12 +448,30 @@
     "empty": "\"{{dataset}}\": no data for the selected fields",
     "failed": "Could not build the file",
     "datasets": {
-      "sensors": { "label": "Sensor readings", "description": "pH, NPK, Mg, organic carbon, moisture, temperature, EC, battery" },
-      "profile": { "label": "Soil profile", "description": "SoilGrids across 0–100 cm depths: pH, nitrogen, carbon, texture, bulk density" },
-      "predictions": { "label": "ML predictions", "description": "Crop, fertilizer, soil condition, N/C/moisture/pH forecast, probabilities" }
+      "sensors": {
+        "label": "Sensor readings",
+        "description": "pH, NPK, Mg, organic carbon, moisture, temperature, EC, battery"
+      },
+      "profile": {
+        "label": "Soil profile",
+        "description": "SoilGrids across 0–100 cm depths: pH, nitrogen, carbon, texture, bulk density"
+      },
+      "predictions": {
+        "label": "ML predictions",
+        "description": "Crop, fertilizer, soil condition, N/C/moisture/pH forecast, probabilities"
+      }
     },
-    "status": { "healthy": "normal", "warning": "attention", "critical": "critical" },
-    "soilState": { "healthy": "healthy", "moderate": "moderate", "poor": "poor", "critical": "critical" },
+    "status": {
+      "healthy": "normal",
+      "warning": "attention",
+      "critical": "critical"
+    },
+    "soilState": {
+      "healthy": "healthy",
+      "moderate": "moderate",
+      "poor": "poor",
+      "critical": "critical"
+    },
     "src": {
       "soilGrids": "SoilGrids (API)",
       "demo": "demo data",
@@ -394,7 +480,10 @@
       "mlModel": "ML model",
       "rules": "rules"
     },
-    "bool": { "yes": "yes", "no": "no" },
+    "bool": {
+      "yes": "yes",
+      "no": "no"
+    },
     "h": {
       "field": "Field",
       "sensorId": "Sensor ID",
@@ -446,8 +535,14 @@
   },
   "data": {
     "fields": {
-      "f-1": { "name": "Oskemen — Tishinka field", "short": "Tishinka field" },
-      "f-2": { "name": "Oskemen — Ust-Tarkhan field", "short": "Ust-Tarkhan field" }
+      "f-1": {
+        "name": "Oskemen — Tishinka field",
+        "short": "Tishinka field"
+      },
+      "f-2": {
+        "name": "Oskemen — Ust-Tarkhan field",
+        "short": "Ust-Tarkhan field"
+      }
     },
     "zones": {
       "z-1": "Zone A (Wheat)",
@@ -529,6 +624,87 @@
     "companies": {
       "u-contractor": "AgroService EKR LLP",
       "u-contractor2": "Petrov Sole Proprietorship"
+    }
+  },
+  "metrics": {
+    "index": "Soil index",
+    "indexShort": "Index",
+    "moisture": "Moisture",
+    "moistureShort": "Moist.",
+    "temperature": "Soil temperature",
+    "temperatureShort": "t°",
+    "ph": "Acidity pH",
+    "phShort": "pH",
+    "ec": "Conductivity",
+    "ecShort": "EC"
+  },
+  "sensors": {
+    "title": "Sensor registry",
+    "subtitle": "Track field sensors: where they are, whether they're online, what they report.",
+    "add": "Add sensor",
+    "newTitle": "New sensor",
+    "create": "Register",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "empty": "No sensors yet — register the first one.",
+    "loadError": "Couldn't load the registry: backend unavailable.",
+    "conn": {
+      "online": "Online",
+      "offline": "Offline",
+      "waiting": "Not connected"
+    },
+    "noPackets": "DevEUI set, no packets from the hub yet",
+    "noDevEui": "DevEUI not set",
+    "back": "All sensors",
+    "notFound": "Sensor {{id}} not found",
+    "noAccess": "No access to this sensor's field",
+    "lastPacket": "last packet",
+    "packets_one": "{{count}} packet",
+    "packets_other": "{{count}} packets",
+    "norm": "normal {{lo}}–{{hi}}",
+    "noNorm": "for reference, not in the index",
+    "history": "Readings",
+    "p24h": "24 h",
+    "p7d": "7 days",
+    "p30d": "30 days",
+    "min": "min",
+    "avg": "avg",
+    "max": "max",
+    "noReadings": "No readings yet. Connect the sensor to the hub — data will appear here automatically.",
+    "noReadingsPeriod": "No packets in the selected period.",
+    "qr": "QR label",
+    "qrHint": "Stick it on the sensor body: scanning it with a phone opens this page.",
+    "qrLocalhost": "This page is open on localhost — the QR will point there too. Print the label from the live site address.",
+    "print": "Print",
+    "passport": "Passport",
+    "registered": "Registered",
+    "noCoords": "not set — not shown on the map",
+    "delete": "Remove from registry",
+    "deleteConfirm": "Remove {{id}} from the registry? Reading history stays in the database.",
+    "hub": "Hub connection",
+    "hubStep1": "In the LinkEdge hub, add a device with the sensor's DevEUI (on the manufacturer's label).",
+    "hubStep2": "In the hub integration, set the webhook (HTTP POST):",
+    "hubStep3": "Enter the same DevEUI in the passport. Packets that arrived earlier will be attached automatically.",
+    "copy": "Copy",
+    "locationError": "Couldn't get device location",
+    "devEuiInvalid": "DevEUI is 16 hex characters",
+    "devEuiTaken": "This DevEUI belongs to another sensor",
+    "coordsInvalid": "Check the coordinates",
+    "saveError": "Couldn't save",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Soil sensor #2",
+      "field": "Field",
+      "devEui": "DevEUI",
+      "devEuiHint": "16 characters from the sensor label or hub UI",
+      "model": "Model",
+      "coords": "Coordinates",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "here": "Here",
+      "depth": "Depth, cm",
+      "notes": "Notes"
     }
   }
 }

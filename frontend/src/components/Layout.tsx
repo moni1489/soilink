@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Leaf, Map as MapIcon, Calendar, Cog, Bell, Search, Command, LogOut } from 'lucide-react';
+import { Leaf, Map as MapIcon, Calendar, Cog, Bell, Search, Command, LogOut, Cpu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useAuth, useUser } from '@/auth/useAuth';
 import { Avatar } from '@/components/Avatar';
@@ -27,7 +27,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isContractor = ROLES[user.role].level === 'contractor';
   const userName = t(user.nameKey);
   const NAV = [
-    ...(canViewDashboard(user) ? [{ to: '/', icon: MapIcon, label: t('nav.overview') }] : []),
+    ...(canViewDashboard(user) ? [{ to: '/', icon: MapIcon, label: t('nav.overview') }, { to: '/sensors', icon: Cpu, label: t('nav.sensors') }] : []),
     { to: '/schedule', icon: Calendar, label: isContractor ? t('nav.myTasks') : t('nav.taskCalendar') },
     { to: '/settings', icon: Cog, label: isContractor ? t('nav.profile') : t('nav.management') },
   ];
@@ -95,7 +95,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                </div>
              )}
              <h1 className="text-[14px] md:text-[15px] font-semibold truncate">
-                {pathname === '/' ? t('header.monitoring') : pathname === '/schedule' ? (isContractor ? t('nav.myTasks') : t('header.operations')) : t('header.settings')}
+                {pathname === '/' ? t('header.monitoring') : pathname.startsWith('/sensors') ? t('nav.sensors') : pathname === '/schedule' ? (isContractor ? t('nav.myTasks') : t('header.operations')) : t('header.settings')}
              </h1>
              <div className="hidden sm:block w-px h-4 bg-black/10" />
              <div className="hidden sm:flex items-center gap-1.5">

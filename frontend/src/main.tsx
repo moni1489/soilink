@@ -8,6 +8,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { SchedulePage } from './pages/SchedulePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LoginPage } from './pages/LoginPage';
+import { SensorsPage } from './pages/SensorsPage';
+import { SensorDetailPage } from './pages/SensorDetailPage';
 import { AuthProvider, RequireAuth } from './auth/AuthContext';
 import { canViewDashboard } from './auth/roles';
 
@@ -22,6 +24,8 @@ createRoot(document.getElementById('root')!).render(
               <Layout>
                 <Routes>
                   <Route path="/" element={<RequireAuth allow={canViewDashboard}><DashboardPage /></RequireAuth>} />
+                  <Route path="/sensors" element={<RequireAuth allow={canViewDashboard}><SensorsPage /></RequireAuth>} />
+                  <Route path="/sensors/:id" element={<RequireAuth allow={canViewDashboard}><SensorDetailPage /></RequireAuth>} />
                   <Route path="/schedule" element={<SchedulePage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />

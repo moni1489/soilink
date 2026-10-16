@@ -75,3 +75,12 @@ body {
   background: rgba(0,0,0,0.1);
   border-radius: 10px;
 }
+
+/* Наклейка датчика: на экране скрыта, при печати — только она */
+.print-label { display: none; }
+@media print {
+  @page { size: 62mm 34mm; margin: 2mm; }
+  body * { visibility: hidden; }
+  .print-label, .print-label * { visibility: visible; }
+  .print-label { display: flex; gap: 3mm; align-items: center; position: fixed; top: 0; left: 0; color: #000; font-family: system-ui, sans-serif; }
+}
