@@ -12,7 +12,7 @@ import { WeatherWidget } from '@/components/WeatherWidget';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Map as MapIcon, MessageSquare, Layers, BarChart3,
-  TrendingUp, AlertTriangle, ChevronDown, X, Droplet,
+  TrendingUp, ChevronDown, X, Droplet,
   Thermometer, FlaskConical, Settings2, Info,
   Activity, Zap, Maximize2, Minimize2, Download
 } from 'lucide-react';
