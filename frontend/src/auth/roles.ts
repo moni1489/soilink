@@ -77,6 +77,12 @@ export function canExportData(user: User) {
   return level === 'full' || level === 'specialist';
 }
 
+/** Реестр датчиков: регистрация, правка паспорта, удаление — руководитель и агрономы полей (они ставят датчики) */
+export function canManageSensors(user: User) {
+  const level = levelOf(user);
+  return level === 'full' || level === 'field';
+}
+
 /** Планирование (создание / изменение нормы, сроков) — только своя область */
 export function canPlanTask(user: User, type: TaskType) {
   return ROLES[user.role].domains.includes(type);
