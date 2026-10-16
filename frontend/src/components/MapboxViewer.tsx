@@ -1,33 +1,31 @@
 import Map, { Source, Layer, Marker, NavigationControl, ScaleControl } from 'react-map-gl/mapbox';
-import { useState, useMemo, useEffect, type ReactNode } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { ChevronDown } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Sensor, SoilZone, Field, MapMode } from '@/types';
-import { METRICS, STATUS_COLORS, classIndex, formatMetric, heatPoints, idw, metersPerDeg, pointInPolygon, type IdwPoint, type MetricKey } from '@/data/metrics';
+import { METRICS, STATUS_COLORS, classLabels, formatMetric, heatPoints, pointInPolygon, type MetricKey } from '@/data/metrics';
+import { COVERAGE_RADIUS_M, buildRaster, estimate, loadGreenness, rasterExtent, type Greenness } from '@/data/fieldRaster';
 import { useDateLocale } from '@/i18n';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 const MAP_STYLES: Record<MapMode, string> = {
   zones: 'mapbox://styles/mapbox/light-v11',
-  heatmap: 'mapbox://styles/mapbox/satellite-streets-v12',
-  satellite: 'mapbox://styles/mapbox/satellite-v9',
+  // чистый снимок без подписей — как у агро-платформ, подписи мешают читать карту показателей
+  heatmap: 'mapbox://styles/mapbox/satellite-v9',
+  satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
 };
 
 const ZONE_COLORS: Record<string, string> = {
-  green: '#10b981',
-  yellow: '#f59e0b',
-  red: '#ef4444',
+  green: '#2fa84f',
+  yellow: '#f3b32a',
+  red: '#e0301e',
 };
 
 const OFFLINE_COLOR = '#8e8e93';
-/** Поле без контуров зон — закрашиваем круги этого радиуса вокруг датчиков */
-const COVERAGE_RADIUS_M = 450;
-/** Разрешение растра: метров на пиксель (не крупнее MAX_PX по стороне) */
-const RASTER_M_PER_PX = 4;
-const MAX_PX = 1200;
 
 interface MapboxViewerProps {
   sensors: Sensor[];
@@ -40,98 +38,35 @@ interface MapboxViewerProps {
   onSelectZone: (zone: SoilZone) => void;
   activeSensorId?: string | null;
   activeZoneId?: string | null;
-  /** Карточка над легендой в левом верхнем углу (сводка по полю) */
-  topLeft?: ReactNode;
-}
-
-const hexRgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-
-/** Достоверность оценки падает с расстоянием до ближайшего датчика → прозрачность пикселя */
-const confidenceAlpha = (nearestM: number) => 0.82 - Math.min(Math.max((nearestM - 250) / 600, 0), 1) * 0.5;
-
-/**
- * Растр интерполяции по показаниям датчиков, обрезанный по контурам зон.
- * Каждый пиксель — отдельная IDW-оценка, раскрашенная по классу (без размытия heatmap-слоя).
- */
-function buildRaster(points: IdwPoint[], zones: SoilZone[], metric: MetricKey) {
-  if (!points.length) return null;
-  const rings = zones.map(z => z.coordinates);
-  const lat0 = points[0].lat;
-  const m = metersPerDeg(lat0);
-  const pad = { lng: COVERAGE_RADIUS_M / m.x, lat: COVERAGE_RADIUS_M / m.y };
-  const all = rings.length ? rings.flat() : points.flatMap(p => [
-    { lng: p.lng - pad.lng, lat: p.lat - pad.lat }, { lng: p.lng + pad.lng, lat: p.lat + pad.lat },
-  ]);
-  const minLng = Math.min(...all.map(c => c.lng)), maxLng = Math.max(...all.map(c => c.lng));
-  const minLat = Math.min(...all.map(c => c.lat)), maxLat = Math.max(...all.map(c => c.lat));
-  const scale = Math.max((maxLng - minLng) * m.x, (maxLat - minLat) * m.y) / MAX_PX;
-  const mPerPx = Math.max(RASTER_M_PER_PX, scale);
-  const W = Math.max(1, Math.round((maxLng - minLng) * m.x / mPerPx));
-  const H = Math.max(1, Math.round((maxLat - minLat) * m.y / mPerPx));
-
-  const src = document.createElement('canvas');
-  src.width = W; src.height = H;
-  const img = src.getContext('2d')!.createImageData(W, H);
-  const palette = METRICS[metric].colors.map(hexRgb);
-  for (let y = 0; y < H; y++) {
-    const lat = maxLat - (y + 0.5) / H * (maxLat - minLat);
-    for (let x = 0; x < W; x++) {
-      const lng = minLng + (x + 0.5) / W * (maxLng - minLng);
-      const { value, nearest } = idw(points, lng, lat, m);
-      const [r, g, b] = palette[classIndex(metric, value)];
-      const i = (y * W + x) * 4;
-      img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b;
-      img.data[i + 3] = Math.round(confidenceAlpha(nearest) * 255);
-    }
-  }
-  src.getContext('2d')!.putImageData(img, 0, 0);
-
-  // Обрезка по контурам через clip — край сглажен, внутри классы остаются чёткими
-  const out = document.createElement('canvas');
-  out.width = W; out.height = H;
-  const ctx = out.getContext('2d')!;
-  const px = (c: { lng: number; lat: number }) =>
-    [(c.lng - minLng) / (maxLng - minLng) * W, (maxLat - c.lat) / (maxLat - minLat) * H] as const;
-  ctx.beginPath();
-  if (rings.length) {
-    for (const ring of rings) ring.forEach((c, i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, ...px(c)));
-  } else {
-    for (const p of points) {
-      const [cx, cy] = px(p);
-      ctx.moveTo(cx + COVERAGE_RADIUS_M / mPerPx, cy);
-      ctx.arc(cx, cy, COVERAGE_RADIUS_M / mPerPx, 0, Math.PI * 2);
-    }
-  }
-  ctx.clip();
-  ctx.drawImage(src, 0, 0);
-
-  return {
-    url: out.toDataURL(),
-    coordinates: [[minLng, maxLat], [maxLng, maxLat], [maxLng, minLat], [minLng, minLat]] as [number, number][],
-  };
-}
-
-/** Внутри закрашенной области (зоны или круги покрытия)? — для подсказки под курсором */
-function insideCoverage(lng: number, lat: number, zones: SoilZone[], points: IdwPoint[]) {
-  if (zones.length) return zones.some(z => pointInPolygon({ lng, lat }, z.coordinates));
-  return idw(points, lng, lat).nearest <= COVERAGE_RADIUS_M;
 }
 
 export function MapboxViewer({
-  sensors, zones, field, mapMode, metric, onMetricChange, onSelectSensor, onSelectZone, activeSensorId, activeZoneId, topLeft,
+  sensors, zones, field, mapMode, metric, onMetricChange, onSelectSensor, onSelectZone, activeSensorId, activeZoneId,
 }: MapboxViewerProps) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const [viewState, setViewState] = useState({
     longitude: field.center.longitude,
     latitude: field.center.latitude,
-    zoom: 13.5,
+    zoom: 13.6,
   });
   const [hover, setHover] = useState<{ x: number; y: number; value: number; nearest: number } | null>(null);
 
+  const [legendOpen, setLegendOpen] = useState(true);
+  const [sat, setSat] = useState<{ key: string; fn: Greenness } | null>(null);
+
   const isHeatmap = mapMode === 'heatmap';
   const points = useMemo(() => heatPoints(sensors, metric), [sensors, metric]);
-  const raster = useMemo(() => isHeatmap ? buildRaster(points, zones, metric) : null, [isHeatmap, points, zones, metric]);
+  const extent = useMemo(() => rasterExtent(points, zones), [points, zones]);
+  const extKey = extent && `${extent.minLng},${extent.minLat},${extent.maxLng},${extent.maxLat}`;
+  const satFn = sat && sat.key === extKey ? sat.fn : undefined;
+  const raster = useMemo(
+    () => isHeatmap && extent ? buildRaster(points, zones, metric, extent, satFn) : null,
+    [isHeatmap, points, zones, metric, extent, satFn],
+  );
+  const inside = (lng: number, lat: number) => zones.length
+    ? zones.some(z => pointInPolygon({ lng, lat }, z.coordinates))
+    : estimate(points, metric, undefined, lng, lat).nearest <= COVERAGE_RADIUS_M;
 
   const [token, setToken] = useState(() => MAPBOX_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('mapbox_token') || '' : ''));
   const [loadingConfig, setLoadingConfig] = useState(!MAPBOX_TOKEN);
@@ -150,6 +85,15 @@ export function MapboxViewer({
         .finally(() => setLoadingConfig(false));
     }
   }, [token]);
+
+  // Снимок под полем — детализация карты; до загрузки (или без него) карта — чистая интерполяция
+  useEffect(() => {
+    if (!isHeatmap || !extent || !token) return;
+    let alive = true;
+    const key = `${extent.minLng},${extent.minLat},${extent.maxLng},${extent.maxLat}`;
+    loadGreenness(extent, token).then(fn => { if (alive && fn) setSat({ key, fn }); });
+    return () => { alive = false; };
+  }, [isHeatmap, extent, token]);
 
   if (!token) {
     if (loadingConfig) {
@@ -186,13 +130,13 @@ export function MapboxViewer({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onMouseMove={(e: any) => {
           const { lng, lat } = e.lngLat;
-          if (!raster || !insideCoverage(lng, lat, zones, points)) return setHover(null);
-          setHover({ x: e.point.x, y: e.point.y, ...idw(points, lng, lat) });
+          if (!raster || !inside(lng, lat)) return setHover(null);
+          setHover({ x: e.point.x, y: e.point.y, ...estimate(points, metric, satFn, lng, lat) });
         }}
         onMouseOut={() => setHover(null)}
       >
         <NavigationControl position="top-right" />
-        <ScaleControl position="bottom-right" />
+        <ScaleControl position="bottom-left" />
 
         {/* ─── INTERPOLATION RASTER (only in heatmap mode) ─── */}
         {raster && (
@@ -226,9 +170,8 @@ export function MapboxViewer({
               {/* Border outline — always visible */}
               <Layer id={`line-${zone.id}`} type="line" paint={{
                 'line-color': isHeatmap ? '#ffffff' : color,
-                'line-width': isActive ? 3.5 : isHeatmap ? 1.5 : 2,
-                'line-opacity': isHeatmap ? 1 : 0.8,
-                'line-dasharray': isHeatmap ? [2, 0] : [1],
+                'line-width': isActive ? 3 : isHeatmap ? 1.5 : 2,
+                'line-opacity': isHeatmap ? 0.9 : 0.8,
               }} />
             </Source>
           );
@@ -245,12 +188,12 @@ export function MapboxViewer({
               onClick={(e: any) => { e?.originalEvent?.stopPropagation?.(); onSelectZone(zone); }}
             >
               <motion.div
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-3 py-1.5 rounded-full bg-white text-[#1d1d1f] text-[11px] font-black cursor-pointer shadow-xl border border-[#d2d2d7]/50 flex items-center gap-2"
+                className="px-2 py-0.5 rounded-md bg-white/95 text-[#1d1d1f] text-[10px] font-bold font-data cursor-pointer shadow-md flex items-center gap-1.5"
               >
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                {zone.healthScore}%
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                {zone.healthScore}
               </motion.div>
             </Marker>
           );
@@ -325,37 +268,49 @@ export function MapboxViewer({
         </div>
       )}
 
-      {/* ─── Сводка + слой и легенда (легенда только в режиме карты показателей) ─── */}
-      <div className="absolute top-3 left-3 md:top-4 md:left-4 z-10 flex flex-col gap-2 w-[min(260px,calc(100%-120px))] md:w-[260px]">
-      {topLeft}
+      {/* ─── Панель слоя: показатель + легенда с долей площади по классам ─── */}
       {isHeatmap && (
-        <div className="bg-white/95 backdrop-blur-xl border border-black/5 rounded-xl shadow-pro p-2 flex flex-col gap-2">
-          <div className="flex bg-[#f5f5f7] p-0.5 rounded-lg">
-            {(Object.keys(METRICS) as MetricKey[]).map(k => (
-              <button key={k} onClick={() => onMetricChange(k)}
-                className={`flex-1 px-1 py-1 rounded-md text-[10px] font-bold whitespace-nowrap transition-all ${metric === k ? 'bg-white shadow-sm text-[#1d1d1f]' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
-              >{t(`${METRICS[k].labelKey}Short`)}</button>
-            ))}
+        <div className="absolute z-10 bottom-8 left-3 right-3 md:left-auto md:right-4 md:w-[300px] bg-white/95 backdrop-blur-xl border border-black/5 rounded-xl shadow-pro">
+          <button onClick={() => setLegendOpen(v => !v)} className="w-full flex items-center justify-between px-3 pt-2.5 pb-1.5">
+            <span className="text-[11px] font-bold text-[#1d1d1f]">{t('map.layer')}</span>
+            <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform ${legendOpen ? '' : 'rotate-180'}`} />
+          </button>
+          <div className="px-3 pb-3 flex flex-col gap-2.5">
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold text-[#86868b]">{t('map.measurement')}</span>
+              <select value={metric} onChange={e => onMetricChange(e.target.value as MetricKey)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-black/10 bg-white text-[12px] font-semibold outline-none focus:ring-2 focus:ring-[#0071e3]/20"
+              >
+                {(Object.keys(METRICS) as MetricKey[]).map(k => <option key={k} value={k}>{t(METRICS[k].labelKey)}{METRICS[k].unit && `, ${METRICS[k].unit}`}</option>)}
+              </select>
+            </label>
+            {legendOpen && raster && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-semibold text-[#86868b]">{t('map.legendShare')}</span>
+                <div className="flex gap-1 items-end">
+                  {def.colors.map((c, i) => {
+                    const share = raster.shares[i];
+                    const max = Math.max(...raster.shares) || 1;
+                    return (
+                      <div key={c} className="flex-1 min-w-0 flex flex-col items-center gap-0.5">
+                        <span className="text-[9px] font-bold font-data text-[#1d1d1f]">{Math.round(share * 100)}%</span>
+                        <div className="w-full h-10 flex items-end">
+                          <div className="w-full rounded-sm" style={{ height: `${Math.max(share / max * 100, 6)}%`, backgroundColor: c }} />
+                        </div>
+                        <span className="text-[8.5px] font-data text-[#6e6e73] whitespace-nowrap">{classLabels(metric)[i]}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[9.5px] text-[#86868b] leading-snug">
+                  {satFn ? t('map.detailSat') : t('map.detailSensors')} · {t('map.paleFar')}
+                </p>
+              </div>
+            )}
+            {!points.length && <p className="text-[10px] font-bold text-[#86868b]">{t('map.noData')}</p>}
           </div>
-          <div className="px-1">
-            <div className="flex gap-[2px] h-2.5">
-              {def.colors.map(c => <div key={c} className="flex-1 first:rounded-l last:rounded-r" style={{ backgroundColor: c }} />)}
-            </div>
-            <div className="relative h-3.5 mt-0.5">
-              {def.breaks.map((b, i) => (
-                <span key={b} className="absolute -translate-x-1/2 text-[9px] font-bold font-data text-[#6e6e73]"
-                  style={{ left: `${(i + 1) / def.colors.length * 100}%` }}
-                >{b}</span>
-              ))}
-            </div>
-            <div className="text-[9px] font-bold text-[#86868b] mt-0.5 leading-snug">
-              <span className="text-[#1d1d1f]">{t(def.labelKey)}{def.unit && `, ${def.unit}`}</span> · {t('map.paleFar')}
-            </div>
-          </div>
-          {!points.length && <p className="px-1 text-[10px] font-bold text-[#86868b]">{t('map.noData')}</p>}
         </div>
       )}
-      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MapboxViewer } from '@/components/MapboxViewer';
@@ -10,28 +10,24 @@ import { RecommendationsPanel } from '@/components/RecommendationsPanel';
 import { MLAnalysisPanel } from '@/components/MLAnalysisPanel';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Map as MapIcon, MessageSquare, Layers, BarChart3,
-  TrendingUp, ChevronDown, X, Droplet,
-  Thermometer, FlaskConical, Settings2, Info,
-  Activity, Zap, Maximize2, Minimize2, Download
-} from 'lucide-react';
+import { ChevronDown, X, Info, Maximize2, Minimize2 } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { SoilAnalysisCard } from '@/components/SoilAnalysisCard';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import type { Sensor, SoilZone, MapMode, WeatherData, SensorStatus } from '@/types';
+import type { Field, Sensor, SoilZone, MapMode, WeatherData, SensorStatus } from '@/types';
 import { fields, sensors, zones, recommendations, weather } from '@/data/mockData';
 import { fetchRealWeather } from '@/services/weatherService';
 import { useUser } from '@/auth/useAuth';
 import { canViewField, canExportData } from '@/auth/roles';
 import { ExportDataModal } from '@/components/ExportDataModal';
 import { METRICS, STATUS_COLORS, heatPoints, idw, pointInPolygon, sensorScore, statusFromScore, type MetricKey } from '@/data/metrics';
+import { OFFLINE_AFTER_MIN } from '@/services/sensorService';
 import { listSensors, toMapSensor } from '@/services/sensorService';
 import { useDateLocale } from '@/i18n';
 
 const ZONE_COLOR: Record<SensorStatus, SoilZone['color']> = { healthy: 'green', warning: 'yellow', critical: 'red' };
 const REFRESH_MS = 60_000;
+const TOOLBAR_BTN = 'flex-shrink-0 whitespace-nowrap px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-black/10 hover:bg-[#f5f5f7]';
 
 /** Индекс зоны — среднее по датчикам внутри неё; без датчиков — интерполяция в центре зоны */
 function zoneFromSensors(zone: SoilZone, sensors: Sensor[]): SoilZone {
@@ -45,7 +41,7 @@ function zoneFromSensors(zone: SoilZone, sensors: Sensor[]): SoilZone {
   return { ...zone, healthScore, color: ZONE_COLOR[statusFromScore(healthScore)] };
 }
 
-type RightPanel = 'map' | 'recommendations' | 'chat' | 'analysis' | 'ml' | null;
+type Panel = 'map' | 'recommendations' | 'chat' | 'analysis' | 'ml';
 
 export function DashboardPage() {
   const { t } = useTranslation();
@@ -60,11 +56,12 @@ export function DashboardPage() {
   const dateLocale = useDateLocale();
   const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
   const [selectedZone, setSelectedZone] = useState<SoilZone | null>(null);
-  const [rightPanel, setRightPanel] = useState<RightPanel>(isMobile ? 'map' : 'recommendations');
+  const [panel, setPanel] = useState<Panel>(isMobile ? 'map' : 'recommendations');
+  // на десктопе карта видна всегда — вкладка «Карта» есть только на мобильном
+  const tab: Panel = !isMobile && panel === 'map' ? 'recommendations' : panel;
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [depthProfileOpen, setDepthProfileOpen] = useState(false);
   const [fieldDropdown, setFieldDropdown] = useState(false);
-  const [ndviEnabled, setNdviEnabled] = useState(false);
   const [mapFullscreen, setMapFullscreen] = useState(false);
 
   const [zoneDropdown, setZoneDropdown] = useState(false);
@@ -119,27 +116,14 @@ export function DashboardPage() {
 
   const activeWeather = realWeather || weather[activeFieldId] || weather['f-1'];
 
-  const stats = useMemo(() => {
-    if (!onlineSensors.length) return [];
-    const avgMoisture = onlineSensors.reduce((s, x) => s + x.soilMoisture, 0) / onlineSensors.length;
-    const avgTemp = onlineSensors.reduce((s, x) => s + x.soilTemperature, 0) / onlineSensors.length;
-    const avgPh = onlineSensors.reduce((s, x) => s + x.pH, 0) / onlineSensors.length;
-
-    return [
-      { id: 'moisture', label: t('dash.moisture'), value: `${avgMoisture.toFixed(0)}%`, icon: Droplet, color: 'text-blue-500', trend: '+2%', data: [35, 42, 38, 45, 49, avgMoisture] },
-      { id: 'temp', label: t('dash.temperature'), value: `${avgTemp.toFixed(1)}°`, icon: Thermometer, color: 'text-orange-500', trend: '-1°', data: [18, 19, 22, 21, 20, avgTemp] },
-      { id: 'ph', label: t('dash.acidity'), value: `${avgPh.toFixed(1)}`, icon: FlaskConical, color: 'text-purple-500', trend: 'OK', data: [6.1, 6.2, 6.1, 6.3, 6.4, avgPh] },
-      { id: 'health', label: t('dash.ndvi'), value: '0.74', icon: TrendingUp, color: 'text-green-600', trend: '+0.05', data: [0.65, 0.68, 0.70, 0.71, 0.73, 0.74] },
-    ];
-  }, [onlineSensors, t]);
-
   const fieldStatus = useMemo(() => {
     const scores = onlineSensors.map(sensorScore);
     const score = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
     const count = (st: SensorStatus) => onlineSensors.filter(s => s.status === st).length;
     const last = onlineSensors.reduce<string | null>((a, s) => !a || s.lastUpdated > a ? s.lastUpdated : a, null);
+    const moisture = onlineSensors.length ? onlineSensors.reduce((a, s) => a + s.soilMoisture, 0) / onlineSensors.length : null;
     return {
-      score, status: score == null ? null : statusFromScore(score), last,
+      score, status: score == null ? null : statusFromScore(score), last, moisture,
       counts: { healthy: count('healthy'), warning: count('warning'), critical: count('critical') } as Record<SensorStatus, number>,
       offline: activeSensors.length - onlineSensors.length,
     };
@@ -147,280 +131,135 @@ export function DashboardPage() {
 
   const selectSensor = (s: Sensor) => s.registryId ? navigate(`/sensors/${s.registryId}`) : setSelectedSensor(s);
 
+  const TABS: [Panel, string][] = [
+    ...(isMobile ? [['map', t('dash.tabMap')] as [Panel, string]] : []),
+    ['recommendations', t('dash.tabInsights')],
+    ['ml', 'ML'],
+    ['analysis', t('dash.tabSoil')],
+    ['chat', t('dash.tabChat')],
+  ];
+  const lastLabel = fieldStatus.last && formatDistanceToNowStrict(new Date(fieldStatus.last), { addSuffix: true, locale: dateLocale });
+
   return (
     <div className="h-full flex flex-col bg-[#f5f5f7] overflow-hidden">
-      {/* Precision Toolbar */}
-      <div className="flex-shrink-0 bg-white border-b border-black/5 px-3 md:px-6 py-2.5 flex items-center justify-between gap-3 md:gap-6 z-30 relative">
-        {/* Dropdowns Container (NO overflow-hidden so popups float freely) */}
-        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 relative z-40">
-          <div className="relative flex-shrink-0">
-            <button onClick={() => setFieldDropdown(v => !v)}
-              className="flex items-center gap-2 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold border border-black/5 md:border-transparent"
-            >
-              <MapIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
-              <span className="truncate max-w-[110px] md:max-w-[140px]">{t(activeField.shortKey)}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform flex-shrink-0 ${fieldDropdown ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {fieldDropdown && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setFieldDropdown(false)} />
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                    className="absolute top-full left-0 mt-2 w-64 max-w-[calc(100vw-32px)] bg-white border border-black/10 rounded-xl shadow-2xl z-50 p-1.5"
-                  >
-                    {visibleFields.map(f => (
-                      <button key={f.id} onClick={() => { setActiveFieldId(f.id); setActiveZoneFilter(null); setFieldDropdown(false); }}
-                        className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeFieldId === f.id ? 'font-bold bg-black/5' : ''}`}
-                      >
-                        <span className="truncate">{t(f.nameKey)}</span>
-                        {activeFieldId === f.id && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 ml-2" />}
-                      </button>
-                    ))}
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="relative flex-shrink-0">
-            <button onClick={() => setZoneDropdown(v => !v)}
-              className="flex items-center gap-2 px-3 py-1.5 hover:bg-black/5 rounded-lg transition-all text-[13px] font-bold border border-black/5 md:border-transparent"
-            >
-              <Layers className="w-4 h-4 text-purple-500 flex-shrink-0" />
-              <span className="truncate max-w-[110px] md:max-w-[140px]">{activeZoneFilter ? t(allFieldZones.find(z => z.id === activeZoneFilter)?.nameKey ?? '') : t('dash.allZones')}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform flex-shrink-0 ${zoneDropdown ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {zoneDropdown && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setZoneDropdown(false)} />
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                    className="absolute top-full left-0 mt-2 w-64 max-w-[calc(100vw-32px)] bg-white border border-black/10 rounded-xl shadow-2xl z-50 p-1.5"
-                  >
-                    <button onClick={() => { setActiveZoneFilter(null); setZoneDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${!activeZoneFilter ? 'font-bold bg-black/5' : ''}`}
-                    >
-                      <span>{t('dash.allZones')}</span>
-                      {!activeZoneFilter && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
-                    </button>
-                    {allFieldZones.map(z => (
-                      <button key={z.id} onClick={() => { setActiveZoneFilter(z.id); setZoneDropdown(false); }}
-                        className={`w-full text-left px-3.5 py-2.5 rounded-lg text-[13px] hover:bg-black/5 transition-all flex items-center justify-between ${activeZoneFilter === z.id ? 'font-bold bg-black/5' : ''}`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: z.color === 'green' ? '#10b981' : z.color === 'yellow' ? '#f59e0b' : '#ef4444' }} />
-                          <span className="truncate">{t(z.nameKey)}</span>
-                        </div>
-                        {activeZoneFilter === z.id && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0 ml-2" />}
-                      </button>
-                    ))}
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+      {/* Панель инструментов */}
+      <div className="flex-shrink-0 bg-white border-b border-black/5 px-3 md:px-5 h-12 flex items-center gap-2 md:gap-3 z-30 relative">
+        <div className="flex items-center gap-1 flex-shrink-0 relative z-40">
+          <Dropdown open={fieldDropdown} onToggle={() => setFieldDropdown(v => !v)} label={t(activeField.shortKey)}>
+            {visibleFields.map(f => (
+              <DropdownItem key={f.id} active={activeFieldId === f.id}
+                onClick={() => { setActiveFieldId(f.id); setActiveZoneFilter(null); setFieldDropdown(false); }}
+              >{t(f.nameKey)}</DropdownItem>
+            ))}
+          </Dropdown>
+          <span className="text-[#c7c7cc] text-[13px]">/</span>
+          <Dropdown open={zoneDropdown} onToggle={() => setZoneDropdown(v => !v)}
+            label={activeZoneFilter ? t(allFieldZones.find(z => z.id === activeZoneFilter)?.nameKey ?? '') : t('dash.allZones')}
+          >
+            <DropdownItem active={!activeZoneFilter} onClick={() => { setActiveZoneFilter(null); setZoneDropdown(false); }}>{t('dash.allZones')}</DropdownItem>
+            {allFieldZones.map(z => (
+              <DropdownItem key={z.id} active={activeZoneFilter === z.id} onClick={() => { setActiveZoneFilter(z.id); setZoneDropdown(false); }}>
+                <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: STATUS_COLORS[statusFromScore(z.healthScore)] }} />{t(z.nameKey)}
+              </DropdownItem>
+            ))}
+          </Dropdown>
         </div>
 
-        {/* Scrollable Map Controls */}
-        <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-hide py-0.5">
-          <div className="h-4 w-px bg-black/10 flex-shrink-0" />
-
-          <div className="flex bg-[#f5f5f7] p-1 rounded-lg border border-black/5 overflow-hidden flex-shrink-0">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide ml-auto md:ml-2">
+          <div className="flex bg-[#f5f5f7] p-0.5 rounded-lg flex-shrink-0">
             {([['heatmap', t('dash.heatmap')], ['zones', t('dash.zones')], ['satellite', t('dash.satellite')]] as [MapMode, string][]).map(([m, lbl]) => (
               <button key={m} onClick={() => setMapMode(m)}
-                className={`px-3 md:px-4 py-1.5 rounded-md text-[11px] font-bold transition-all whitespace-nowrap ${mapMode === m ? 'bg-white shadow-sm text-blue-600' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+                className={`px-2.5 md:px-3 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap ${mapMode === m ? 'bg-white shadow-sm text-[#1d1d1f]' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
               >{lbl}</button>
             ))}
           </div>
-
-          <button onClick={() => setNdviEnabled(!ndviEnabled)}
-            title={t('dash.ndviTooltip')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border flex-shrink-0 whitespace-nowrap ${ndviEnabled ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-200' : 'bg-white border-black/10 text-[#6e6e73] hover:border-black/20'}`}
-          >
-            <Activity className="w-3.5 h-3.5" /> NDVI
-          </button>
-
+          <button onClick={() => setDepthProfileOpen(true)} className={TOOLBAR_BTN}>{t('dash.profile')}</button>
           {canExportData(user) && (
-            <button onClick={() => setExportOpen(true)} title={t('dash.exportTooltip')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black transition-all border flex-shrink-0 whitespace-nowrap bg-white border-black/10 text-[#6e6e73] hover:border-[#0071e3] hover:text-[#0071e3]"
-            >
-              <Download className="w-3.5 h-3.5" /> {t('dash.export')}
-            </button>
+            <button onClick={() => setExportOpen(true)} title={t('dash.exportTooltip')} className={TOOLBAR_BTN}>{t('dash.export')}</button>
           )}
         </div>
 
-        <div className="flex-1 hidden md:block" />
-        <div className="flex-shrink-0 hidden md:block">
+        <div className="flex-shrink-0 hidden lg:block ml-auto">
           <WeatherWidget data={activeWeather} />
         </div>
       </div>
 
-      {/* Grid Stats */}
-      <div className="flex-shrink-0 grid grid-cols-2 md:grid-cols-4 bg-white border-b border-black/5 relative z-10">
-        {stats.map((s, i) => {
-          const colorHex = s.color.includes('blue') ? '#3b82f6' : s.color.includes('orange') ? '#f97316' : s.color.includes('purple') ? '#a855f7' : '#16a34a';
-          const borderClasses = isMobile
-            ? `${i % 2 === 0 ? 'border-r' : ''} ${i < 2 ? 'border-b' : ''} border-black/5`
-            : `${i < 3 ? 'border-r' : ''} border-black/5`;
-          return (
-            <div key={s.id} className={`p-3 md:p-5 flex flex-col gap-1 md:gap-1.5 relative group overflow-hidden ${borderClasses}`}>
-              <div className="flex items-center justify-between min-w-0 z-10 relative">
-                <span className="text-[9px] md:text-[10px] font-black text-[#6e6e73] uppercase tracking-widest truncate">{s.label}</span>
-                <s.icon className={`w-3.5 h-3.5 flex-shrink-0 ${s.color}`} />
-              </div>
-              <div className="flex items-baseline gap-2 min-w-0 z-10 relative">
-                <span className="text-xl md:text-3xl font-bold tracking-tight font-data leading-none truncate">{s.value}</span>
-                <span className={`text-[10px] font-black font-data px-1.5 py-0.5 rounded bg-black/5 ${s.trend.includes('+') ? 'text-green-600' : s.trend.includes('-') ? 'text-orange-600' : 'text-[#86868b]'}`}>{s.trend}</span>
-              </div>
-              {/* Sparkline background */}
-              <div className="absolute inset-x-0 bottom-0 h-12 opacity-15 pointer-events-none group-hover:opacity-30 transition-opacity">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={s.data.map((val, idx) => ({ val, idx }))}>
-                    <defs>
-                      <linearGradient id={`spark-${s.id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={colorHex} stopOpacity={1} />
-                        <stop offset="100%" stopColor={colorHex} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area type="monotone" dataKey="val" stroke={colorHex} strokeWidth={2} fill={`url(#spark-${s.id})`} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Mobile View Switcher — Карта / Инсайты / Чат / Почва */}
-      <div className="md:hidden flex-shrink-0 flex items-center gap-1 px-2 py-2 bg-white border-b border-black/5 z-20 overflow-x-auto scrollbar-hide">
-        {([
-          ['map', MapIcon, t('dash.tabMap')],
-          ['recommendations', Zap, t('dash.tabInsights')],
-          ['ml', BarChart3, 'ML'],
-          ['chat', MessageSquare, t('dash.tabChat')],
-          ['analysis', Layers, t('dash.tabSoil')],
-        ] as [RightPanel, typeof MapIcon, string][]).map(([key, Icon, label]) => (
-          <button key={key} onClick={() => setRightPanel(key)}
-            className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-xl transition-all ${rightPanel === key ? 'bg-[#f5f5f7] text-[#1d1d1f]' : 'text-[#86868b]'}`}
-          >
-            <Icon className="w-4 h-4" />
-            <span className="text-[9px] font-black uppercase tracking-wider">{label}</span>
-          </button>
-        ))}
+      {/* Вкладки на мобильном — текстом, без иконок */}
+      <div className="md:hidden flex-shrink-0 flex bg-white border-b border-black/5 overflow-x-auto scrollbar-hide">
+        {TABS.map(([key, label]) => <TabButton key={key} active={tab === key} onClick={() => setPanel(key)}>{label}</TabButton>)}
       </div>
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        {/* Левая панель: сводка поля + вкладки */}
+        <aside className={`w-full md:w-[400px] ${isMobile && tab === 'map' ? 'hidden' : 'flex-1 md:flex-none'} min-h-0 flex flex-col md:border-r border-black/5 bg-[#fbfbfd]`}>
+          <div className="hidden md:flex flex-shrink-0 bg-white border-b border-black/5 px-2">
+            {TABS.map(([key, label]) => <TabButton key={key} active={tab === key} onClick={() => setPanel(key)}>{label}</TabButton>)}
+          </div>
+          <div className={`flex-1 min-h-0 ${tab === 'chat' ? 'flex flex-col p-4' : 'overflow-y-auto p-4 flex flex-col gap-4'}`}>
+            {tab !== 'chat' && <FieldInsightsCard status={fieldStatus} field={activeField} zones={allFieldZones} lastLabel={lastLabel} />}
+            {tab === 'chat' ? (
+              <ChatInterface isOpen={true} onClose={() => setPanel('recommendations')} context={{ field: activeField, sensors: activeSensors }} />
+            ) : tab === 'analysis' ? (
+              <SoilAnalysisCard fieldId={activeFieldId} />
+            ) : tab === 'ml' ? (
+              <MLAnalysisPanel fieldId={activeFieldId} />
+            ) : (
+              <RecommendationsPanel recommendations={activeRecs} />
+            )}
+          </div>
+        </aside>
+
         <div className={mapFullscreen
           ? 'fixed inset-0 z-[100] bg-white'
-          : `${isMobile ? (rightPanel === 'map' ? 'flex-1' : 'hidden') : 'h-auto flex-1'} relative bg-white overflow-hidden`
+          : `${isMobile ? (tab === 'map' ? 'flex-1' : 'hidden') : 'flex-1'} relative bg-white overflow-hidden`
         }>
           <MapboxViewer
+            key={activeField.id}
             sensors={activeSensors}
             zones={activeZones}
             field={activeField}
-            mapMode={ndviEnabled ? 'heatmap' : mapMode}
+            mapMode={mapMode}
             metric={metric}
             onMetricChange={setMetric}
             onSelectSensor={selectSensor}
             onSelectZone={setSelectedZone}
-            topLeft={!isMobile && (
-              <FieldStatusCard status={fieldStatus} lastLabel={fieldStatus.last && formatDistanceToNowStrict(new Date(fieldStatus.last), { addSuffix: true, locale: dateLocale })} />
-            )}
             activeSensorId={selectedSensor?.id ?? null}
             activeZoneId={selectedZone?.id ?? null}
           />
 
-          {/* Fullscreen Toggle */}
           <button onClick={() => setMapFullscreen(v => !v)}
             title={mapFullscreen ? t('dash.fullscreenExit') : t('dash.fullscreenEnter')}
-            className="absolute top-4 right-16 md:right-20 z-20 w-9 h-9 md:w-10 md:h-10 bg-white/95 backdrop-blur-xl border border-black/10 rounded-xl shadow-pro flex items-center justify-center hover:bg-black/5 active:scale-95 transition-all pointer-events-auto"
+            className="absolute top-2.5 right-12 z-20 w-[29px] h-[29px] bg-white rounded-md shadow-[0_0_0_2px_rgba(0,0,0,0.1)] flex items-center justify-center hover:bg-[#f5f5f7]"
           >
-            {mapFullscreen ? <Minimize2 className="w-4 h-4 text-[#1d1d1f]" /> : <Maximize2 className="w-4 h-4 text-[#1d1d1f]" />}
+            {mapFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-[#1d1d1f]" /> : <Maximize2 className="w-3.5 h-3.5 text-[#1d1d1f]" />}
           </button>
-
-
-          {/* Quick Controls Bottom — desktop */}
-          <div className="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 z-10 gap-2.5">
-            <button onClick={() => setDepthProfileOpen(true)} className="flex items-center gap-2.5 px-6 py-3 bg-[#1d1d1f] text-white rounded-full text-[13px] font-bold shadow-pro-lg hover:bg-black hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
-              <Settings2 className="w-4 h-4" /> {t('dash.openScanner')}
-            </button>
-          </div>
-
-          {/* Compact Field Status + Controls — mobile only */}
-          <div className="md:hidden absolute bottom-4 inset-x-4 z-10 flex flex-col items-stretch gap-2">
-            <FieldStatusCard status={fieldStatus} />
-            <button onClick={() => setDepthProfileOpen(true)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1d1d1f] text-white rounded-full text-[11px] font-bold shadow-pro-lg active:scale-95 transition-all whitespace-nowrap pointer-events-auto">
-              <Settings2 className="w-4 h-4" /> {t('dash.profileScanner')}
-            </button>
-          </div>
 
           <AnimatePresence>
             {selectedZone && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-                className="absolute top-4 left-4 right-4 md:left-auto md:top-6 md:right-6 md:w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-pro-lg z-30 overflow-hidden border border-black/5"
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
+                className="absolute top-3 left-3 right-3 md:right-auto md:w-72 bg-white rounded-xl shadow-pro-lg z-30 overflow-hidden border border-black/5"
               >
-                <div className="p-5 border-b border-black/5 flex items-center justify-between">
-                  <h3 className="font-bold text-[14px] truncate">{t(selectedZone.nameKey)}</h3>
-                  <button onClick={() => setSelectedZone(null)} className="p-1 hover:bg-black/5 rounded-md transition-all"><X className="w-4 h-4 text-[#6e6e73]" /></button>
+                <div className="px-4 py-3 border-b border-black/5 flex items-center justify-between">
+                  <h3 className="font-semibold text-[13px] truncate">{t(selectedZone.nameKey)}</h3>
+                  <button onClick={() => setSelectedZone(null)} className="p-1 hover:bg-black/5 rounded-md"><X className="w-4 h-4 text-[#6e6e73]" /></button>
                 </div>
-                <div className="p-5 flex flex-col gap-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold text-[#6e6e73] uppercase tracking-wider">{t('dash.healthIndex')}</span>
-                      <span className="text-3xl font-bold font-data leading-none">{selectedZone.healthScore}%</span>
-                    </div>
-                    <div className="w-14 h-14 rounded-full border-4 border-blue-500/10 flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-[12px] font-black text-white shadow-lg shadow-blue-200">{selectedZone.healthScore}</div>
-                    </div>
+                <div className="p-4 flex flex-col gap-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-[11px] text-[#6e6e73]">{t('dash.soilIndex')}</span>
+                    <span className="text-2xl font-bold font-data leading-none">{selectedZone.healthScore}<span className="text-[12px] text-[#86868b] font-sans"> / 100</span></span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => setComparisonOpen(true)} className="py-2.5 bg-[#0071e3] text-white rounded-xl text-[11px] font-bold shadow-sm hover:bg-[#0077ed] transition-all">{t('dash.analysis')}</button>
-                    <button onClick={() => setDepthProfileOpen(true)} className="py-2.5 bg-[#f5f5f7] text-[#1d1d1f] rounded-xl text-[11px] font-bold hover:bg-black/5 transition-all">{t('dash.report')}</button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => setComparisonOpen(true)} className="py-2 bg-[#0071e3] text-white rounded-lg text-[11px] font-semibold hover:bg-[#0077ed]">{t('dash.analysis')}</button>
+                    <button onClick={() => setDepthProfileOpen(true)} className="py-2 bg-[#f5f5f7] rounded-lg text-[11px] font-semibold hover:bg-black/5">{t('dash.report')}</button>
                   </div>
-                  <div className="p-4 bg-blue-50/50 rounded-xl flex gap-3 border border-blue-100/50">
-                    <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-blue-900 leading-relaxed font-medium">{t('dash.mineralAlert')}</p>
+                  <div className="p-3 bg-blue-50/60 rounded-lg flex gap-2.5">
+                    <Info className="w-3.5 h-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-blue-900 leading-relaxed">{t('dash.mineralAlert')}</p>
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-
-        <div className={`w-full md:w-[420px] ${isMobile ? (rightPanel === 'map' ? 'hidden' : 'flex-1') : 'flex-1 md:flex-none'} min-h-0 md:flex-shrink-0 flex flex-col border-t md:border-t-0 md:border-l border-black/5 bg-white relative`}>
-          <div className="hidden md:flex h-14 md:h-16 items-center gap-0.5 px-2 border-b border-black/5 bg-[#fbfbfd] overflow-x-auto scrollbar-hide">
-            <button onClick={() => setRightPanel('recommendations')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'recommendations' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
-              <Zap className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-wider">{t('dash.tabInsights')}</span>
-            </button>
-            <button onClick={() => setRightPanel('ml')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'ml' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-wider">ML</span>
-            </button>
-            <button onClick={() => setRightPanel('chat')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'chat' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-wider">{t('dash.tabChat')}</span>
-            </button>
-            <button onClick={() => setRightPanel('analysis')} className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl transition-all ${rightPanel === 'analysis' ? 'bg-white shadow-sm text-[#1d1d1f] border border-black/5' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}>
-              <Layers className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-wider">{t('dash.tabSoil')}</span>
-            </button>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <AnimatePresence mode="wait">
-              <motion.div key={rightPanel} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full overflow-y-auto p-4">
-                {rightPanel === 'chat' ? (
-                  <ChatInterface isOpen={true} onClose={() => setRightPanel(null)} context={{ field: activeField, sensors: activeSensors }} />
-                ) : rightPanel === 'analysis' ? (
-                  <SoilAnalysisCard fieldId={activeFieldId} />
-                ) : rightPanel === 'ml' ? (
-                  <MLAnalysisPanel fieldId={activeFieldId} />
-                ) : (
-                  <RecommendationsPanel recommendations={activeRecs} />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
         </div>
       </div>
 
@@ -437,43 +276,117 @@ export function DashboardPage() {
 }
 
 type FieldStatus = {
-  score: number | null; status: SensorStatus | null; last: string | null;
+  score: number | null; status: SensorStatus | null; last: string | null; moisture: number | null;
   counts: Record<SensorStatus, number>; offline: number;
 };
 
-const STATUS_KEYS: Record<SensorStatus, string> = { healthy: 'dash.statusOk', warning: 'dash.statusWarn', critical: 'dash.statusCrit' };
+const BADGE: Record<SensorStatus, { key: string; cls: string }> = {
+  healthy:  { key: 'dash.badgeOk',   cls: 'bg-green-50 text-green-700' },
+  warning:  { key: 'dash.badgeWarn', cls: 'bg-amber-50 text-amber-700' },
+  critical: { key: 'dash.badgeCrit', cls: 'bg-red-50 text-red-700' },
+};
 
-function FieldStatusCard({ status: f, lastLabel }: { status: FieldStatus; lastLabel?: string | null }) {
+/** Шкала влажности: сухо → оптимум → избыток, с отметкой средней по полю */
+const MOISTURE_SCALE = { min: 5, max: 50, bands: [[5, 12, '#e0301e'], [12, 18, '#f4802a'], [18, 24, '#f3d33c'], [24, 38, '#2fa84f'], [38, 50, '#3987e5']] as const };
+
+/** Карточка «Сводка поля» — всё считается из показаний датчиков */
+function FieldInsightsCard({ status: f, field, zones, lastLabel }: { status: FieldStatus; field: Field; zones: SoilZone[]; lastLabel: string | null }) {
   const { t } = useTranslation();
-  const total = f.counts.healthy + f.counts.warning + f.counts.critical + f.offline;
-  const order: SensorStatus[] = ['critical', 'warning', 'healthy'];
+  const online = f.counts.healthy + f.counts.warning + f.counts.critical;
+  const ok = METRICS.moisture.ok!;
+  const pos = (v: number) => (Math.min(Math.max(v, MOISTURE_SCALE.min), MOISTURE_SCALE.max) - MOISTURE_SCALE.min) / (MOISTURE_SCALE.max - MOISTURE_SCALE.min) * 100;
   return (
-    <div className="bg-white/95 backdrop-blur-xl border border-black/5 rounded-xl shadow-pro px-3 py-2.5 flex flex-col gap-2 pointer-events-auto">
+    <section className="bg-white rounded-xl border border-black/5 shadow-sm p-4 flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: f.status ? STATUS_COLORS[f.status] : '#8e8e93' }} />
-          <span className="text-[10px] font-black uppercase tracking-wider truncate">{t('dash.fieldStatus')}</span>
-          <span className="text-[10px] font-bold text-[#6e6e73] truncate">{f.status ? t(STATUS_KEYS[f.status]) : t('map.noData')}</span>
-        </div>
-        <span className="text-[18px] font-bold font-data leading-none" title={t(METRICS.index.labelKey)}>{f.score ?? '—'}</span>
+        <h3 className="text-[14px] font-semibold">{t('dash.summary')}</h3>
+        {f.status && <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${BADGE[f.status].cls}`}>{t(BADGE[f.status].key)}</span>}
       </div>
-      {total > 0 && (
-        <div className="flex gap-[2px] h-1.5">
-          {order.map(st => f.counts[st] > 0 && (
-            <div key={st} className="rounded-full" style={{ flex: f.counts[st], backgroundColor: STATUS_COLORS[st] }} />
+
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-baseline justify-between">
+          <span className="text-[11px] text-[#6e6e73]">{t('dash.soilMoisture')}</span>
+          <span className="text-[12px] font-semibold font-data">{f.moisture != null ? `${f.moisture.toFixed(0)}%` : '—'}</span>
+        </div>
+        <div className="relative">
+          <div className="flex gap-[2px] h-1.5">
+            {MOISTURE_SCALE.bands.map(([lo, hi, c]) => <div key={lo} className="first:rounded-l-full last:rounded-r-full" style={{ flex: hi - lo, backgroundColor: c }} />)}
+          </div>
+          {f.moisture != null && (
+            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white border-2 border-[#1d1d1f] shadow" style={{ left: `${pos(f.moisture)}%` }} />
+          )}
+        </div>
+        <div className="flex justify-between text-[10px] text-[#86868b]">
+          <span>{t('dash.dry')}</span><span>{t('dash.optimum', { lo: ok[0], hi: ok[1] })}</span><span>{t('dash.wet')}</span>
+        </div>
+      </div>
+
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
+        <Stat label={t('dash.soilIndex')}><span className="font-data">{f.score ?? '—'}</span><span className="text-[#86868b]"> / 100</span></Stat>
+        <Stat label={t('dash.area')}><span className="font-data">{field.areaHectares}</span> {t('common.ha')}</Stat>
+        <Stat label={t('dash.sensorsLabel')}>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{t('dash.sensorsOnline', { n: online })}
+            {f.offline > 0 && <span className="text-[#86868b]">· {t('dash.sensorsOffline', { n: f.offline })}</span>}
+          </span>
+        </Stat>
+        <Stat label={t('dash.lastReading')}>{lastLabel ?? '—'}</Stat>
+      </dl>
+
+      {zones.length > 0 && (
+        <div className="flex flex-col gap-2 pt-3 border-t border-black/5">
+          <span className="text-[11px] text-[#6e6e73]">{t('dash.zonesTitle')}</span>
+          {zones.map(z => (
+            <div key={z.id} className="flex items-center gap-3 text-[12px]">
+              <span className="flex-1 min-w-0 truncate">{t(z.nameKey)}</span>
+              <div className="w-20 h-1.5 rounded-full bg-[#f0f0f2] overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${z.healthScore}%`, backgroundColor: STATUS_COLORS[statusFromScore(z.healthScore)] }} />
+              </div>
+              <span className="w-7 text-right font-data font-semibold">{z.healthScore}</span>
+            </div>
           ))}
-          {f.offline > 0 && <div className="rounded-full bg-[#d2d2d7]" style={{ flex: f.offline }} />}
         </div>
       )}
-      <div className="flex items-center gap-2.5 text-[10px] font-bold font-data text-[#6e6e73] whitespace-nowrap">
-        {order.map(st => (
-          <span key={st} className="flex items-center gap-1" title={t(STATUS_KEYS[st])}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[st] }} />{f.counts[st]}
-          </span>
-        ))}
-        {f.offline > 0 && <span title={t('dash.offline')}>○ {f.offline}</span>}
-        {lastLabel && <span className="ml-auto truncate font-sans">{lastLabel}</span>}
-      </div>
+      <p className="text-[10px] text-[#86868b] -mt-1">{t('dash.offlineHint', { min: OFFLINE_AFTER_MIN })}</p>
+    </section>
+  );
+}
+
+function Stat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5 min-w-0">
+      <dt className="text-[10px] text-[#86868b]">{label}</dt>
+      <dd className="font-semibold truncate">{children}</dd>
     </div>
+  );
+}
+
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button onClick={onClick}
+      className={`flex-shrink-0 px-3.5 py-3 text-[12px] font-semibold border-b-2 transition-colors whitespace-nowrap ${active ? 'border-[#0071e3] text-[#1d1d1f]' : 'border-transparent text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+    >{children}</button>
+  );
+}
+
+function Dropdown({ open, onToggle, label, children }: { open: boolean; onToggle: () => void; label: string; children: ReactNode }) {
+  return (
+    <div className="relative flex-shrink-0">
+      <button onClick={onToggle} className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-black/5 rounded-lg text-[13px] font-semibold">
+        <span className="truncate max-w-[120px] md:max-w-[180px]">{label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-[#86868b] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={onToggle} />
+          <div className="absolute top-full left-0 mt-1.5 w-64 max-w-[calc(100vw-32px)] bg-white border border-black/10 rounded-xl shadow-2xl z-50 p-1">{children}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DropdownItem({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button onClick={onClick} className={`w-full text-left px-3 py-2 rounded-lg text-[13px] hover:bg-black/5 flex items-center ${active ? 'font-semibold bg-black/5' : ''}`}>{children}</button>
   );
 }

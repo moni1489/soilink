@@ -1,4 +1,4 @@
-import { addDays, subHours, format } from 'date-fns';
+import { addDays, subHours } from 'date-fns';
 import { sensorScore, statusFromScore } from './metrics';
 import type { WateringEvent, Field, Sensor, SoilZone, Recommendation, Prediction, StatisticCard, ScannerData, WeatherData } from '@/types';
 
