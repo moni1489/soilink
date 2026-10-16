@@ -18,6 +18,12 @@ interface MetricDef {
   /** Границы классов на карте; colors на один длиннее breaks */
   breaks: number[];
   colors: string[];
+  /**
+   * Сдвиг значения на 1σ «зелени» спутникового снимка — даёт карте детализацию внутри поля.
+   * Знак: густая растительность ↔ больше влаги и выше индекс, ниже засоление и температура поверхности.
+   * ponytail: линейная связь с RGB-снимком грубая; заменить на NDVI Sentinel-2, если понадобится точность.
+   */
+  satGain: number;
 }
 
 export const METRICS: Record<MetricKey, MetricDef> = {
@@ -25,19 +31,22 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     labelKey: 'metrics.index', unit: '', digits: 0, read: s => sensorScore(s),
     // статусная шкала: критично → серьёзно → внимание → норма → отлично
     breaks: [35, 55, 70, 85],
-    colors: ['#d03b3b', '#ec835a', '#fab219', '#6cc04a', '#0ca30c'],
+    colors: ['#e0301e', '#f4802a', '#f3d33c', '#97d24c', '#2fa84f'],
+    satGain: 7,
   },
   moisture: {
     labelKey: 'metrics.moisture', unit: '%', digits: 0, read: s => s.soilMoisture,
     ok: [24, 38], limit: [12, 50],
     breaks: [12, 18, 24, 31, 38, 45],
     colors: ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '#0d366b'],
+    satGain: 2.5,
   },
   temperature: {
     labelKey: 'metrics.temperature', unit: '°C', digits: 1, read: s => s.soilTemperature,
     // в индекс не входит: это погода, а не состояние почвы — иначе каждая осень «критична»
     breaks: [0, 5, 10, 15, 20, 25],
     colors: ['#fde4d3', '#fbc4a2', '#f7a072', '#eb6834', '#c9501f', '#9c3b14', '#6e290d'],
+    satGain: -0.8,
   },
   ph: {
     labelKey: 'metrics.ph', unit: '', digits: 1, read: s => s.pH,
@@ -45,12 +54,14 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     // расходящаяся: кислая (красный) ↔ норма (серый) ↔ щелочная (синий)
     breaks: [5.0, 5.5, 6.0, 7.5, 8.0, 8.5],
     colors: ['#a8302f', '#e34948', '#f09a92', '#f0efec', '#9ec5f4', '#3987e5', '#184f95'],
+    satGain: 0, // кислотность по снимку не видна — только интерполяция
   },
   ec: {
     labelKey: 'metrics.ec', unit: 'mS/cm', digits: 2, read: s => s.electricalConductivity,
     ok: [0, 1.5], limit: [0, 4],
     breaks: [0.5, 1.0, 1.5, 2.5, 4],
     colors: ['#e6e2fa', '#c4bcf2', '#9a8de6', '#6250d6', '#4a3aa7', '#2e2470'],
+    satGain: -0.15,
   },
 };
 
@@ -82,8 +93,14 @@ export const classIndex = (key: MetricKey, value: number) =>
   METRICS[key].breaks.filter(b => value >= b).length;
 
 export const STATUS_COLORS: Record<SensorStatus, string> = {
-  healthy: '#0ca30c', warning: '#fab219', critical: '#d03b3b',
+  healthy: '#2fa84f', warning: '#f3b32a', critical: '#e0301e',
 };
+
+/** Подписи классов легенды: «<35», «35–55», …, «>85» */
+export function classLabels(key: MetricKey): string[] {
+  const { breaks } = METRICS[key];
+  return [`<${breaks[0]}`, ...breaks.slice(1).map((b, i) => `${breaks[i]}–${b}`), `>${breaks[breaks.length - 1]}`];
+}
 
 // ─── Геометрия и интерполяция ───
 

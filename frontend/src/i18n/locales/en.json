@@ -547,7 +547,8 @@
     "zones": {
       "z-1": "Zone A (Wheat)",
       "z-2": "Zone B (Sunflower)",
-      "z-3": "Zone C (Fallow)"
+      "z-3": "Zone C (Fallow)",
+      "z-4": "Zone D (Rapeseed)"
     },
     "sensors": {
       "s-1": "Sensor 01 (Zone A — North)",

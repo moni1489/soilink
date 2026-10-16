@@ -2,24 +2,23 @@ import { addDays, subHours, format } from 'date-fns';
 import { sensorScore, statusFromScore } from './metrics';
 import type { WateringEvent, Field, Sensor, SoilZone, Recommendation, Prediction, StatisticCard, ScannerData, WeatherData } from '@/types';
 
-// Реальные сельхозугодья южнее Усть-Каменогорска (Ertis / Tishinka area)
+// Реальные пашни западнее Усть-Каменогорска (массив полос у трассы на Самарское) —
+// контуры зон обведены по спутниковому снимку, чтобы детализация карты ложилась на настоящие посевы
 export const fields: Field[] = [
   {
     id: 'f-1',
     nameKey: 'data.fields.f-1.name',
     shortKey: 'data.fields.f-1.short',
-    areaHectares: 124.5,
-    // Центр: южнее города, вблизи с. Тишинка
-    center: { latitude: 49.9260, longitude: 82.5420 },
+    areaHectares: 550,
+    center: { latitude: 49.9791, longitude: 82.3650 },
     boundary: [],
   },
   {
     id: 'f-2',
     nameKey: 'data.fields.f-2.name',
     shortKey: 'data.fields.f-2.short',
-    areaHectares: 86.2,
-    // Юго-восток, вблизи поймы Иртыша
-    center: { latitude: 49.8920, longitude: 82.6380 },
+    areaHectares: 115,
+    center: { latitude: 49.9650, longitude: 82.3817 },
     boundary: [],
   },
 ];
@@ -64,66 +63,34 @@ const createSensor = (id: string, fieldId: string, lat: number, lng: number,
 };
 
 export const sensors: Sensor[] = [
-  // Field 1 — Тишинское поле (юг УКГ). Зона А в норме, Б пересыхает, В — сухо и засоление
-  createSensor('s-1', 'f-1', 49.9315, 82.5340, [31, 13.8, 6.9, 0.55]),
-  createSensor('s-2', 'f-1', 49.9295, 82.5370, [22, 13.1, 7.3, 0.70]),
-  createSensor('s-3', 'f-1', 49.9305, 82.5295, [29, 14.0, 7.0, 0.60]),
-  createSensor('s-4', 'f-1', 49.9270, 82.5555, [13.5, 15.2, 7.9, 1.90]),
-  createSensor('s-5', 'f-1', 49.9290, 82.5600, [21, 14.6, 7.4, 1.10]),
-  createSensor('s-11', 'f-1', 49.9155, 82.5340, [18, 15.5, 8.1, 2.60]),
-  createSensor('s-12', 'f-1', 49.9130, 82.5360, [15, 16.0, 8.3, 3.20]),
-  createSensor('s-13', 'f-1', 49.9145, 82.5310, [20, 15.1, 7.8, 2.10]),
+  // Field 1. Зона А в норме, Б пересыхает, В — сухо и засоление
+  createSensor('s-1', 'f-1', 49.98182, 82.34946, [31, 13.8, 6.9, 0.55]),
+  createSensor('s-2', 'f-1', 49.98500, 82.36288, [22, 13.1, 7.3, 0.70]),
+  createSensor('s-3', 'f-1', 49.97636, 82.35582, [29, 14.0, 7.0, 0.60]),
+  createSensor('s-4', 'f-1', 49.97455, 82.36994, [13.5, 15.2, 7.9, 1.90]),
+  createSensor('s-5', 'f-1', 49.97182, 82.37559, [21, 14.6, 7.4, 1.10]),
+  createSensor('s-11', 'f-1', 49.98500, 82.38195, [18, 15.5, 8.1, 2.60]),
+  createSensor('s-12', 'f-1', 49.98136, 82.38619, [15, 16.0, 8.3, 3.20]),
+  createSensor('s-13', 'f-1', 49.97977, 82.38830, [20, 15.1, 7.8, 2.10]),
 
-  // Field 2 — Усть-Тарханское поле
-  createSensor('s-6', 'f-2', 49.8940, 82.6320, [33, 12.9, 6.6, 0.50]),
-  createSensor('s-7', 'f-2', 49.8910, 82.6400, [30, 13.3, 6.4, 0.48]),
-  createSensor('s-8', 'f-2', 49.8950, 82.6450, [19, 13.9, 5.6, 0.80]),
+  // Field 2
+  createSensor('s-6', 'f-2', 49.96545, 82.37701, [33, 12.9, 6.6, 0.50]),
+  createSensor('s-7', 'f-2', 49.96818, 82.38265, [30, 13.3, 6.4, 0.48]),
+  createSensor('s-8', 'f-2', 49.96273, 82.38407, [19, 13.9, 5.6, 0.80]),
 ];
 
+const ring = (pts: [number, number][]) => pts.map(([lng, lat]) => ({ lng, lat }));
+
+// healthScore и цвет — заглушки: на дашборде пересчитываются по датчикам
 export const zones: SoilZone[] = [
-  {
-    // ЗОНА А — трапеция (шире сверху), северная часть поля
-    // Расположена: ~49.928-49.935°N, 82.524-82.545°E
-    id: 'z-1', fieldId: 'f-1', nameKey: 'data.zones.z-1', color: 'green',
-    healthScore: 92,
-    coordinates: [
-      { lng: 82.524, lat: 49.935 },
-      { lng: 82.537, lat: 49.934 },
-      { lng: 82.545, lat: 49.930 },
-      { lng: 82.540, lat: 49.926 },
-      { lng: 82.525, lat: 49.927 },
-    ],
-    polygon: [],
-  },
-  {
-    // ЗОНА Б — неправильный пятиугольник, ~400м восточнее зоны А (ближе к центру экрана)
-    // Расположена: ~49.923-49.935°N, 82.548-82.562°E
-    id: 'z-2', fieldId: 'f-1', nameKey: 'data.zones.z-2', color: 'yellow',
-    healthScore: 68,
-    coordinates: [
-      { lng: 82.549, lat: 49.933 },
-      { lng: 82.559, lat: 49.935 },
-      { lng: 82.563, lat: 49.929 },
-      { lng: 82.560, lat: 49.923 },
-      { lng: 82.548, lat: 49.924 },
-    ],
-    polygon: [],
-  },
-  {
-    // ЗОНА В — Г-образная (L-shape), ~900м южнее зоны А
-    // Расположена: ~49.910-49.921°N, 82.523-82.545°E
-    id: 'z-3', fieldId: 'f-1', nameKey: 'data.zones.z-3', color: 'red',
-    healthScore: 42,
-    coordinates: [
-      { lng: 82.523, lat: 49.921 },
-      { lng: 82.545, lat: 49.921 },
-      { lng: 82.545, lat: 49.917 },
-      { lng: 82.534, lat: 49.917 },
-      { lng: 82.534, lat: 49.910 },
-      { lng: 82.523, lat: 49.910 },
-    ],
-    polygon: [],
-  },
+  { id: 'z-1', fieldId: 'f-1', nameKey: 'data.zones.z-1', color: 'green', healthScore: 0, polygon: [],
+    coordinates: ring([[82.33781, 49.97932], [82.36853, 49.99409], [82.38089, 49.98705], [82.35229, 49.96977]]) },
+  { id: 'z-2', fieldId: 'f-1', nameKey: 'data.zones.z-2', color: 'yellow', healthScore: 0, polygon: [],
+    coordinates: ring([[82.35935, 49.97091], [82.37489, 49.98046], [82.38265, 49.97273], [82.36994, 49.96409]]) },
+  { id: 'z-3', fieldId: 'f-1', nameKey: 'data.zones.z-3', color: 'red', healthScore: 0, polygon: [],
+    coordinates: ring([[82.37806, 49.98432], [82.38124, 49.98682], [82.39219, 49.98023], [82.38830, 49.97864]]) },
+  { id: 'z-4', fieldId: 'f-2', nameKey: 'data.zones.z-4', color: 'green', healthScore: 0, polygon: [],
+    coordinates: ring([[82.37136, 49.96364], [82.38265, 49.97205], [82.39219, 49.96591], [82.38054, 49.95795]]) },
 ];
 
 export const recommendations: Recommendation[] = [

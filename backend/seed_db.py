@@ -20,8 +20,8 @@ def seed():
     
     # 1. Create Fields
     initial_fields = [
-        {"id": "f-1", "name": "УКГ — Тишинское поле", "latitude": 49.9260, "longitude": 82.5420, "area_hectares": 124.5},
-        {"id": "f-2", "name": "УКГ — Усть-Тарханское поле", "latitude": 49.8920, "longitude": 82.6380, "area_hectares": 86.2},
+        {"id": "f-1", "name": "УКГ — Тишинское поле", "latitude": 49.9791, "longitude": 82.3650, "area_hectares": 550},
+        {"id": "f-2", "name": "УКГ — Усть-Тарханское поле", "latitude": 49.9650, "longitude": 82.3817, "area_hectares": 115},
         {"id": "field-1", "name": "North Sector", "latitude": 51.5074, "longitude": -0.1278, "area_hectares": 12.5},
     ]
     for f_info in initial_fields:
@@ -90,7 +90,7 @@ def seed():
         db.add(Sensor(
             id="SL-0001", name="Датчик почвы №1", field_id="f-1",
             model="Soil 4-in-1 (T · VWC · EC · pH), LoRaWAN", depth_cm=20,
-            latitude=49.9300, longitude=82.5530,
+            latitude=49.96909, longitude=82.36571,
         ))
         db.commit()
         print("Registered real sensor SL-0001")
