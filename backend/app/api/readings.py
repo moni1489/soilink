@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -54,6 +56,29 @@ def ingest_batch(payloads: list[SensorReadingIn], db: Session = Depends(get_db))
     for r in results:
         db.refresh(r)
     return results
+
+
+@router.post("/linkedge")
+def ingest_linkedge(payload: dict, field_id: str, db: Session = Depends(get_db)):
+    # Webhook LinkEdge-хаба (target url: .../api/readings/linkedge?field_id=...).
+    # Невалидные и тестовые пакеты подтверждаем без записи, иначе хаб будет слать их вечно
+    d = payload.get("decoded_data")
+    if not d or not payload.get("is_valid"):
+        return {"stored": False}
+
+    reading = SensorReading(
+        sensor_id=payload["dev_eui"],
+        field_id=field_id,
+        timestamp=datetime.fromisoformat(payload["time"]),
+        ph=d["ph"],
+        soil_temperature=d["temperature_c"],
+        soil_moisture=d["moisture_pct"],
+        electrical_conductivity=d["ec_us_cm"] / 1000,  # у нас mS/cm
+        gas_composition=d.get("gas_composition", "n/a"),  # газового датчика пока нет
+    )
+    db.add(reading)
+    db.commit()
+    return {"stored": True, "id": reading.id}
 
 
 @router.get("/latest", response_model=list[SensorReadingOut])

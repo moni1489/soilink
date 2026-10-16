@@ -33,4 +33,4 @@ COPY --from=frontend-builder /app/frontend/dist /app/static
 EXPOSE 8000
 
 # База (PostgreSQL из DATABASE_URL) доступна только в рантайме — сидим при старте, сид идемпотентный
-CMD ["sh", "-c", "python seed_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python seed_db.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

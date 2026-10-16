@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: soilink
       POSTGRES_PASSWORD: soilink
       POSTGRES_DB: soilink
-    ports:
+    ports: 
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
